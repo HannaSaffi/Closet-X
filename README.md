@@ -203,9 +203,9 @@ This project is licensed under the MIT License.
 
 ## 👥 Team
 
-- Developer 1
-- Developer 2  
-- Developer 3
+- Kuany Kuany
+- Hanna Saffi  
+- Aleksandra Postolov
 
 ## 📧 Contact
 

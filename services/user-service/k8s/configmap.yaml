@@ -1,0 +1,42 @@
+# services/user-service/k8s/configmap.yaml
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: user-service-config
+  namespace: closet-x
+  labels:
+    app: user-service
+data:
+  # Database configuration
+  mongodb-uri: "mongodb://mongodb-service:27017/closetx_users"
+  mongodb-pool-size: "10"
+  
+  # JWT configuration
+  jwt-expiration: "7d"
+  jwt-refresh-expiration: "30d"
+  
+  # API configuration
+  api-rate-limit: "100"
+  api-rate-window: "15"
+  
+  # CORS configuration
+  cors-origin: "https://closet-x.yourdomain.com"
+  
+  # Service URLs for inter-service communication
+  wardrobe-service-url: "http://wardrobe-service"
+  outfit-service-url: "http://outfit-service"
+  analytics-service-url: "http://analytics-service"
+  
+  # OAuth configuration
+  google-oauth-callback: "https://closet-x.yourdomain.com/auth/google/callback"
+  facebook-oauth-callback: "https://closet-x.yourdomain.com/auth/facebook/callback"
+  
+  # Feature flags
+  feature-social-login: "true"
+  feature-email-verification: "true"
+  feature-two-factor-auth: "false"
+  
+  # Logging configuration
+  log-level: "info"
+  log-format: "json"

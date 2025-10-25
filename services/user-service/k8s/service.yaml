@@ -1,0 +1,26 @@
+# services/user-service/k8s/service.yaml
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+  namespace: closet-x
+  labels:
+    app: user-service
+    tier: backend
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "3001"
+spec:
+  type: ClusterIP
+  selector:
+    app: user-service
+  ports:
+  - name: http
+    port: 80
+    targetPort: 3001
+    protocol: TCP
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800

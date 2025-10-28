@@ -1,0 +1,12 @@
+{
+  "name": "closet-x-backend",
+  "version": "1.0.0",
+  "main": "dist/server.js",
+  "type": "commonjs",
+  "scripts": {
+    "dev": "ts-node-dev --transpile-only --respawn src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "lint": "eslint . --ext .ts"
+  }
+}

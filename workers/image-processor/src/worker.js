@@ -4,15 +4,15 @@
 const mongoose = require('mongoose');
 require('dotenv').config();
 
-const { RabbitMQConnection, QUEUES, consumeQueue } = require('../../../shared/config/rabbitmq');
+const { RabbitMQConnection, QUEUES, consumeQueue, setupRabbitMQ } = require('../shared/config/rabbitmq');
 const ollamaService = require('./services/ollamaService');
-const aiService = require('./services/aiService'); // Google Vision/Clarifai
-const Clothing = require('../../wardrobe-service/src/models/Clothing');
+//const aiService = require('./services/aiService'); // Google Vision/Clarifai
+const Clothing = require('./models/Clothing');
 
 // Connect to MongoDB
 async function connectDB() {
   try {
-    await mongoose.connect(process.env.MONGODB_URI);
+    await mongoose.connect(process.env.MONGO_URI);
     console.log('✅ Connected to MongoDB');
   } catch (error) {
     console.error('MongoDB connection error:', error);
@@ -99,7 +99,6 @@ async function startWorker() {
     const channel = await rabbitMQ.connect();
     
     // Setup queues
-    const { setupRabbitMQ } = require('../../../shared/config/rabbitmq');
     await setupRabbitMQ(channel);
     
     // Check Ollama availability

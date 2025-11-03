@@ -1,0 +1,75 @@
+# services/outfit-service/k8s/configmap.yaml
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: outfit-service-config
+  namespace: closet-x
+  labels:
+    app: outfit-service
+data:
+  # Database configuration
+  mongodb-uri: "mongodb://mongodb-service:27017/closetx_outfits"
+  mongodb-pool-size: "10"
+  
+  # RabbitMQ configuration
+  rabbitmq-url: "amqp://closetx:closetx123@rabbitmq-service:5672"
+  rabbitmq-exchange: "outfit-events"
+  rabbitmq-queue: "outfit-generation"
+  
+  # Service URLs
+  user-service-url: "http://user-service"
+  wardrobe-service-url: "http://wardrobe-service"
+  
+  # Weather API configuration
+  weather-api-url: "https://api.openweathermap.org/data/2.5"
+  weather-cache-ttl: "3600"  # 1 hour in seconds
+  weather-default-city: "New York"
+  
+  # AI Configuration
+  ai-vision-provider: "google"  # google, clarifai, or aws
+  ai-confidence-threshold: "0.7"
+  ai-max-retries: "3"
+  ollama-url: "http://ollama-service:11434"
+  
+  # Outfit Generation Configuration
+  outfit-min-items: "2"
+  outfit-max-items: "6"
+  outfit-generation-timeout: "30000"  # 30 seconds in ms
+  max-outfit-suggestions: "10"
+  
+  # Color Matching Configuration
+  color-harmony-strict: "false"
+  allow-pattern-mixing: "true"
+  
+  # Weather-based Logic
+  cold-temp-threshold: "50"  # Fahrenheit
+  hot-temp-threshold: "80"   # Fahrenheit
+  rain-probability-threshold: "50"  # percentage
+  
+  # Fashion Trends
+  trends-update-interval: "86400"  # 24 hours in seconds
+  trends-source: "pinterest"
+  
+  # Cache Configuration
+  cache-enabled: "true"
+  cache-max-size: "1000"
+  outfit-cache-ttl: "3600"  # 1 hour
+  
+  # API configuration
+  api-rate-limit: "100"
+  api-rate-window: "15"
+  
+  # CORS configuration
+  cors-origin: "https://closet-x.yourdomain.com"
+  
+  # Feature flags
+  feature-ai-outfit-generation: "true"
+  feature-weather-integration: "true"
+  feature-trend-analysis: "true"
+  feature-sell-suggestions: "true"
+  feature-occasion-matching: "true"
+  
+  # Logging configuration
+  log-level: "info"
+  log-format: "json"

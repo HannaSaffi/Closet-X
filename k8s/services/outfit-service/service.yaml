@@ -1,0 +1,26 @@
+# services/outfit-service/k8s/service.yaml
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: outfit-service
+  namespace: closet-x
+  labels:
+    app: outfit-service
+    tier: backend
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "3003"
+spec:
+  type: ClusterIP
+  selector:
+    app: outfit-service
+  ports:
+  - name: http
+    port: 80
+    targetPort: 3003
+    protocol: TCP
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800

@@ -1,0 +1,247 @@
+# UPDATED DEPLOYMENT FILES FOR HARBOR REGISTRY
+# Replace the image URLs and imagePullSecrets in ALL your deployment files
+
+# ============================================
+# User Service Deployment (UPDATED)
+# services/user-service/k8s/deployment.yaml
+# ============================================
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+  namespace: closet-x
+  labels:
+    app: user-service
+    tier: backend
+    version: v1
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: user-service
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: user-service
+        tier: backend
+        version: v1
+    spec:
+      containers:
+      - name: user-service
+        # UPDATED: Use YOUR actual Harbor URL
+        image: harbor.yourdomain.com/closet-x/user-service:latest
+        imagePullPolicy: Always
+        
+        ports:
+        - name: http
+          containerPort: 3001
+          protocol: TCP
+        
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: PORT
+          value: "3001"
+        - name: MONGODB_URI
+          valueFrom:
+            configMapKeyRef:
+              name: user-service-config
+              key: mongodb-uri
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: user-service-secrets
+              key: jwt-secret
+        - name: MONGODB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mongodb-secrets
+              key: password
+        
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 5
+      
+      # UPDATED: Use the secret name from kates-imagepullsecret.yaml
+      imagePullSecrets:
+      - name: kates-harbor-secret
+
+---
+# ============================================
+# Wardrobe Service Deployment (UPDATED)
+# services/wardrobe-service/k8s/deployment.yaml
+# ============================================
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wardrobe-service
+  namespace: closet-x
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: wardrobe-service
+  template:
+    metadata:
+      labels:
+        app: wardrobe-service
+    spec:
+      containers:
+      - name: wardrobe-service
+        # UPDATED: Use YOUR actual Harbor URL
+        image: harbor.yourdomain.com/closet-x/wardrobe-service:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3002
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: PORT
+          value: "3002"
+        - name: MONGODB_URI
+          valueFrom:
+            configMapKeyRef:
+              name: wardrobe-service-config
+              key: mongodb-uri
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "300m"
+          limits:
+            memory: "1Gi"
+            cpu: "800m"
+      
+      # UPDATED: Use the secret name from kates-imagepullsecret.yaml
+      imagePullSecrets:
+      - name: kates-harbor-secret
+
+---
+# ============================================
+# Outfit Service Deployment (UPDATED)
+# services/outfit-service/k8s/deployment.yaml
+# ============================================
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: outfit-service
+  namespace: closet-x
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: outfit-service
+  template:
+    metadata:
+      labels:
+        app: outfit-service
+    spec:
+      containers:
+      - name: outfit-service
+        # UPDATED: Use YOUR actual Harbor URL
+        image: harbor.yourdomain.com/closet-x/outfit-service:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3003
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: PORT
+          value: "3003"
+        - name: MONGODB_URI
+          valueFrom:
+            configMapKeyRef:
+              name: outfit-service-config
+              key: mongodb-uri
+        - name: GOOGLE_VISION_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: outfit-service-secrets
+              key: google-vision-api-key
+        - name: OPENWEATHER_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: outfit-service-secrets
+              key: openweather-api-key
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "300m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+      
+      # UPDATED: Use the secret name from kates-imagepullsecret.yaml
+      imagePullSecrets:
+      - name: kates-harbor-secret
+
+---
+# ============================================
+# Image Processor Worker (UPDATED)
+# workers/image-processor/k8s/deployment.yaml
+# ============================================
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: image-processor-worker
+  namespace: closet-x
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: image-processor
+  template:
+    metadata:
+      labels:
+        app: image-processor
+    spec:
+      containers:
+      - name: image-processor
+        # UPDATED: Use YOUR actual Harbor URL
+        image: harbor.yourdomain.com/closet-x/image-processor:latest
+        imagePullPolicy: Always
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: MONGODB_URI
+          valueFrom:
+            configMapKeyRef:
+              name: image-processor-config
+              key: mongodb-uri
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "300m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+      
+      # UPDATED: Use the secret name from kates-imagepullsecret.yaml
+      imagePullSecrets:
+      - name: kates-harbor-secret

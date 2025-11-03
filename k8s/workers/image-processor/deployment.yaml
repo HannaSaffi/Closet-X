@@ -1,0 +1,156 @@
+# workers/image-processor/k8s/deployment.yaml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: image-processor-worker
+  namespace: closet-x
+  labels:
+    app: image-processor
+    tier: worker
+    version: v1
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: image-processor
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: image-processor
+        tier: worker
+        version: v1
+    spec:
+      serviceAccountName: closet-x-sa
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
+      
+      containers:
+      - name: image-processor
+        image: harbor.yourdomain.com/closet-x/image-processor:latest
+        imagePullPolicy: Always
+        
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: WORKER_NAME
+          value: "image-processor"
+        
+        # ConfigMap references
+        - name: MONGODB_URI
+          valueFrom:
+            configMapKeyRef:
+              name: image-processor-config
+              key: mongodb-uri
+        - name: RABBITMQ_URL
+          valueFrom:
+            configMapKeyRef:
+              name: image-processor-config
+              key: rabbitmq-url
+        - name: S3_BUCKET
+          valueFrom:
+            configMapKeyRef:
+              name: image-processor-config
+              key: s3-bucket
+        - name: AWS_REGION
+          valueFrom:
+            configMapKeyRef:
+              name: image-processor-config
+              key: aws-region
+        
+        # Secret references
+        - name: MONGODB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mongodb-secrets
+              key: password
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: wardrobe-service-secrets
+              key: aws-access-key-id
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: wardrobe-service-secrets
+              key: aws-secret-access-key
+        - name: GOOGLE_VISION_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: outfit-service-secrets
+              key: google-vision-api-key
+        - name: CLARIFAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: outfit-service-secrets
+              key: clarifai-api-key
+        
+        # Resource limits
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "300m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        
+        # Security context
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 1001
+          capabilities:
+            drop:
+            - ALL
+        
+        # Volume mounts
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        - name: processing
+          mountPath: /app/processing
+      
+      # Volumes
+      volumes:
+      - name: tmp
+        emptyDir: {}
+      - name: processing
+        emptyDir:
+          sizeLimit: 5Gi
+      
+      # Image pull secrets
+      imagePullSecrets:
+      - name: harbor-registry-secret
+      
+      # Tolerations for worker nodes
+      tolerations:
+      - key: "node-role"
+        operator: "Equal"
+        value: "worker"
+        effect: "NoSchedule"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: image-processor-config
+  namespace: closet-x
+  labels:
+    app: image-processor
+data:
+  mongodb-uri: "mongodb://mongodb-service:27017/closetx_wardrobe"
+  rabbitmq-url: "amqp://rabbitmq-service:5672"
+  rabbitmq-queue: "image-processing"
+  s3-bucket: "closet-x-images"
+  aws-region: "us-east-1"
+  ai-provider: "google"
+  processing-timeout: "60000"
+  max-concurrent-jobs: "5"

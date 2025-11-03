@@ -1,43 +1,30 @@
 # docker-compose.yml - Local development setup
 
-version: '3.8'
-
 services:
-  # MongoDB
   mongodb:
-    image: mongo:7.0
+    image: mongo:latest
     container_name: closetx-mongodb
-    restart: unless-stopped
     ports:
       - "27017:27017"
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: admin123
-      MONGO_INITDB_DATABASE: closetx
     volumes:
-      - mongodb_data:/data/db
+      - mongodb-data:/data/db
       - ./infrastructure/scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=closetxuser
+      - MONGO_INITDB_ROOT_PASSWORD=supersecurepassword
     networks:
       - closetx-network
-    healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/closetx --quiet
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
-  # RabbitMQ
+
   rabbitmq:
-    image: rabbitmq:3.12-management-alpine
+    image: rabbitmq:3-management
     container_name: closetx-rabbitmq
-    restart: unless-stopped
     ports:
-      - "5672:5672"   # AMQP port
-      - "15672:15672" # Management UI
+      - "5672:5672"
+      - "15672:15672"
     environment:
-      RABBITMQ_DEFAULT_USER: closetx
-      RABBITMQ_DEFAULT_PASS: closetx123
-    volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
     networks:
       - closetx-network
     healthcheck:
@@ -46,135 +33,80 @@ services:
       timeout: 5s
       retries: 5
 
-  # User Service
   user-service:
-    build:
-      context: ./services/user-service
-      dockerfile: Dockerfile
+    build: ./services/user-service
     container_name: closetx-user-service
-    restart: unless-stopped
     ports:
       - "3001:3001"
     environment:
-      NODE_ENV: development
-      PORT: 3001
-      MONGODB_URI: mongodb://admin:admin123@mongodb:27017/closetx_users?authSource=admin
-      JWT_SECRET: dev-jwt-secret-key-change-in-production-min-32-characters
-      JWT_EXPIRATION: 7d
+      - MONGO_URI=mongodb://user_service:service_password_123@mongodb:27017/closetx_users
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - PORT=3001
+      - JWT_SECRET=${JWT_SECRET}
     depends_on:
-      mongodb:
-        condition: service_healthy
-    volumes:
-      - ./services/user-service/src:/app/src
-      - ./services/user-service/logs:/app/logs
+      - mongodb
+      - rabbitmq
     networks:
       - closetx-network
-    command: npm run dev
 
-  # Wardrobe Service
   wardrobe-service:
-    build:
-      context: ./services/wardrobe-service
-      dockerfile: Dockerfile
+    build: ./services/wardrobe-service
     container_name: closetx-wardrobe-service
-    restart: unless-stopped
     ports:
       - "3002:3002"
     environment:
-      NODE_ENV: development
-      PORT: 3002
-      MONGODB_URI: mongodb://admin:admin123@mongodb:27017/closetx_wardrobe?authSource=admin
-      JWT_SECRET: dev-jwt-secret-key-change-in-production-min-32-characters
-      RABBITMQ_URL: amqp://closetx:closetx123@rabbitmq:5672
-      USER_SERVICE_URL: http://user-service:3001
-      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-your-aws-key}
-      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-your-aws-secret}
-      S3_BUCKET: ${S3_BUCKET:-closet-x-dev}
-      AWS_REGION: ${AWS_REGION:-us-east-1}
+      - MONGO_URI=mongodb://wardrobe_service:service_password_123@mongodb:27017/closetx_wardrobe
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - PORT=3002
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION}
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
     depends_on:
-      mongodb:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-      user-service:
-        condition: service_started
-    volumes:
-      - ./services/wardrobe-service/src:/app/src
-      - ./services/wardrobe-service/uploads:/app/uploads
-      - ./services/wardrobe-service/logs:/app/logs
+      - mongodb
+      - rabbitmq
     networks:
       - closetx-network
-    command: npm run dev
+    volumes:
+      - wardrobe-uploads:/app/uploads
 
-  # Outfit Service
   outfit-service:
-    build:
-      context: ./services/outfit-service
-      dockerfile: Dockerfile
+    build: ./services/outfit-service
     container_name: closetx-outfit-service
-    restart: unless-stopped
     ports:
       - "3003:3003"
     environment:
-      NODE_ENV: development
-      PORT: 3003
-      MONGODB_URI: mongodb://admin:admin123@mongodb:27017/closetx_outfits?authSource=admin
-      JWT_SECRET: dev-jwt-secret-key-change-in-production-min-32-characters
-      RABBITMQ_URL: amqp://closetx:closetx123@rabbitmq:5672
-      USER_SERVICE_URL: http://user-service:3001
-      WARDROBE_SERVICE_URL: http://wardrobe-service:3002
-      OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY:-your-api-key}
-      GOOGLE_VISION_API_KEY: ${GOOGLE_VISION_API_KEY:-your-api-key}
-      CLARIFAI_API_KEY: ${CLARIFAI_API_KEY:-your-api-key}
+      - RABBITMQ_URL=amqp://guest:guest@closetx-rabbitmq:5672
+      - MONGO_URI=mongodb://outfit_service:service_password_123@mongodb:27017/closetx_outfits
+      - PORT=3003
+      - CLARIFAI_PAT=${CLARIFAI_PAT}
+      - CLARIFAI_USER_ID=${CLARIFAI_USER_ID}
+      - CLARIFAI_APP_ID=${CLARIFAI_APP_ID}
     depends_on:
-      mongodb:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-      user-service:
-        condition: service_started
-      wardrobe-service:
-        condition: service_started
-    volumes:
-      - ./services/outfit-service/src:/app/src
-      - ./services/outfit-service/cache:/app/cache
-      - ./services/outfit-service/logs:/app/logs
+      - mongodb
+      - rabbitmq
     networks:
       - closetx-network
-    command: npm run dev
 
-  # Image Processor Worker
   image-processor:
     build:
-      context: ./workers/image-processor
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: workers/image-processor/Dockerfile
     container_name: closetx-image-processor
-    restart: unless-stopped
     environment:
-      NODE_ENV: development
-      RABBITMQ_URL: amqp://closetx:closetx123@rabbitmq:5672
-      MONGODB_URI: mongodb://admin:admin123@mongodb:27017/closetx_wardrobe?authSource=admin
-      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-your-aws-key}
-      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-your-aws-secret}
-      S3_BUCKET: ${S3_BUCKET:-closet-x-dev}
-      GOOGLE_VISION_API_KEY: ${GOOGLE_VISION_API_KEY:-your-api-key}
-      CLARIFAI_API_KEY: ${CLARIFAI_API_KEY:-your-api-key}
+      - MONGO_URI=mongodb://mongodb:27017/closetx
+      - RABBITMQ_URL=amqp://rabbitmq:5672
     depends_on:
-      rabbitmq:
-        condition: service_healthy
-      mongodb:
-        condition: service_healthy
-    volumes:
-      - ./workers/image-processor/src:/app/src
+      - mongodb
+      - rabbitmq
     networks:
       - closetx-network
+
 
 networks:
   closetx-network:
     driver: bridge
 
 volumes:
-  mongodb_data:
-    driver: local
-  rabbitmq_data:
-    driver: local
+  mongodb-data:
+  wardrobe-uploads:

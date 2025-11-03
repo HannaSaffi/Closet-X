@@ -2,10 +2,10 @@
   "name": "user-service",
   "version": "1.0.0",
   "description": "User authentication and profile management service",
-  "main": "src/server.js",
+  "main": "src/models/User.js",
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "nodemon src/server.js",
+    "start": "node src/models/User.js",
+    "dev": "nodemon src/models/User.js",
     "test": "jest --coverage",
     "test:watch": "jest --watch",
     "test:unit": "jest --testPathPattern=tests/unit",

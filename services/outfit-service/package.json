@@ -2,10 +2,10 @@
   "name": "outfit-service",
   "version": "1.0.0",
   "description": "AI-powered outfit recommendations and weather integration service",
-  "main": "src/server.js",
+  "main": "src/models/Outfit.js",
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "nodemon src/server.js",
+    "start": "node src/models/Outfit.js",
+    "dev": "nodemon src/models/Outfit.js",
     "test": "jest --coverage",
     "test:watch": "jest --watch",
     "test:unit": "jest --testPathPattern=tests/unit",

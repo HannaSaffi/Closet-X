@@ -13,7 +13,7 @@ data:
   mongodb-pool-size: "10"
   
   # RabbitMQ configuration
-  rabbitmq-url: "amqp://rabbitmq-service:5672"
+  rabbitmq-url: "amqp://closetx:closetx123@rabbitmq-service:5672"
   rabbitmq-exchange: "outfit-events"
   rabbitmq-queue: "outfit-generation"
   
@@ -30,6 +30,7 @@ data:
   ai-vision-provider: "google"  # google, clarifai, or aws
   ai-confidence-threshold: "0.7"
   ai-max-retries: "3"
+  ollama-url: "http://ollama-service:11434"
   
   # Outfit Generation Configuration
   outfit-min-items: "2"

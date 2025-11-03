@@ -2,10 +2,10 @@
   "name": "wardrobe-service",
   "version": "1.0.0",
   "description": "Clothing item management and image storage service",
-  "main": "src/server.js",
+  "main": "src/models/Clothing.js",
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "nodemon src/server.js",
+    "start": "node src/models/Clothing.js",
+    "dev": "nodemon src/models/Clothing.js",
     "test": "jest --coverage",
     "test:watch": "jest --watch",
     "test:unit": "jest --testPathPattern=tests/unit",

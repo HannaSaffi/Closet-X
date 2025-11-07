@@ -229,6 +229,37 @@ Closet-X/
 └── package.json             # Root package file
 ```
 
+
+Backend architecture 
+                      ┌──────────────────────┐
+   Client (HTTP) ───▶ │  User Service :3001 │──┐
+    (REST + JWT)      │  Auth, profiles     │  │  issues JWT
+                      └──────────────────────┘  │
+                                                │
+                      ┌──────────────────────┐  │  validates JWT
+   Client (HTTP) ───▶ │ Wardrobe :3002      │──┼─────────┐
+                      │ CRUD, uploads       │  │         │
+                      │ Publishes events    │  │         │
+                      └─────────┬────────────  │         │
+                                │  RabbitMQ    │         │
+                                ▼              │         │
+                      ┌──────────────────────┐ │         │
+                      │ Image Processor     │◀┘         │
+                      │ (worker, idempotent)│           │
+                      │ AI providers → S3    │           │
+                      │ updates Mongo (items)│           │
+                      └─────────▲────────────┘           │
+                                │                        │
+                      ┌─────────┴───────────┐            │
+   Client (HTTP) ───▶ │ Outfit :3003        │◀───────────┘
+                      │ Generation, weather │
+                      │ analytics/trending  │
+                      └──────────────────────┘
+
+       Shared: middleware (reqId, auth, errors), Zod schemas, logging utils,
+       config managers (Mongo/Rabbit), constants/enums, JWT utilities
+
+
 ## 🚀 Getting Started
 
 ### Prerequisites

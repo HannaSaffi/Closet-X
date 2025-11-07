@@ -620,8 +620,8 @@ This project is licensed under the MIT License.
 ## 👥 Team
 
 - **Kuany Kuany** - Backend Developer
-- **Hanna Saffi** - Backend Developer
-- **Aleksandra Postolov** - Frontend Developer
+- **Hanna Saffi** - Frontend Developer
+- **Aleksandra Postolov** - Database
 
 ## 📧 Contact
 

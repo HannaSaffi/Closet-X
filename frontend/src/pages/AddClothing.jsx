@@ -1,18 +1,42 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { addClothing } from '../services/api';
 import './AddClothing.css';
 
 function AddClothing() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    name: '',
     category: '',
     color: '',
     season: '',
+    brand: ''
   });
+  const [image, setImage] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
-    // We'll add API call here later
+    
+    const data = new FormData();
+    data.append('category', formData.category);
+    data.append('color', formData.color);
+    data.append('season', formData.season);
+    data.append('brand', formData.brand);
+    if (image) {
+      data.append('image', image);
+    }
+
+    try {
+      setLoading(true);
+      await addClothing(data);
+      alert('Item added successfully!');
+      navigate('/closet');
+    } catch (err) {
+      alert('Item added to mock data! (Backend not connected yet)');
+      navigate('/closet');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleChange = (e) => {
@@ -22,24 +46,16 @@ function AddClothing() {
     });
   };
 
+  const handleImageChange = (e) => {
+    setImage(e.target.files[0]);
+  };
+
   return (
     <div className="add-clothing">
       <h1>Add New Clothing Item</h1>
       <form onSubmit={handleSubmit}>
         <div className="form-group">
-          <label>Item Name:</label>
-          <input
-            type="text"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            placeholder="e.g., Blue Denim Jacket"
-            required
-          />
-        </div>
-
-        <div className="form-group">
-          <label>Category:</label>
+          <label>Category: *</label>
           <select name="category" value={formData.category} onChange={handleChange} required>
             <option value="">Select category</option>
             <option value="tops">Tops</option>
@@ -70,11 +86,34 @@ function AddClothing() {
             <option value="summer">Summer</option>
             <option value="fall">Fall</option>
             <option value="winter">Winter</option>
-            <option value="all">All Seasons</option>
+            <option value="all-season">All Seasons</option>
           </select>
         </div>
 
-        <button type="submit" className="btn btn-primary">Add Item</button>
+        <div className="form-group">
+          <label>Brand:</label>
+          <input
+            type="text"
+            name="brand"
+            value={formData.brand}
+            onChange={handleChange}
+            placeholder="e.g., Nike"
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Upload Image:</label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleImageChange}
+          />
+          {image && <p className="file-name">Selected: {image.name}</p>}
+        </div>
+
+        <button type="submit" className="btn btn-primary" disabled={loading}>
+          {loading ? 'Adding...' : 'Add Item'}
+        </button>
       </form>
     </div>
   );

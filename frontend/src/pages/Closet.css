@@ -42,3 +42,12 @@
 .empty-state p:last-child {
   color: #666;
 }
+
+.info-message {
+  background-color: #e3f2fd;
+  color: #1976d2;
+  padding: 12px 20px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+  text-align: center;
+}

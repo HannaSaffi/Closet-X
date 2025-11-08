@@ -1,18 +1,18 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: outfit-service
-  namespace: closet-x
+  name: ai-advice-service
+  namespace: kates-services
   labels:
-    app: outfit-service
+    app: ai-advice-service
     component: backend
     tier: service
 spec:
-  replicas: 3
+  replicas: 2
   revisionHistoryLimit: 3
   selector:
     matchLabels:
-      app: outfit-service
+      app: ai-advice-service
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -21,86 +21,71 @@ spec:
   template:
     metadata:
       labels:
-        app: outfit-service
+        app: ai-advice-service
         component: backend
         tier: service
         version: v1.0.0
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: "3002"
+        prometheus.io/port: "3004"
         prometheus.io/path: "/metrics"
     spec:
-      # Security Context
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
         fsGroup: 1000
       
-      # Service Account
-      serviceAccountName: outfit-service-sa
+      serviceAccountName: default
       
       containers:
-      - name: outfit-service
-        image: closetx/outfit-service:latest
+      - name: ai-advice-service
+        image: harbor.javajon.duckdns.org/kates/closetx-ai-advice-service:1.0.0
         imagePullPolicy: Always
         
         ports:
         - name: http
-          containerPort: 3002
+          containerPort: 3004
           protocol: TCP
         
-        # Environment Variables
         env:
         - name: NODE_ENV
           value: "production"
         - name: PORT
-          value: "3002"
-        - name: MONGO_URI
-          valueFrom:
-            secretKeyRef:
-              name: outfit-service-secrets
-              key: mongodb-uri
-        - name: RABBITMQ_URL
-          valueFrom:
-            configMapKeyRef:
-              name: outfit-service-config
-              key: rabbitmq-url
-        - name: GOOGLE_VISION_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: outfit-service-secrets
-              key: google-vision-api-key
-        - name: CLARIFAI_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: outfit-service-secrets
-              key: clarifai-api-key
-        - name: WEATHER_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: outfit-service-secrets
-              key: weather-api-key
-        - name: OLLAMA_HOST
-          valueFrom:
-            configMapKeyRef:
-              name: outfit-service-config
-              key: ollama-host
-        - name: CACHE_TTL
-          valueFrom:
-            configMapKeyRef:
-              name: outfit-service-config
-              key: cache-ttl
+          value: "3004"
         
-        # Resource Limits (Higher for AI processing)
+        # Gemini API Key (Free tier available)
+        - name: GEMINI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: ai-advice-secrets
+              key: gemini-api-key
+              optional: true
+        
+        # OpenAI API Key (Backup)
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: ai-advice-secrets
+              key: openai-api-key
+              optional: true
+        
+        # Preferred provider (gemini or openai)
+        - name: AI_PROVIDER
+          valueFrom:
+            configMapKeyRef:
+              name: ai-advice-config
+              key: preferred-provider
+        
+        # Resource Limits
         resources:
           requests:
+            memory: "256Mi"
+            cpu: "250m"
+            ephemeral-storage: "512Mi"
+          limits:
             memory: "512Mi"
             cpu: "500m"
             ephemeral-storage: "1Gi"
-          limits:
-            memory: "1Gi"
-            cpu: "1000m"
-            ephemeral-storage: "2Gi"
         
         # Health Checks
         livenessProbe:
@@ -108,7 +93,7 @@ spec:
             path: /live
             port: http
             scheme: HTTP
-          initialDelaySeconds: 45
+          initialDelaySeconds: 30
           periodSeconds: 10
           timeoutSeconds: 5
           successThreshold: 1
@@ -119,7 +104,7 @@ spec:
             path: /ready
             port: http
             scheme: HTTP
-          initialDelaySeconds: 15
+          initialDelaySeconds: 10
           periodSeconds: 5
           timeoutSeconds: 3
           successThreshold: 1
@@ -142,11 +127,6 @@ spec:
             exec:
               command: ["/bin/sh", "-c", "sleep 15"]
         
-        # Volume Mounts for cache
-        volumeMounts:
-        - name: cache-volume
-          mountPath: /app/cache
-        
         # Security Context
         securityContext:
           allowPrivilegeEscalation: false
@@ -157,21 +137,9 @@ spec:
             drop:
               - ALL
       
-      # Volumes
-      volumes:
-      - name: cache-volume
-        emptyDir:
-          sizeLimit: 500Mi
-      
-      # Init Containers
-      initContainers:
-      - name: wait-for-mongodb
-        image: busybox:1.35
-        command: ['sh', '-c', 'until nc -z closetx-mongodb 27017; do echo "Waiting for MongoDB..."; sleep 2; done;']
-      
-      - name: wait-for-rabbitmq
-        image: busybox:1.35
-        command: ['sh', '-c', 'until nc -z closetx-rabbitmq 5672; do echo "Waiting for RabbitMQ..."; sleep 2; done;']
+      # Image Pull Secrets
+      imagePullSecrets:
+      - name: harbor-pull-secret
       
       # Pod Scheduling
       affinity:
@@ -184,7 +152,7 @@ spec:
                 - key: app
                   operator: In
                   values:
-                  - outfit-service
+                  - ai-advice-service
               topologyKey: kubernetes.io/hostname
       
       # Tolerations
@@ -204,21 +172,30 @@ spec:
 
 ---
 apiVersion: v1
-kind: ServiceAccount
+kind: Service
 metadata:
-  name: outfit-service-sa
-  namespace: closet-x
+  name: ai-advice-service
+  namespace: kates-services
   labels:
-    app: outfit-service
+    app: ai-advice-service
+spec:
+  selector:
+    app: ai-advice-service
+  ports:
+  - port: 3004
+    targetPort: 3004
+    protocol: TCP
+    name: http
+  type: ClusterIP
 
 ---
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: outfit-service-pdb
-  namespace: closet-x
+  name: ai-advice-service-pdb
+  namespace: kates-services
 spec:
-  minAvailable: 2
+  minAvailable: 1
   selector:
     matchLabels:
-      app: outfit-service
+      app: ai-advice-service

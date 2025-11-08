@@ -1,6 +1,13 @@
 // services/outfit-service/src/controllers/aiController.js
+/**
+ * Enhanced AI Controller with Backup AI Service Integration
+ * 
+ * This version includes the backup AI Advice Service (Gemini/OpenAI)
+ * alongside your existing AI functionality.
+ */
 
 const aiService = require('../services/aiService');
+const aiAdviceService = require('../services/aiAdviceService'); // ← NEW: Backup AI service
 const weatherService = require('../services/weatherService');
 const outfitGenerator = require('../services/outfitGenerator');
 const { colorMatching } = require('../algorithms/colorMatching');
@@ -122,11 +129,18 @@ exports.getWeatherRecommendations = async (req, res) => {
 /**
  * Generate outfit suggestions
  * POST /api/outfits/generate
+ * 
+ * ENHANCED: Now includes optional AI advice from backup service
  */
 exports.generateOutfits = async (req, res) => {
   try {
     const userId = req.user.id; // From auth middleware
-    const { occasion = 'casual', city, maxSuggestions = 5 } = req.body;
+    const { 
+      occasion = 'casual', 
+      city, 
+      maxSuggestions = 5,
+      includeAIAdvice = false // ← NEW: Optional AI enhancement
+    } = req.body;
 
     // Get weather if city provided
     let weather = null;
@@ -146,6 +160,31 @@ exports.generateOutfits = async (req, res) => {
     let weatherRecs = null;
     if (weather) {
       weatherRecs = weatherService.getClothingRecommendations(weather);
+    }
+
+    // ======================================================================
+    // NEW: Get AI fashion advice if requested and service is available
+    // ======================================================================
+    let aiAdvice = null;
+    if (includeAIAdvice) {
+      const isAIAvailable = await aiAdviceService.isAvailable();
+      
+      if (isAIAvailable) {
+        const advice = await aiAdviceService.getFashionAdvice({
+          occasion,
+          weather: weather ? weather.current.condition.description : 'mild',
+          colors: outfits[0]?.colors || [],
+          style: 'versatile'
+        });
+        
+        if (advice.success) {
+          aiAdvice = {
+            advice: advice.advice,
+            provider: advice.provider,
+            generated: new Date().toISOString()
+          };
+        }
+      }
     }
 
     res.json({
@@ -170,6 +209,7 @@ exports.generateOutfits = async (req, res) => {
           condition: weather.current.condition.description,
           recommendations: weatherRecs
         } : null,
+        aiAdvice, // ← NEW: AI-powered fashion advice
         count: outfits.length
       },
       message: `Generated ${outfits.length} outfit suggestions`
@@ -187,10 +227,12 @@ exports.generateOutfits = async (req, res) => {
 /**
  * Test color compatibility
  * POST /api/colors/compatibility
+ * 
+ * ENHANCED: Now includes optional AI color analysis
  */
 exports.testColorCompatibility = async (req, res) => {
   try {
-    const { color1, color2 } = req.body;
+    const { color1, color2, includeAIAnalysis = false } = req.body;
 
     if (!color1 || !color2) {
       return res.status(400).json({
@@ -201,6 +243,25 @@ exports.testColorCompatibility = async (req, res) => {
 
     const score = colorMatching.getColorCompatibility(color1, color2);
     const suggestions = colorMatching.suggestComplementaryColors(color1);
+
+    // ======================================================================
+    // NEW: Get AI color analysis if requested
+    // ======================================================================
+    let aiAnalysis = null;
+    if (includeAIAnalysis) {
+      const isAIAvailable = await aiAdviceService.isAvailable();
+      
+      if (isAIAvailable) {
+        const analysis = await aiAdviceService.analyzeColors([color1, color2]);
+        
+        if (analysis.success) {
+          aiAnalysis = {
+            analysis: analysis.analysis,
+            provider: analysis.provider
+          };
+        }
+      }
+    }
 
     res.json({
       success: true,
@@ -216,7 +277,8 @@ exports.testColorCompatibility = async (req, res) => {
           perfect: suggestions.perfect,
           good: suggestions.good,
           avoid: suggestions.avoid
-        }
+        },
+        aiAnalysis // ← NEW: AI-powered color analysis
       }
     });
   } catch (error) {
@@ -275,10 +337,18 @@ exports.testStyleCompatibility = async (req, res) => {
 /**
  * Validate outfit colors and styles
  * POST /api/outfits/validate
+ * 
+ * ENHANCED: Now includes optional AI outfit analysis
  */
 exports.validateOutfit = async (req, res) => {
   try {
-    const { colors, styles, occasion } = req.body;
+    const { 
+      colors, 
+      styles, 
+      occasion, 
+      outfit, // ← NEW: Optional outfit details for AI analysis
+      includeAIAnalysis = false 
+    } = req.body;
 
     if (!colors || !styles) {
       return res.status(400).json({
@@ -292,6 +362,25 @@ exports.validateOutfit = async (req, res) => {
 
     const isValid = colorValidation.isValid && styleValidation.isValid;
 
+    // ======================================================================
+    // NEW: Get AI outfit analysis if requested and outfit details provided
+    // ======================================================================
+    let aiAnalysis = null;
+    if (includeAIAnalysis && outfit) {
+      const isAIAvailable = await aiAdviceService.isAvailable();
+      
+      if (isAIAvailable) {
+        const analysis = await aiAdviceService.analyzeOutfit(outfit);
+        
+        if (analysis.success) {
+          aiAnalysis = {
+            analysis: analysis.analysis,
+            provider: analysis.provider
+          };
+        }
+      }
+    }
+
     res.json({
       success: true,
       data: {
@@ -304,7 +393,8 @@ exports.validateOutfit = async (req, res) => {
         recommendations: [
           ...colorValidation.suggestions,
           ...styleValidation.suggestions
-        ]
+        ],
+        aiAnalysis // ← NEW: AI-powered outfit analysis
       }
     });
   } catch (error) {
@@ -319,11 +409,13 @@ exports.validateOutfit = async (req, res) => {
 /**
  * Get daily outfit suggestion (weather-based)
  * GET /api/outfits/daily?city=New York
+ * 
+ * ENHANCED: Now includes AI fashion advice
  */
 exports.getDailyOutfit = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { city } = req.query;
+    const { city, includeAIAdvice = true } = req.query; // ← AI advice on by default
 
     if (!city) {
       return res.status(400).json({
@@ -353,6 +445,30 @@ exports.getDailyOutfit = async (req, res) => {
 
     const outfit = outfits[0];
 
+    // ======================================================================
+    // NEW: Get AI fashion advice for daily outfit
+    // ======================================================================
+    let aiAdvice = null;
+    if (includeAIAdvice === 'true' || includeAIAdvice === true) {
+      const isAIAvailable = await aiAdviceService.isAvailable();
+      
+      if (isAIAvailable) {
+        const advice = await aiAdviceService.getFashionAdvice({
+          occasion: 'casual',
+          weather: weather.current.condition.description,
+          colors: outfit.colors,
+          style: 'comfortable and stylish'
+        });
+        
+        if (advice.success) {
+          aiAdvice = {
+            advice: advice.advice,
+            provider: advice.provider
+          };
+        }
+      }
+    }
+
     res.json({
       success: true,
       data: {
@@ -381,7 +497,8 @@ exports.getDailyOutfit = async (req, res) => {
         },
         tips: recommendations.suggested.map(tip => 
           `Consider bringing: ${tip}`
-        )
+        ),
+        aiAdvice // ← NEW: AI-powered fashion advice
       }
     });
   } catch (error) {
@@ -389,6 +506,147 @@ exports.getDailyOutfit = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to get daily outfit',
+      error: error.message
+    });
+  }
+};
+
+// ============================================================================
+// NEW ENDPOINTS: Backup AI Service Features
+// ============================================================================
+
+/**
+ * Get AI fashion advice (standalone endpoint)
+ * POST /api/ai/fashion-advice
+ */
+exports.getAIFashionAdvice = async (req, res) => {
+  try {
+    const { occasion, weather, colors, style, preferences } = req.body;
+
+    // Check if AI service is available
+    const isAvailable = await aiAdviceService.isAvailable();
+    
+    if (!isAvailable) {
+      return res.status(503).json({
+        success: false,
+        message: 'AI Advice Service is currently unavailable',
+        fallback: 'Please try again later or use our algorithmic recommendations.'
+      });
+    }
+
+    const advice = await aiAdviceService.getFashionAdvice({
+      occasion,
+      weather,
+      colors,
+      style,
+      preferences
+    });
+
+    if (!advice.success) {
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to get AI advice',
+        error: advice.error
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        advice: advice.advice,
+        provider: advice.provider,
+        context: {
+          occasion,
+          weather,
+          colors,
+          style
+        },
+        timestamp: new Date().toISOString()
+      }
+    });
+  } catch (error) {
+    console.error('AI Fashion Advice Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get fashion advice',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Analyze outfit with AI (standalone endpoint)
+ * POST /api/ai/analyze-outfit
+ */
+exports.analyzeOutfitWithAI = async (req, res) => {
+  try {
+    const { top, bottom, shoes, outerwear } = req.body;
+
+    if (!top || !bottom) {
+      return res.status(400).json({
+        success: false,
+        message: 'At least top and bottom are required'
+      });
+    }
+
+    const isAvailable = await aiAdviceService.isAvailable();
+    
+    if (!isAvailable) {
+      return res.status(503).json({
+        success: false,
+        message: 'AI Advice Service is currently unavailable'
+      });
+    }
+
+    const analysis = await aiAdviceService.analyzeOutfit({
+      top,
+      bottom,
+      shoes,
+      outerwear
+    });
+
+    res.json({
+      success: true,
+      data: {
+        analysis: analysis.success ? analysis.analysis : analysis.fallback,
+        provider: analysis.provider,
+        outfit: { top, bottom, shoes, outerwear },
+        timestamp: new Date().toISOString()
+      }
+    });
+  } catch (error) {
+    console.error('AI Outfit Analysis Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to analyze outfit',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Check AI service status
+ * GET /api/ai/status
+ */
+exports.getAIServiceStatus = async (req, res) => {
+  try {
+    const isAvailable = await aiAdviceService.isAvailable();
+    
+    res.json({
+      success: true,
+      data: {
+        available: isAvailable,
+        service: 'AI Advice Service (Gemini/OpenAI)',
+        lastCheck: aiAdviceService.lastCheck,
+        message: isAvailable 
+          ? 'AI Advice Service is operational' 
+          : 'AI Advice Service is currently unavailable, using algorithmic fallbacks'
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to check AI service status',
       error: error.message
     });
   }

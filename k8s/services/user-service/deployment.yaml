@@ -1,11 +1,3 @@
-# UPDATED DEPLOYMENT FILES FOR HARBOR REGISTRY
-# Replace the image URLs and imagePullSecrets in ALL your deployment files
-
-# ============================================
-# User Service Deployment (UPDATED)
-# services/user-service/k8s/deployment.yaml
-# ============================================
-
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -13,10 +5,11 @@ metadata:
   namespace: closet-x
   labels:
     app: user-service
-    tier: backend
-    version: v1
+    component: backend
+    tier: service
 spec:
-  replicas: 3
+  replicas: 2
+  revisionHistoryLimit: 3
   selector:
     matchLabels:
       app: user-service
@@ -29,13 +22,26 @@ spec:
     metadata:
       labels:
         app: user-service
-        tier: backend
-        version: v1
+        component: backend
+        tier: service
+        version: v1.0.0
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3001"
+        prometheus.io/path: "/metrics"
     spec:
+      # Security Context
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      
+      # Service Account
+      serviceAccountName: user-service-sa
+      
       containers:
       - name: user-service
-        # UPDATED: Use YOUR actual Harbor URL
-        image: harbor.yourdomain.com/closet-x/user-service:latest
+        image: closetx/user-service:latest
         imagePullPolicy: Always
         
         ports:
@@ -43,205 +49,151 @@ spec:
           containerPort: 3001
           protocol: TCP
         
+        # Environment Variables from ConfigMap and Secrets
         env:
         - name: NODE_ENV
           value: "production"
         - name: PORT
           value: "3001"
-        - name: MONGODB_URI
+        - name: MONGO_URI
+          valueFrom:
+            secretKeyRef:
+              name: user-service-secrets
+              key: mongodb-uri
+        - name: RABBITMQ_URL
           valueFrom:
             configMapKeyRef:
               name: user-service-config
-              key: mongodb-uri
+              key: rabbitmq-url
         - name: JWT_SECRET
           valueFrom:
             secretKeyRef:
               name: user-service-secrets
               key: jwt-secret
-        - name: MONGODB_PASSWORD
+        - name: JWT_EXPIRE
           valueFrom:
-            secretKeyRef:
-              name: mongodb-secrets
-              key: password
+            configMapKeyRef:
+              name: user-service-config
+              key: jwt-expire
         
+        # Resource Limits and Requests
         resources:
           requests:
             memory: "256Mi"
-            cpu: "200m"
+            cpu: "250m"
+            ephemeral-storage: "512Mi"
           limits:
             memory: "512Mi"
             cpu: "500m"
+            ephemeral-storage: "1Gi"
         
+        # Health Checks
         livenessProbe:
           httpGet:
-            path: /health
+            path: /live
             port: http
+            scheme: HTTP
           initialDelaySeconds: 30
           periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
         
         readinessProbe:
           httpGet:
-            path: /health
+            path: /ready
             port: http
+            scheme: HTTP
           initialDelaySeconds: 10
           periodSeconds: 5
+          timeoutSeconds: 3
+          successThreshold: 1
+          failureThreshold: 3
+        
+        startupProbe:
+          httpGet:
+            path: /health
+            port: http
+            scheme: HTTP
+          initialDelaySeconds: 0
+          periodSeconds: 10
+          timeoutSeconds: 3
+          successThreshold: 1
+          failureThreshold: 30
+        
+        # Lifecycle Hooks
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/sh", "-c", "sleep 15"]
+        
+        # Security Context
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          runAsNonRoot: true
+          runAsUser: 1000
+          capabilities:
+            drop:
+              - ALL
       
-      # UPDATED: Use the secret name from kates-imagepullsecret.yaml
-      imagePullSecrets:
-      - name: kates-harbor-secret
+      # Init Containers (optional - for migrations/setup)
+      initContainers:
+      - name: wait-for-mongodb
+        image: busybox:1.35
+        command: ['sh', '-c', 'until nc -z closetx-mongodb 27017; do echo "Waiting for MongoDB..."; sleep 2; done;']
+      
+      - name: wait-for-rabbitmq
+        image: busybox:1.35
+        command: ['sh', '-c', 'until nc -z closetx-rabbitmq 5672; do echo "Waiting for RabbitMQ..."; sleep 2; done;']
+      
+      # Pod Scheduling
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - user-service
+              topologyKey: kubernetes.io/hostname
+      
+      # Tolerations
+      tolerations:
+      - key: "node.kubernetes.io/not-ready"
+        operator: "Exists"
+        effect: "NoExecute"
+        tolerationSeconds: 300
+      - key: "node.kubernetes.io/unreachable"
+        operator: "Exists"
+        effect: "NoExecute"
+        tolerationSeconds: 300
+      
+      # DNS Policy
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
 
 ---
-# ============================================
-# Wardrobe Service Deployment (UPDATED)
-# services/wardrobe-service/k8s/deployment.yaml
-# ============================================
-
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: v1
+kind: ServiceAccount
 metadata:
-  name: wardrobe-service
+  name: user-service-sa
   namespace: closet-x
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: wardrobe-service
-  template:
-    metadata:
-      labels:
-        app: wardrobe-service
-    spec:
-      containers:
-      - name: wardrobe-service
-        # UPDATED: Use YOUR actual Harbor URL
-        image: harbor.yourdomain.com/closet-x/wardrobe-service:latest
-        imagePullPolicy: Always
-        ports:
-        - containerPort: 3002
-        env:
-        - name: NODE_ENV
-          value: "production"
-        - name: PORT
-          value: "3002"
-        - name: MONGODB_URI
-          valueFrom:
-            configMapKeyRef:
-              name: wardrobe-service-config
-              key: mongodb-uri
-        resources:
-          requests:
-            memory: "512Mi"
-            cpu: "300m"
-          limits:
-            memory: "1Gi"
-            cpu: "800m"
-      
-      # UPDATED: Use the secret name from kates-imagepullsecret.yaml
-      imagePullSecrets:
-      - name: kates-harbor-secret
+  labels:
+    app: user-service
 
 ---
-# ============================================
-# Outfit Service Deployment (UPDATED)
-# services/outfit-service/k8s/deployment.yaml
-# ============================================
-
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: policy/v1
+kind: PodDisruptionBudget
 metadata:
-  name: outfit-service
+  name: user-service-pdb
   namespace: closet-x
 spec:
-  replicas: 3
+  minAvailable: 1
   selector:
     matchLabels:
-      app: outfit-service
-  template:
-    metadata:
-      labels:
-        app: outfit-service
-    spec:
-      containers:
-      - name: outfit-service
-        # UPDATED: Use YOUR actual Harbor URL
-        image: harbor.yourdomain.com/closet-x/outfit-service:latest
-        imagePullPolicy: Always
-        ports:
-        - containerPort: 3003
-        env:
-        - name: NODE_ENV
-          value: "production"
-        - name: PORT
-          value: "3003"
-        - name: MONGODB_URI
-          valueFrom:
-            configMapKeyRef:
-              name: outfit-service-config
-              key: mongodb-uri
-        - name: GOOGLE_VISION_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: outfit-service-secrets
-              key: google-vision-api-key
-        - name: OPENWEATHER_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: outfit-service-secrets
-              key: openweather-api-key
-        resources:
-          requests:
-            memory: "512Mi"
-            cpu: "300m"
-          limits:
-            memory: "1Gi"
-            cpu: "1000m"
-      
-      # UPDATED: Use the secret name from kates-imagepullsecret.yaml
-      imagePullSecrets:
-      - name: kates-harbor-secret
-
----
-# ============================================
-# Image Processor Worker (UPDATED)
-# workers/image-processor/k8s/deployment.yaml
-# ============================================
-
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: image-processor-worker
-  namespace: closet-x
-spec:
-  replicas: 2
-  selector:
-    matchLabels:
-      app: image-processor
-  template:
-    metadata:
-      labels:
-        app: image-processor
-    spec:
-      containers:
-      - name: image-processor
-        # UPDATED: Use YOUR actual Harbor URL
-        image: harbor.yourdomain.com/closet-x/image-processor:latest
-        imagePullPolicy: Always
-        env:
-        - name: NODE_ENV
-          value: "production"
-        - name: MONGODB_URI
-          valueFrom:
-            configMapKeyRef:
-              name: image-processor-config
-              key: mongodb-uri
-        resources:
-          requests:
-            memory: "512Mi"
-            cpu: "300m"
-          limits:
-            memory: "2Gi"
-            cpu: "1000m"
-      
-      # UPDATED: Use the secret name from kates-imagepullsecret.yaml
-      imagePullSecrets:
-      - name: kates-harbor-secret
+      app: user-service

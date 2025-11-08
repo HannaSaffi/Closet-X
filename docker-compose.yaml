@@ -1,30 +1,63 @@
-# docker-compose.yml - Local development setup
+# ============================================================================
+# Closet-X Docker Compose - Complete Development Environment
+# ============================================================================
+# This docker-compose file provides a complete local development setup with:
+# - MongoDB database
+# - RabbitMQ message queue
+# - All microservices (user, outfit, wardrobe)
+# - Worker services
+# - Health checks and proper dependencies
+# - Volume mounts for development
+# ============================================================================
+
+version: '3.8'
 
 services:
+  # ==========================================================================
+  # DATABASES & INFRASTRUCTURE
+  # ==========================================================================
+  
   mongodb:
-    image: mongo:latest
+    image: mongo:7.0
     container_name: closetx-mongodb
+    restart: unless-stopped
     ports:
       - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: closetxuser
+      MONGO_INITDB_ROOT_PASSWORD: supersecurepassword
+      MONGO_INITDB_DATABASE: closetx
     volumes:
       - mongodb-data:/data/db
+      - mongodb-config:/data/configdb
       - ./infrastructure/scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=closetxuser
-      - MONGO_INITDB_ROOT_PASSWORD=supersecurepassword
     networks:
       - closetx-network
-
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   rabbitmq:
-    image: rabbitmq:3-management
+    image: rabbitmq:3.12-management-alpine
     container_name: closetx-rabbitmq
+    restart: unless-stopped
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "5672:5672"    # AMQP port
+      - "15672:15672"  # Management UI
     environment:
-      - RABBITMQ_DEFAULT_USER=guest
-      - RABBITMQ_DEFAULT_PASS=guest
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_DEFAULT_VHOST: /
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
     networks:
       - closetx-network
     healthcheck:
@@ -32,81 +65,331 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ==========================================================================
+  # MICROSERVICES
+  # ==========================================================================
 
   user-service:
-    build: ./services/user-service
+    build:
+      context: ./user-service
+      dockerfile: Dockerfile
     container_name: closetx-user-service
+    restart: unless-stopped
     ports:
       - "3001:3001"
     environment:
-      - MONGO_URI=mongodb://user_service:service_password_123@mongodb:27017/closetx_users
-      - RABBITMQ_URL=amqp://rabbitmq:5672
-      - PORT=3001
-      - JWT_SECRET=${JWT_SECRET}
+      NODE_ENV: development
+      PORT: 3001
+      MONGO_URI: mongodb://user_service:service_password_123@mongodb:27017/closetx_users?authSource=admin
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
+      JWT_EXPIRE: 7d
     depends_on:
-      - mongodb
-      - rabbitmq
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     networks:
       - closetx-network
+    volumes:
+      - ./user-service/src:/app/src:ro
+      - ./user-service/logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
-  wardrobe-service:
-    build: ./services/wardrobe-service
-    container_name: closetx-wardrobe-service
+  outfit-service:
+    build:
+      context: ./outfit-service
+      dockerfile: Dockerfile
+    container_name: closetx-outfit-service
+    restart: unless-stopped
     ports:
       - "3002:3002"
     environment:
-      - MONGO_URI=mongodb://wardrobe_service:service_password_123@mongodb:27017/closetx_wardrobe
-      - RABBITMQ_URL=amqp://rabbitmq:5672
-      - PORT=3002
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-      - AWS_REGION=${AWS_REGION}
-      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+      NODE_ENV: development
+      PORT: 3002
+      MONGO_URI: mongodb://outfit_service:service_password_123@mongodb:27017/closetx_outfits?authSource=admin
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      GOOGLE_VISION_API_KEY: ${GOOGLE_VISION_API_KEY}
+      CLARIFAI_PAT: ${CLARIFAI_PAT}
+      CLARIFAI_USER_ID: ${CLARIFAI_USER_ID}
+      CLARIFAI_APP_ID: ${CLARIFAI_APP_ID}
+      WEATHER_API_KEY: ${WEATHER_API_KEY}
+      OLLAMA_HOST: ${OLLAMA_HOST:-http://localhost:11434}
+      CACHE_TTL: 600
     depends_on:
-      - mongodb
-      - rabbitmq
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - closetx-network
+    volumes:
+      - ./outfit-service/src:/app/src:ro
+      - ./outfit-service/cache:/app/cache
+      - ./outfit-service/logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  wardrobe-service:
+    build:
+      context: ./services/wardrobe-service
+      dockerfile: Dockerfile
+    container_name: closetx-wardrobe-service
+    restart: unless-stopped
+    ports:
+      - "3003:3003"
+    environment:
+      NODE_ENV: development
+      PORT: 3003
+      MONGO_URI: mongodb://wardrobe_service:service_password_123@mongodb:27017/closetx_wardrobe?authSource=admin
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      S3_BUCKET_NAME: ${S3_BUCKET_NAME}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     networks:
       - closetx-network
     volumes:
       - wardrobe-uploads:/app/uploads
+      - ./services/wardrobe-service/src:/app/src:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
-  outfit-service:
-    build: ./services/outfit-service
-    container_name: closetx-outfit-service
-    ports:
-      - "3003:3003"
-    environment:
-      - RABBITMQ_URL=amqp://guest:guest@closetx-rabbitmq:5672
-      - MONGO_URI=mongodb://outfit_service:service_password_123@mongodb:27017/closetx_outfits
-      - PORT=3003
-      - CLARIFAI_PAT=${CLARIFAI_PAT}
-      - CLARIFAI_USER_ID=${CLARIFAI_USER_ID}
-      - CLARIFAI_APP_ID=${CLARIFAI_APP_ID}
-    depends_on:
-      - mongodb
-      - rabbitmq
-    networks:
-      - closetx-network
+  # ==========================================================================
+  # WORKER SERVICES
+  # ==========================================================================
 
   image-processor:
     build:
       context: .
       dockerfile: workers/image-processor/Dockerfile
     container_name: closetx-image-processor
+    restart: unless-stopped
     environment:
-      - MONGO_URI=mongodb://mongodb:27017/closetx
-      - RABBITMQ_URL=amqp://rabbitmq:5672
+      NODE_ENV: development
+      MONGO_URI: mongodb://closetxuser:supersecurepassword@mongodb:27017/closetx?authSource=admin
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
     depends_on:
-      - mongodb
-      - rabbitmq
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     networks:
       - closetx-network
+    volumes:
+      - ./workers/image-processor/src:/app/src:ro
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
+  fashion-advice-worker:
+    build:
+      context: .
+      dockerfile: workers/fashion-advice/Dockerfile
+    container_name: closetx-fashion-advice
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      MONGO_URI: mongodb://closetxuser:supersecurepassword@mongodb:27017/closetx?authSource=admin
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      PINTEREST_API_KEY: ${PINTEREST_API_KEY}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - closetx-network
+    volumes:
+      - ./workers/fashion-advice/src:/app/src:ro
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  outfit-generator-worker:
+    build:
+      context: .
+      dockerfile: workers/outfit-generator/Dockerfile
+    container_name: closetx-outfit-generator
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      MONGO_URI: mongodb://closetxuser:supersecurepassword@mongodb:27017/closetx?authSource=admin
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - closetx-network
+    volumes:
+      - ./workers/outfit-generator/src:/app/src:ro
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ==========================================================================
+  # FRONTEND (Optional - if needed for local dev)
+  # ==========================================================================
+
+  # frontend:
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile.dev
+  #   container_name: closetx-frontend
+  #   restart: unless-stopped
+  #   ports:
+  #     - "5173:5173"
+  #   environment:
+  #     VITE_API_URL: http://localhost:8080/api
+  #   volumes:
+  #     - ./frontend/src:/app/src
+  #     - ./frontend/public:/app/public
+  #   networks:
+  #     - closetx-network
+
+  # ==========================================================================
+  # UTILITIES & MONITORING (Optional)
+  # ==========================================================================
+
+  # MongoDB Express - Web-based MongoDB admin interface
+  mongo-express:
+    image: mongo-express:latest
+    container_name: closetx-mongo-express
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: closetxuser
+      ME_CONFIG_MONGODB_ADMINPASSWORD: supersecurepassword
+      ME_CONFIG_MONGODB_URL: mongodb://closetxuser:supersecurepassword@mongodb:27017/
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: admin123
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - closetx-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# ============================================================================
+# NETWORKS
+# ============================================================================
 
 networks:
   closetx-network:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+# ============================================================================
+# VOLUMES
+# ============================================================================
 
 volumes:
   mongodb-data:
+    driver: local
+  mongodb-config:
+    driver: local
+  rabbitmq-data:
+    driver: local
   wardrobe-uploads:
+    driver: local
+
+# ============================================================================
+# USAGE INSTRUCTIONS
+# ============================================================================
+# 
+# 1. Create a .env file in the root directory with required environment variables:
+#    JWT_SECRET=your-secret-key
+#    GOOGLE_VISION_API_KEY=your-key
+#    CLARIFAI_PAT=your-key
+#    WEATHER_API_KEY=your-key
+#    AWS_ACCESS_KEY_ID=your-key
+#    AWS_SECRET_ACCESS_KEY=your-key
+#    S3_BUCKET_NAME=your-bucket
+#
+# 2. Start all services:
+#    docker-compose up -d
+#
+# 3. View logs:
+#    docker-compose logs -f [service-name]
+#
+# 4. Stop all services:
+#    docker-compose down
+#
+# 5. Stop and remove volumes:
+#    docker-compose down -v
+#
+# 6. Rebuild a specific service:
+#    docker-compose up -d --build [service-name]
+#
+# ============================================================================
+# ACCESS POINTS
+# ============================================================================
+#
+# User Service:         http://localhost:3001
+# Outfit Service:       http://localhost:3002
+# Wardrobe Service:     http://localhost:3003
+# RabbitMQ Management:  http://localhost:15672 (guest/guest)
+# MongoDB Express:      http://localhost:8081 (admin/admin123)
+# MongoDB:              mongodb://localhost:27017
+#
+# Health Checks:
+# - http://localhost:3001/health
+# - http://localhost:3002/health
+# - http://localhost:3003/health
+#
+# ============================================================================

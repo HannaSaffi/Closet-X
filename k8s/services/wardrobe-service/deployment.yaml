@@ -1,200 +1,122 @@
 # services/wardrobe-service/k8s/deployment.yaml
-
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: wardrobe-service
-  namespace: closet-x
+  name: kates-wardrobe-service
+  namespace: kates-webapp
   labels:
-    app: wardrobe-service
+    app: kates-wardrobe-service
     tier: backend
-    version: v1
 spec:
-  replicas: 3
+  replicas: 2
   selector:
     matchLabels:
-      app: wardrobe-service
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 0
+      app: kates-wardrobe-service
   template:
     metadata:
       labels:
-        app: wardrobe-service
+        app: kates-wardrobe-service
         tier: backend
-        version: v1
-      annotations:
-        prometheus.io/scrape: "true"
-        prometheus.io/port: "3002"
-        prometheus.io/path: "/metrics"
     spec:
-      serviceAccountName: closet-x-sa
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 1001
-        fsGroup: 1001
-      
       containers:
       - name: wardrobe-service
-        image: harbor.yourdomain.com/closet-x/wardrobe-service:latest
-        imagePullPolicy: Always
-        
+        image: your-registry/kates-wardrobe-service:latest
         ports:
-        - name: http
-          containerPort: 3002
-          protocol: TCP
-        
+        - containerPort: 3004
+          name: http
         env:
         - name: NODE_ENV
           value: "production"
         - name: PORT
-          value: "3002"
-        - name: SERVICE_NAME
-          value: "wardrobe-service"
-        
-        # ConfigMap references
+          value: "3004"
         - name: MONGODB_URI
           valueFrom:
-            configMapKeyRef:
-              name: wardrobe-service-config
-              key: mongodb-uri
-        - name: S3_BUCKET
-          valueFrom:
-            configMapKeyRef:
-              name: wardrobe-service-config
-              key: s3-bucket
-        - name: AWS_REGION
-          valueFrom:
-            configMapKeyRef:
-              name: wardrobe-service-config
-              key: aws-region
-        - name: RABBITMQ_URL
-          valueFrom:
-            configMapKeyRef:
-              name: wardrobe-service-config
-              key: rabbitmq-url
-        - name: USER_SERVICE_URL
-          valueFrom:
-            configMapKeyRef:
-              name: wardrobe-service-config
-              key: user-service-url
-        
-        # Secret references
-        - name: MONGODB_PASSWORD
-          valueFrom:
             secretKeyRef:
-              name: mongodb-secrets
-              key: password
-        - name: AWS_ACCESS_KEY_ID
-          valueFrom:
-            secretKeyRef:
-              name: wardrobe-service-secrets
-              key: aws-access-key-id
-        - name: AWS_SECRET_ACCESS_KEY
-          valueFrom:
-            secretKeyRef:
-              name: wardrobe-service-secrets
-              key: aws-secret-access-key
-        - name: JWT_SECRET
-          valueFrom:
-            secretKeyRef:
-              name: user-service-secrets
-              key: jwt-secret
-        
-        # Resource limits and requests
+              name: kates-mongodb-secret
+              key: connection-string
         resources:
           requests:
-            memory: "512Mi"
-            cpu: "300m"
+            memory: "128Mi"
+            cpu: "100m"
           limits:
-            memory: "1Gi"
-            cpu: "800m"
-        
-        # Liveness probe
+            memory: "256Mi"
+            cpu: "500m"
         livenessProbe:
           httpGet:
             path: /health
-            port: http
+            port: 3004
           initialDelaySeconds: 30
           periodSeconds: 10
           timeoutSeconds: 5
           failureThreshold: 3
-          successThreshold: 1
-        
-        # Readiness probe
         readinessProbe:
           httpGet:
-            path: /health/ready
-            port: http
+            path: /health
+            port: 3004
           initialDelaySeconds: 10
           periodSeconds: 5
           timeoutSeconds: 3
           failureThreshold: 3
-          successThreshold: 1
-        
-        # Startup probe
-        startupProbe:
-          httpGet:
-            path: /health
-            port: http
-          initialDelaySeconds: 0
-          periodSeconds: 10
-          timeoutSeconds: 3
-          failureThreshold: 30
-          successThreshold: 1
-        
-        # Security context
-        securityContext:
-          allowPrivilegeEscalation: false
-          readOnlyRootFilesystem: true
-          runAsNonRoot: true
-          runAsUser: 1001
-          capabilities:
-            drop:
-            - ALL
-        
-        # Volume mounts
         volumeMounts:
-        - name: tmp
-          mountPath: /tmp
         - name: uploads
           mountPath: /app/uploads
-        - name: logs
-          mountPath: /app/logs
-      
-      # Volumes
       volumes:
-      - name: tmp
-        emptyDir: {}
       - name: uploads
         persistentVolumeClaim:
-          claimName: wardrobe-uploads-pvc
-      - name: logs
-        emptyDir: {}
-      
-      # Image pull secrets
-      imagePullSecrets:
-      - name: harbor-registry-secret
-      
-      # Pod affinity
-      affinity:
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-          - weight: 100
-            podAffinityTerm:
-              labelSelector:
-                matchExpressions:
-                - key: app
-                  operator: In
-                  values:
-                  - wardrobe-service
-              topologyKey: kubernetes.io/hostname
-      
-      # Tolerations
-      tolerations:
-      - key: "node-role"
-        operator: "Equal"
-        value: "backend"
-        effect: "NoSchedule"
+          claimName: kates-wardrobe-uploads-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kates-wardrobe-service
+  namespace: kates-webapp
+  labels:
+    app: kates-wardrobe-service
+spec:
+  type: ClusterIP
+  ports:
+  - port: 3004
+    targetPort: 3004
+    protocol: TCP
+    name: http
+  selector:
+    app: kates-wardrobe-service
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: kates-wardrobe-uploads-pvc
+  namespace: kates-webapp
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: standard
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: kates-wardrobe-service-hpa
+  namespace: kates-webapp
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: kates-wardrobe-service
+  minReplicas: 2
+  maxReplicas: 5
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80

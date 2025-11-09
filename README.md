@@ -18,9 +18,82 @@ Closet-X is a digital closet web application that revolutionizes how you manage 
 
 ## 🏗️ System Architecture
 
-![Closet-X Architecture Diagram](./architecture-diagram.png)
+```mermaid
+graph TB
+    subgraph "Client Layer"
+        FE[React Frontend<br/>Port: 3000]
+    end
 
-> **Note**: You can also view this diagram on GitHub with the Mermaid version below, or download the PNG image above.
+    subgraph "API Gateway / Load Balancer"
+        LB[Load Balancer / API Gateway]
+    end
+
+    subgraph "Microservices Layer"
+        US[User Service<br/>Port: 3001<br/>Authentication & Profiles]
+        WS[Wardrobe Service<br/>Port: 3002<br/>Clothing Management]
+        OS[Outfit Service<br/>Port: 3003<br/>Outfit Generation]
+    end
+
+    subgraph "Worker Layer"
+        IP[Image Processor Worker<br/>Background Processing]
+    end
+
+    subgraph "Message Queue"
+        RMQ[RabbitMQ<br/>Port: 5672<br/>Event Streaming]
+    end
+
+    subgraph "Database Layer"
+        MDB1[(MongoDB<br/>User DB)]
+        MDB2[(MongoDB<br/>Wardrobe DB)]
+        MDB3[(MongoDB<br/>Outfits DB)]
+    end
+
+    subgraph "Storage Layer"
+        S3[AWS S3<br/>Image Storage]
+    end
+
+    subgraph "External APIs"
+        WEATHER[OpenWeather API]
+        VISION[Google Vision AI]
+        CLARIFAI[Clarifai API]
+    end
+
+    FE -->|HTTP/REST| LB
+    LB --> US
+    LB --> WS
+    LB --> OS
+
+    US -->|JWT Auth| MDB1
+    WS -->|CRUD| MDB2
+    OS -->|CRUD| MDB3
+
+    WS -->|Publish Events| RMQ
+    OS -->|Publish Events| RMQ
+    RMQ -->|Consume Events| IP
+
+    WS -->|Upload/Retrieve| S3
+    IP -->|Process & Store| S3
+
+    OS -->|Weather Data| WEATHER
+    IP -->|Image Analysis| VISION
+    IP -->|Fashion Tags| CLARIFAI
+    OS -->|Image Analysis| VISION
+
+    US -.->|Verify User| WS
+    US -.->|Verify User| OS
+    OS -.->|Fetch Items| WS
+
+    style FE fill:#61dafb
+    style US fill:#68a063
+    style WS fill:#68a063
+    style OS fill:#68a063
+    style IP fill:#ff6b6b
+    style RMQ fill:#ff6600
+    style MDB1 fill:#4db33d
+    style MDB2 fill:#4db33d
+    style MDB3 fill:#4db33d
+    style S3 fill:#ff9900
+```
 
 ### Architecture Overview
 
@@ -539,7 +612,6 @@ docker-compose up --build
 - Access RabbitMQ management UI: http://localhost:15672
 - Check queue status and messages
 - Verify credentials in docker-compose.yaml
-
 
 ## 👥 Team
 

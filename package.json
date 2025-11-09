@@ -1,33 +1,12 @@
 {
-  "name": "closet-x",
+  "name": "closet-x-backend",
   "version": "1.0.0",
-  "description": "Digital Closet Application - AI-powered wardrobe management",
-  "private": true,
+  "main": "dist/server.js",
+  "type": "commonjs",
   "scripts": {
-    "install-all": "npm run install-services && npm run install-workers && npm run install-infrastructure",
-    "install-services": "cd services/user-service && npm install && cd ../wardrobe-service && npm install && cd ../outfit-service && npm install && cd ../..",
-    "install-workers": "cd workers/image-processor && npm install && cd ../..",
-    "install-infrastructure": "cd infrastructure/scripts && npm install && cd ../..",
-    "start": "docker-compose up",
-    "start-dev": "docker-compose up --build",
-    "stop": "docker-compose down",
-    "seed": "node infrastructure/scripts/seed-database.js",
-    "init-db": "docker exec -i closetx-mongodb mongosh -u admin -p admin123 < infrastructure/scripts/mongo-init.js"
-  },
-  "keywords": [
-    "fashion",
-    "ai",
-    "wardrobe",
-    "microservices",
-    "kubernetes"
-  ],
-  "author": "Closet-X Team",
-  "license": "MIT",
-  "devDependencies": {
-    "concurrently": "^8.2.2"
-  },
-  "dependencies": {
-    "dotenv": "^17.2.3",
-    "mongoose": "^8.19.2"
+    "dev": "ts-node-dev --transpile-only --respawn src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "lint": "eslint . --ext .ts"
   }
 }

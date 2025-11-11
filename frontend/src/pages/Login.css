@@ -1,0 +1,123 @@
+.auth-container {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #427A76 0%, #174143 100%);
+  padding: 20px;
+  margin: 0;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+.auth-card {
+  background: #F5E5E1;
+  padding: 40px;
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(23, 65, 67, 0.3);
+  width: 100%;
+  max-width: 420px;
+  z-index: 10;
+}
+
+.auth-card h1 {
+  text-align: center;
+  color: #174143;
+  margin-bottom: 10px;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.auth-subtitle {
+  text-align: center;
+  color: #427A76;
+  margin-bottom: 30px;
+  font-size: 0.95rem;
+}
+
+.auth-card .form-group {
+  margin-bottom: 20px;
+}
+
+.auth-card .form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #174143;
+  font-size: 0.95rem;
+}
+
+.auth-card input {
+  width: 100%;
+  padding: 12px 15px;
+  border: 2px solid #F9B487;
+  border-radius: 8px;
+  font-size: 1rem;
+  background-color: white;
+  transition: all 0.3s;
+}
+
+.auth-card input:focus {
+  outline: none;
+  border-color: #427A76;
+  box-shadow: 0 0 0 3px rgba(66, 122, 118, 0.1);
+}
+
+.btn-primary {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #427A76 0%, #174143 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  margin-top: 10px;
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(23, 65, 67, 0.4);
+  background: linear-gradient(135deg, #174143 0%, #427A76 100%);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.error-message {
+  background-color: #F9B487;
+  color: #174143;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  text-align: center;
+  font-size: 0.9rem;
+  border: 1px solid #427A76;
+}
+
+.auth-footer {
+  text-align: center;
+  margin-top: 25px;
+  color: #174143;
+  font-size: 0.9rem;
+}
+
+.auth-footer a {
+  color: #427A76;
+  text-decoration: none;
+  font-weight: 700;
+  transition: color 0.3s;
+}
+
+.auth-footer a:hover {
+  color: #174143;
+  text-decoration: underline;
+}

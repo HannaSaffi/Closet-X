@@ -2,11 +2,13 @@
   padding: 20px;
   max-width: 1200px;
   margin: 0 auto;
+  background-color: #F5E5E1;
 }
 
 .closet h1 {
   margin-bottom: 30px;
-  color: #333;
+  color: #174143;
+  font-size: 2rem;
 }
 
 .clothes-grid {
@@ -19,35 +21,39 @@
   text-align: center;
   padding: 40px;
   font-size: 1.1rem;
+  color: #427A76;
 }
 
 .error {
-  color: #f44336;
+  color: #F9B487;
+}
+
+.info-message {
+  background-color: #F9B487;
+  color: #174143;
+  padding: 12px 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  text-align: center;
+  border: 2px solid #427A76;
 }
 
 .empty-state {
   text-align: center;
   padding: 60px 20px;
   background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(23, 65, 67, 0.1);
+  border: 2px solid #F9B487;
 }
 
 .empty-state p:first-child {
   font-size: 1.3rem;
-  color: #333;
+  color: #174143;
   margin-bottom: 10px;
+  font-weight: 600;
 }
 
 .empty-state p:last-child {
-  color: #666;
-}
-
-.info-message {
-  background-color: #e3f2fd;
-  color: #1976d2;
-  padding: 12px 20px;
-  border-radius: 4px;
-  margin-bottom: 20px;
-  text-align: center;
+  color: #427A76;
 }

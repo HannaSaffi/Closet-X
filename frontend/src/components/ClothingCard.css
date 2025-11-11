@@ -1,21 +1,23 @@
 .clothing-card {
   background: white;
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(23, 65, 67, 0.1);
   transition: transform 0.2s, box-shadow 0.2s;
+  border: 2px solid #F9B487;
 }
 
 .clothing-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  box-shadow: 0 8px 20px rgba(23, 65, 67, 0.2);
+  border-color: #427A76;
 }
 
 .card-image {
   width: 100%;
   height: 250px;
   overflow: hidden;
-  background-color: #f0f0f0;
+  background-color: #F5E5E1;
 }
 
 .card-image img {
@@ -26,13 +28,15 @@
 
 .card-content {
   padding: 15px;
+  background-color: white;
 }
 
 .card-content h3 {
   margin-bottom: 10px;
-  color: #333;
+  color: #174143;
   font-size: 1.1rem;
   text-transform: capitalize;
+  font-weight: 600;
 }
 
 .card-details {
@@ -46,29 +50,30 @@
   padding: 4px 10px;
   border-radius: 12px;
   font-size: 0.85rem;
-  font-weight: 500;
+  font-weight: 600;
   text-transform: capitalize;
 }
 
 .badge.category {
-  background-color: #e3f2fd;
-  color: #1976d2;
+  background-color: #427A76;
+  color: #F5E5E1;
 }
 
 .badge.color {
-  background-color: #f3e5f5;
-  color: #7b1fa2;
+  background-color: #F9B487;
+  color: #174143;
 }
 
 .badge.season {
-  background-color: #e8f5e9;
-  color: #388e3c;
+  background-color: #174143;
+  color: #F5E5E1;
 }
 
 .brand {
   font-size: 0.9rem;
-  color: #666;
+  color: #427A76;
   margin: 5px 0 0 0;
+  font-weight: 500;
 }
 
 .card-actions {
@@ -77,16 +82,18 @@
 
 .btn-delete {
   width: 100%;
-  padding: 8px;
-  background-color: #f44336;
+  padding: 10px;
+  background: linear-gradient(135deg, #F9B487 0%, #427A76 100%);
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 0.9rem;
-  transition: background-color 0.2s;
+  font-weight: 600;
+  transition: all 0.3s;
 }
 
 .btn-delete:hover {
-  background-color: #d32f2f;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(249, 180, 135, 0.4);
 }

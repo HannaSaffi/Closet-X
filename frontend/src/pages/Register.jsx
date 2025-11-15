@@ -8,6 +8,7 @@ function Register() {
   const { register } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
+    username: '',
     email: '',
     password: '',
     confirmPassword: ''
@@ -39,14 +40,21 @@ function Register() {
     setLoading(true);
 
     try {
-      const result = await register(formData.name, formData.email, formData.password);
+      // Call register with correct parameter order: email, username, password, confirmPassword, name
+      const result = await register(
+        formData.email,
+        formData.username,
+        formData.password,
+        formData.confirmPassword,
+        formData.name
+      );
       if (result.success) {
         navigate('/');
       } else {
         setError(result.error || 'Registration failed');
       }
     } catch (err) {
-      setError('An error occurred. Please try again.');
+      setError(err.message || 'An error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -69,6 +77,18 @@ function Register() {
               value={formData.name}
               onChange={handleChange}
               placeholder="Enter your name"
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Username</label>
+            <input
+              type="text"
+              name="username"
+              value={formData.username}
+              onChange={handleChange}
+              placeholder="Choose a username"
               required
             />
           </div>

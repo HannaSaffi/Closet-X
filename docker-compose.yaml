@@ -189,6 +189,34 @@ services:
     networks:
       - closetx-network
 
+  # AI Advice Service (Python/FastAPI)
+  ai-advice-service:
+    build:
+      context: ./services/ai-advice-service
+      dockerfile: Dockerfile
+    container_name: closetx-ai-advice-service
+    restart: unless-stopped
+    ports:
+      - "5001:3004"  # ← CHANGE THIS (was 5000:3004)
+    environment:
+      PORT: 3004
+      MONGO_URI: mongodb://closetxuser:supersecurepassword@mongodb:27017/closetx_ai?authSource=admin
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      NODE_ENV: development
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - closetx-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3004/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
 networks:
   closetx-network:
     driver: bridge

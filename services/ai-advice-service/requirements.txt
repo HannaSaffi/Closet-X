@@ -4,7 +4,7 @@ uvicorn[standard]==0.24.0
 pydantic==2.5.0
 
 # Database
-motor==3.3.2  # Async MongoDB driver
+motor==3.3.2
 pymongo==4.6.0
 
 # Message Queue
@@ -22,14 +22,3 @@ aiohttp==3.9.1
 # Utilities
 python-dotenv==1.0.0
 python-multipart==0.0.6
-
-# Testing
-pytest==7.4.3
-pytest-asyncio==0.21.1
-pytest-cov==4.1.0
-httpx==0.25.2
-
-# Development
-black==23.12.0
-flake8==6.1.0
-mypy==1.7.1

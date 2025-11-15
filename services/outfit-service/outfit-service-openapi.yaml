@@ -1,0 +1,304 @@
+# services/outfit-service/outfit-service-openapi.yaml
+
+openapi: 3.0.3
+info:
+  title: Closet-X Outfit Service API
+  description: |
+    Outfit generation and management service for Closet-X.
+    
+    This service handles:
+    - AI-powered outfit generation
+    - Weather-based recommendations
+    - Outfit saving and favorites
+    - Outfit history tracking
+  version: 1.0.0
+  contact:
+    name: Closet-X Team
+
+servers:
+  - url: http://localhost:3003/api
+    description: Development server
+  - url: http://outfit-service:3003/api
+    description: Kubernetes internal
+
+tags:
+  - name: Outfits
+    description: Outfit management
+  - name: Generation
+    description: Outfit generation and recommendations
+  - name: Health
+    description: Health checks
+
+paths:
+  /outfits:
+    get:
+      tags:
+        - Outfits
+      summary: List saved outfits
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Outfits retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  count:
+                    type: integer
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Outfit'
+
+    post:
+      tags:
+        - Outfits
+      summary: Save an outfit
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveOutfitRequest'
+      responses:
+        '201':
+          description: Outfit saved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/Outfit'
+
+  /outfits/{id}:
+    get:
+      tags:
+        - Outfits
+      summary: Get outfit by ID
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Outfit retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/Outfit'
+
+    delete:
+      tags:
+        - Outfits
+      summary: Delete outfit
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Outfit deleted
+
+  /outfits/generate:
+    post:
+      tags:
+        - Generation
+      summary: Generate outfit recommendation
+      description: Generate an AI-powered outfit based on occasion and weather
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - occasion
+              properties:
+                occasion:
+                  type: string
+                  enum: [casual, formal, work, athletic, party, date]
+                weatherCondition:
+                  type: string
+                  enum: [sunny, rainy, cloudy, snowy]
+                temperature:
+                  type: number
+                  description: Temperature in Celsius
+                preferences:
+                  type: object
+                  properties:
+                    favoriteColors:
+                      type: array
+                      items:
+                        type: string
+                    style:
+                      type: string
+      responses:
+        '200':
+          description: Outfit generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  outfit:
+                    $ref: '#/components/schemas/GeneratedOutfit'
+
+  /outfits/weather:
+    get:
+      tags:
+        - Generation
+      summary: Get weather-based recommendations
+      description: Get outfit recommendations based on current weather
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: location
+          in: query
+          schema:
+            type: string
+          description: City name or coordinates
+      responses:
+        '200':
+          description: Recommendations retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  weather:
+                    $ref: '#/components/schemas/Weather'
+                  recommendations:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/GeneratedOutfit'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Outfit:
+      type: object
+      properties:
+        _id:
+          type: string
+        userId:
+          type: string
+        outfitName:
+          type: string
+        clothingItems:
+          type: array
+          items:
+            type: string
+        occasion:
+          type: string
+        weatherCondition:
+          type: string
+        temperature:
+          type: number
+        isFavorite:
+          type: boolean
+        timesWorn:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+
+    SaveOutfitRequest:
+      type: object
+      required:
+        - outfitName
+        - clothingItems
+        - occasion
+      properties:
+        outfitName:
+          type: string
+        clothingItems:
+          type: array
+          items:
+            type: string
+        occasion:
+          type: string
+        weatherCondition:
+          type: string
+        temperature:
+          type: number
+
+    GeneratedOutfit:
+      type: object
+      properties:
+        clothingItems:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              category:
+                type: string
+              imageURL:
+                type: string
+        reasoning:
+          type: string
+        styleTips:
+          type: array
+          items:
+            type: string
+        confidenceScore:
+          type: number
+
+    Weather:
+      type: object
+      properties:
+        temperature:
+          type: number
+        condition:
+          type: string
+        humidity:
+          type: number
+        windSpeed:
+          type: number
+        location:
+          type: string

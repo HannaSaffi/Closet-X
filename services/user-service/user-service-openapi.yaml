@@ -1,0 +1,736 @@
+# services/user-service/user-service-openapi.yaml
+openapi: 3.0.3
+info:
+  title: Closet-X User Service API
+  description: |
+    User authentication and profile management service for Closet-X.
+    
+    This service handles:
+    - User registration and login
+    - JWT-based authentication
+    - User profile management
+    - User preferences and settings
+  version: 1.0.0
+  contact:
+    name: Closet-X Team
+    email: support@closetx.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:3001/api
+    description: Development server
+  - url: http://user-service:3001/api
+    description: Kubernetes internal
+  - url: https://api.closetx.com/api
+    description: Production server
+
+tags:
+  - name: Authentication
+    description: User authentication endpoints
+  - name: Users
+    description: User profile management
+  - name: Health
+    description: Health check endpoints
+
+paths:
+  # ============================================================================
+  # AUTHENTICATION ENDPOINTS
+  # ============================================================================
+  
+  /auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: Register a new user
+      description: Create a new user account with email, username, and password
+      operationId: registerUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+            examples:
+              basicRegistration:
+                summary: Basic registration
+                value:
+                  email: john.doe@example.com
+                  username: johndoe
+                  password: SecurePass123!
+                  name: John Doe
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+              examples:
+                successfulRegistration:
+                  summary: Successful registration
+                  value:
+                    success: true
+                    message: User registered successfully
+                    user:
+                      _id: 507f1f77bcf86cd799439011
+                      email: john.doe@example.com
+                      username: johndoe
+                      name: John Doe
+                      createdAt: "2025-11-10T12:00:00.000Z"
+                    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: User already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                duplicateEmail:
+                  summary: Email already exists
+                  value:
+                    success: false
+                    error: User with this email already exists
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Login user
+      description: Authenticate user with email/username and password
+      operationId: loginUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            examples:
+              emailLogin:
+                summary: Login with email
+                value:
+                  email: john.doe@example.com
+                  password: SecurePass123!
+              usernameLogin:
+                summary: Login with username
+                value:
+                  email: johndoe
+                  password: SecurePass123!
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Account is deactivated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: Logout user
+      description: Invalidate the current user's authentication token
+      operationId: logoutUser
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Logged out successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /auth/me:
+    get:
+      tags:
+        - Authentication
+      summary: Get current user
+      description: Get the profile of the currently authenticated user
+      operationId: getCurrentUser
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Current user retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  user:
+                    $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ============================================================================
+  # USER MANAGEMENT ENDPOINTS
+  # ============================================================================
+
+  /users:
+    get:
+      tags:
+        - Users
+      summary: List users
+      description: Get a list of all users (paginated)
+      operationId: listUsers
+      parameters:
+        - name: page
+          in: query
+          description: Page number
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          description: Number of users per page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+      responses:
+        '200':
+          description: Users retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  count:
+                    type: integer
+                    example: 10
+                  total:
+                    type: integer
+                    example: 150
+                  page:
+                    type: integer
+                    example: 1
+                  pages:
+                    type: integer
+                    example: 15
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /users/{id}:
+    get:
+      tags:
+        - Users
+      summary: Get user by ID
+      description: Get a specific user's profile by their ID
+      operationId: getUserById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: User ID
+          schema:
+            type: string
+            example: 507f1f77bcf86cd799439011
+      responses:
+        '200':
+          description: User retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/User'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    
+    put:
+      tags:
+        - Users
+      summary: Update user profile
+      description: Update the authenticated user's profile
+      operationId: updateUser
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: User ID
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: User updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Profile updated successfully
+                  user:
+                    $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Forbidden - cannot update another user's profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    
+    delete:
+      tags:
+        - Users
+      summary: Delete user
+      description: Delete a user account (soft delete - sets isActive to false)
+      operationId: deleteUser
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: User ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: User account deactivated successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ============================================================================
+  # HEALTH CHECK ENDPOINTS
+  # ============================================================================
+
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Basic health check
+      description: Returns service health status
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /ready:
+    get:
+      tags:
+        - Health
+      summary: Readiness probe
+      description: Checks if service is ready to accept traffic
+      operationId: readinessCheck
+      responses:
+        '200':
+          description: Service is ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadinessResponse'
+        '503':
+          description: Service not ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadinessResponse'
+
+  /live:
+    get:
+      tags:
+        - Health
+      summary: Liveness probe
+      description: Checks if service is alive
+      operationId: livenessCheck
+      responses:
+        '200':
+          description: Service is alive
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: alive
+                  service:
+                    type: string
+                    example: user-service
+                  timestamp:
+                    type: string
+                    format: date-time
+
+# ============================================================================
+# COMPONENTS
+# ============================================================================
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from login/register
+
+  schemas:
+    RegisterRequest:
+      type: object
+      required:
+        - email
+        - username
+        - password
+        - name
+      properties:
+        email:
+          type: string
+          format: email
+          description: User's email address
+          example: john.doe@example.com
+        username:
+          type: string
+          minLength: 3
+          maxLength: 20
+          pattern: '^[a-zA-Z0-9_]+$'
+          description: Unique username (alphanumeric and underscores only)
+          example: johndoe
+        password:
+          type: string
+          minLength: 8
+          format: password
+          description: User's password (minimum 8 characters)
+          example: SecurePass123!
+        name:
+          type: string
+          maxLength: 50
+          description: User's full name
+          example: John Doe
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          description: Email address or username
+          example: john.doe@example.com
+        password:
+          type: string
+          format: password
+          description: User's password
+          example: SecurePass123!
+
+    UpdateUserRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 50
+          example: John Updated Doe
+        profileImage:
+          type: string
+          format: uri
+          example: https://s3.amazonaws.com/closetx/profile-images/user123.jpg
+        preferences:
+          $ref: '#/components/schemas/UserPreferences'
+
+    User:
+      type: object
+      properties:
+        _id:
+          type: string
+          description: User's unique identifier
+          example: 507f1f77bcf86cd799439011
+        email:
+          type: string
+          format: email
+          example: john.doe@example.com
+        username:
+          type: string
+          example: johndoe
+        name:
+          type: string
+          example: John Doe
+        profileImage:
+          type: string
+          format: uri
+          example: https://default-avatar-url.com/default.png
+        preferences:
+          $ref: '#/components/schemas/UserPreferences'
+        isActive:
+          type: boolean
+          example: true
+        lastLogin:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    UserPreferences:
+      type: object
+      properties:
+        style:
+          type: string
+          enum: [casual, formal, sporty, bohemian, minimalist, trendy, classic]
+          default: casual
+        favoriteColors:
+          type: array
+          items:
+            type: string
+          example: [blue, black, white]
+        weatherPreferences:
+          type: object
+          properties:
+            coldTolerance:
+              type: string
+              enum: [low, medium, high]
+              default: medium
+            rainPreference:
+              type: string
+              enum: [avoid, neutral, enjoy]
+              default: neutral
+        sizes:
+          type: object
+          properties:
+            top:
+              type: string
+              example: M
+            bottom:
+              type: string
+              example: 32
+            shoes:
+              type: string
+              example: 10
+
+    AuthResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Login successful
+        user:
+          $ref: '#/components/schemas/User'
+        token:
+          type: string
+          description: JWT authentication token
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI1MDdmMWY3N2JjZjg2Y2Q3OTk0MzkwMTEiLCJlbWFpbCI6ImpvaG4uZG9lQGV4YW1wbGUuY29tIiwiaWF0IjoxNzAwMDAwMDAwLCJleHAiOjE3MDA2MDQ4MDB9.signature
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          example: Error message description
+
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: healthy
+        service:
+          type: string
+          example: user-service
+        timestamp:
+          type: string
+          format: date-time
+        uptime:
+          type: number
+          example: 12345.67
+
+    ReadinessResponse:
+      type: object
+      properties:
+        service:
+          type: string
+          example: user-service
+        timestamp:
+          type: string
+          format: date-time
+        ready:
+          type: boolean
+          example: true
+        checks:
+          type: object
+          properties:
+            database:
+              type: object
+              properties:
+                status:
+                  type: string
+                  example: connected
+                ready:
+                  type: boolean
+                  example: true
+            messageQueue:
+              type: object
+              properties:
+                status:
+                  type: string
+                  example: connected
+                ready:
+                  type: boolean
+                  example: true
+
+  responses:
+    BadRequest:
+      description: Bad request - invalid input
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            invalidEmail:
+              summary: Invalid email format
+              value:
+                success: false
+                error: Please provide a valid email
+            missingFields:
+              summary: Missing required fields
+              value:
+                success: false
+                error: All fields are required
+
+    Unauthorized:
+      description: Unauthorized - authentication required or failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            noToken:
+              summary: No authentication token
+              value:
+                success: false
+                error: Authentication required. Please provide a valid token.
+            invalidToken:
+              summary: Invalid token
+              value:
+                success: false
+                error: Invalid or expired token. Please login again.
+            invalidCredentials:
+              summary: Invalid credentials
+              value:
+                success: false
+                error: Invalid credentials
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            userNotFound:
+              summary: User not found
+              value:
+                success: false
+                error: User not found
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            serverError:
+              summary: Internal server error
+              value:
+                success: false
+                error: Internal server error

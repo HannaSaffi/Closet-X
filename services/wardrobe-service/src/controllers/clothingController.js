@@ -1,236 +1,229 @@
 // services/wardrobe-service/src/controllers/clothingController.js
-// Controller with RabbitMQ integration
+const ClothingItem = require('../models/ClothingItem');
+const { uploadImage, deleteImage, downloadImage } = require('../services/gridfsService');
+const { publishMessage } = require('../services/messageQueue');
 
-const Clothing = require('../models/Clothing');
-const messageQueue = require('../services/messageQueue');
-
-/**
- * Upload new clothing item
- * POST /api/clothing
- */
-exports.uploadClothing = async (req, res) => {
+exports.getAllClothingItems = async (req, res) => {
   try {
-    const { imageURL, category, color, brand, size } = req.body;
-    const userId = req.user.id;
+    const { category, color, season, isActive, tags, sortBy, order, limit, skip } = req.query;
+    const userId = req.user.userId;
 
-    // Create clothing item
-    const clothing = new Clothing({
+    const filter = { userId };
+    if (category) filter.category = category;
+    if (color) filter['color.primary'] = new RegExp(color, 'i');
+    if (season) filter.season = season;
+    if (isActive !== undefined) filter.isActive = isActive === 'true';
+    if (tags) filter.tags = { $in: tags.split(',') };
+
+    const sortOptions = {};
+    if (sortBy) {
+      sortOptions[sortBy] = order === 'desc' ? -1 : 1;
+    } else {
+      sortOptions.createdAt = -1;
+    }
+
+    const items = await ClothingItem.find(filter)
+      .sort(sortOptions)
+      .limit(parseInt(limit) || 100)
+      .skip(parseInt(skip) || 0)
+      .lean();
+
+    const total = await ClothingItem.countDocuments(filter);
+
+    res.json({ success: true, count: items.length, total, data: items });
+  } catch (error) {
+    console.error('Error fetching clothing items:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch clothing items' });
+  }
+};
+
+exports.getClothingItemById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.userId;
+
+    const item = await ClothingItem.findOne({ _id: id, userId });
+
+    if (!item) {
+      return res.status(404).json({ success: false, error: 'Clothing item not found' });
+    }
+
+    res.json({ success: true, data: item });
+  } catch (error) {
+    console.error('Error fetching clothing item:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch clothing item' });
+  }
+};
+
+exports.createClothingItem = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const file = req.file;
+
+    if (!file) {
+      return res.status(400).json({ success: false, error: 'No image file provided' });
+    }
+
+    const { imageUrl, thumbnailUrl, imageId, thumbnailId } = await uploadImage(file, `wardrobe/${userId}`);
+
+    const clothingData = {
       userId,
-      imageURL,
-      category,
-      color,
-      brand,
-      size,
-      aiMetadata: {
-        processed: false // Will be processed by worker
+      imageUrl,
+      thumbnailUrl,
+      imageId,
+      thumbnailId,
+      category: req.body.category || 'other',
+      subcategory: req.body.subcategory,
+      color: {
+        primary: req.body.primaryColor,
+        secondary: req.body.secondaryColors ? req.body.secondaryColors.split(',') : []
+      },
+      brand: req.body.brand,
+      season: req.body.season ? req.body.season.split(',') : ['all-season'],
+      fabric: req.body.fabric,
+      tags: req.body.tags ? req.body.tags.split(',') : [],
+      size: req.body.size,
+      purchaseDate: req.body.purchaseDate,
+      price: req.body.price,
+      metadata: {
+        uploadedFrom: req.headers['user-agent'],
+        imageSize: file.size
       }
-    });
+    };
 
-    await clothing.save();
+    const item = await ClothingItem.create(clothingData);
 
-    // Publish to RabbitMQ for async processing
-    await messageQueue.publishClothingUpload(clothing);
+    if (process.env.RABBITMQ_URL) {
+      await publishMessage('image.analyze', {
+        itemId: item._id.toString(),
+        userId: userId.toString(),
+        imageUrl,
+        imageId,
+        timestamp: new Date().toISOString()
+      });
+    }
 
     res.status(201).json({
       success: true,
-      message: 'Clothing item uploaded successfully. AI analysis in progress...',
-      data: clothing,
-      processing: true
+      message: 'Clothing item created successfully',
+      data: item
     });
   } catch (error) {
-    console.error('Upload clothing error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to upload clothing',
-      error: error.message
-    });
+    console.error('Error creating clothing item:', error);
+    res.status(500).json({ success: false, error: 'Failed to create clothing item' });
   }
 };
 
-/**
- * Get clothing item by ID
- * GET /api/clothing/:id
- */
-exports.getClothing = async (req, res) => {
+exports.updateClothingItem = async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.user.id;
-
-    const clothing = await Clothing.findOne({ _id: id, userId });
-
-    if (!clothing) {
-      return res.status(404).json({
-        success: false,
-        message: 'Clothing item not found'
-      });
-    }
-
-    res.json({
-      success: true,
-      data: clothing,
-      aiProcessed: clothing.aiMetadata?.processed || false
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Failed to get clothing item',
-      error: error.message
-    });
-  }
-};
-
-/**
- * Get all clothing items for user
- * GET /api/clothing
- */
-exports.getAllClothing = async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const { category, color, season, processed } = req.query;
-
-    // Build filter
-    const filter = { userId, isActive: true };
-    
-    if (category) filter.category = category;
-    if (color) filter['color.primary'] = color;
-    if (season) filter.season = season;
-    if (processed !== undefined) {
-      filter['aiMetadata.processed'] = processed === 'true';
-    }
-
-    const clothing = await Clothing.find(filter)
-      .sort({ createdAt: -1 });
-
-    // Count processing vs processed
-    const stats = {
-      total: clothing.length,
-      processed: clothing.filter(c => c.aiMetadata?.processed).length,
-      processing: clothing.filter(c => !c.aiMetadata?.processed).length
-    };
-
-    res.json({
-      success: true,
-      data: clothing,
-      stats
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Failed to get clothing items',
-      error: error.message
-    });
-  }
-};
-
-/**
- * Update clothing item
- * PUT /api/clothing/:id
- */
-exports.updateClothing = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const userId = req.user.id;
+    const userId = req.user.userId;
     const updates = req.body;
 
-    const clothing = await Clothing.findOneAndUpdate(
+    const item = await ClothingItem.findOneAndUpdate(
       { _id: id, userId },
-      updates,
+      { $set: updates },
       { new: true, runValidators: true }
     );
 
-    if (!clothing) {
-      return res.status(404).json({
-        success: false,
-        message: 'Clothing item not found'
-      });
+    if (!item) {
+      return res.status(404).json({ success: false, error: 'Clothing item not found' });
     }
 
-    res.json({
-      success: true,
-      message: 'Clothing item updated',
-      data: clothing
-    });
+    res.json({ success: true, message: 'Clothing item updated successfully', data: item });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Failed to update clothing item',
-      error: error.message
-    });
+    console.error('Error updating clothing item:', error);
+    res.status(500).json({ success: false, error: 'Failed to update clothing item' });
   }
 };
 
-/**
- * Delete clothing item
- * DELETE /api/clothing/:id
- */
-exports.deleteClothing = async (req, res) => {
+exports.deleteClothingItem = async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.user.id;
+    const userId = req.user.userId;
 
-    const clothing = await Clothing.findOneAndUpdate(
+    const item = await ClothingItem.findOne({ _id: id, userId });
+
+    if (!item) {
+      return res.status(404).json({ success: false, error: 'Clothing item not found' });
+    }
+
+    if (item.imageId) {
+      await deleteImage(item.imageId, item.thumbnailId);
+    }
+
+    await ClothingItem.deleteOne({ _id: id, userId });
+
+    res.json({ success: true, message: 'Clothing item deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting clothing item:', error);
+    res.status(500).json({ success: false, error: 'Failed to delete clothing item' });
+  }
+};
+
+exports.markAsWorn = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.userId;
+
+    const item = await ClothingItem.findOneAndUpdate(
       { _id: id, userId },
-      { isActive: false },
+      { $inc: { wearCount: 1 }, $set: { lastWorn: new Date() } },
       { new: true }
     );
 
-    if (!clothing) {
-      return res.status(404).json({
-        success: false,
-        message: 'Clothing item not found'
-      });
+    if (!item) {
+      return res.status(404).json({ success: false, error: 'Clothing item not found' });
     }
 
-    res.json({
-      success: true,
-      message: 'Clothing item deleted'
-    });
+    res.json({ success: true, message: 'Wear count updated', data: item });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Failed to delete clothing item',
-      error: error.message
-    });
+    console.error('Error marking item as worn:', error);
+    res.status(500).json({ success: false, error: 'Failed to update wear count' });
   }
 };
 
-/**
- * Reprocess clothing item with AI
- * POST /api/clothing/:id/reprocess
- */
-exports.reprocessClothing = async (req, res) => {
+exports.getWardrobeStats = async (req, res) => {
   try {
-    const { id } = req.params;
-    const userId = req.user.id;
+    const userId = req.user.userId;
 
-    const clothing = await Clothing.findOne({ _id: id, userId });
+    const stats = await ClothingItem.aggregate([
+      { $match: { userId: userId, isActive: true } },
+      {
+        $group: {
+          _id: null,
+          totalItems: { $sum: 1 },
+          totalValue: { $sum: '$price' },
+          averageWearCount: { $avg: '$wearCount' }
+        }
+      }
+    ]);
 
-    if (!clothing) {
-      return res.status(404).json({
-        success: false,
-        message: 'Clothing item not found'
-      });
-    }
+    const categoryStats = await ClothingItem.aggregate([
+      { $match: { userId: userId, isActive: true } },
+      { $group: { _id: '$category', count: { $sum: 1 }, totalValue: { $sum: '$price' } } }
+    ]);
 
-    // Reset AI metadata
-    clothing.aiMetadata = {
-      processed: false
-    };
-    await clothing.save();
-
-    // Republish for processing
-    await messageQueue.publishClothingUpload(clothing);
-
-    res.json({
-      success: true,
-      message: 'Clothing item queued for reprocessing',
-      processing: true
-    });
+    res.json({ success: true, data: { overall: stats[0] || {}, byCategory: categoryStats } });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Failed to reprocess clothing item',
-      error: error.message
-    });
+    console.error('Error fetching wardrobe stats:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch statistics' });
+  }
+};
+
+exports.getImage = async (req, res) => {
+  try {
+    const { fileId } = req.params;
+
+    const { stream, contentType, filename } = await downloadImage(fileId);
+
+    res.set('Content-Type', contentType);
+    res.set('Content-Disposition', `inline; filename="${filename}"`);
+    res.set('Cache-Control', 'public, max-age=86400');
+
+    stream.pipe(res);
+  } catch (error) {
+    console.error('Error serving image:', error);
+    res.status(404).json({ success: false, error: 'Image not found' });
   }
 };

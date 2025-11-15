@@ -1,23 +1,14 @@
 {
-  "name": "closetx-image-processor",
+  "name": "image-processor-worker",
   "version": "1.0.0",
-  "description": "Image processing worker for ClosetX wardrobe app",
   "main": "src/worker.js",
   "scripts": {
-    "start": "node src/worker.js",
-    "dev": "nodemon src/worker.js"
+    "start": "node src/worker.js"
   },
   "dependencies": {
-    "mongoose": "^8.0.0",
-    "dotenv": "^16.3.1",
     "amqplib": "^0.10.3",
-    "axios": "^1.6.0",
-    "sharp": "^0.33.0"
-  },
-  "devDependencies": {
-    "nodemon": "^3.0.1"
-  },
-  "engines": {
-    "node": ">=18.0.0"
+    "mongoose": "^7.5.0",
+    "axios": "^1.5.0",
+    "dotenv": "^16.3.1"
   }
 }

@@ -1,250 +1,96 @@
-// services/wardrobe-service/src/services/messageQueue.js
-// Service to publish messages to RabbitMQ from API endpoints
+const amqp = require('amqplib');
 
-const { 
-  RabbitMQConnection, 
-  QUEUES, 
-  EXCHANGES, 
-  ROUTING_KEYS,
-  publishToQueue,
-  publishToExchange 
-} = require('../../../../shared/config/rabbitmq');
+let connection = null;
+let channel = null;
 
-class MessageQueueService {
-  constructor() {
-    this.rabbitMQ = null;
-    this.channel = null;
+const EXCHANGE_NAME = 'closetx_events';
+const QUEUES = {
+  IMAGE_PROCESSING: 'image_processing_queue',
+  OUTFIT_GENERATION: 'outfit_generation_queue',
+  FASHION_ADVICE: 'fashion_advice_queue'
+};
+
+exports.connectRabbitMQ = async () => {
+  try {
+    const rabbitmqUrl = process.env.RABBITMQ_URL || 'amqp://guest:guest@localhost:5672';
+    
+    connection = await amqp.connect(rabbitmqUrl);
+    channel = await connection.createChannel();
+
+    // Setup exchange
+    await channel.assertExchange(EXCHANGE_NAME, 'topic', { durable: true });
+
+    // Setup queues
+    await channel.assertQueue(QUEUES.IMAGE_PROCESSING, { durable: true });
+    await channel.assertQueue(QUEUES.OUTFIT_GENERATION, { durable: true });
+    await channel.assertQueue(QUEUES.FASHION_ADVICE, { durable: true });
+
+    console.log('✅ RabbitMQ connected and queues set up');
+
+    connection.on('error', (err) => {
+      console.error('❌ RabbitMQ connection error:', err);
+      connection = null;
+      channel = null;
+    });
+
+    connection.on('close', () => {
+      console.warn('⚠️  RabbitMQ connection closed');
+      connection = null;
+      channel = null;
+    });
+
+    return { connection, channel };
+  } catch (error) {
+    console.error('Failed to connect to RabbitMQ:', error);
+    throw error;
   }
+};
 
-  /**
-   * Initialize RabbitMQ connection
-   */
-  async init() {
-    if (!this.channel) {
-      this.rabbitMQ = new RabbitMQConnection();
-      this.channel = await this.rabbitMQ.connect();
-      
-      const { setupRabbitMQ } = require('../../../../shared/config/rabbitmq');
-      await setupRabbitMQ(this.channel);
-    }
-    return this.channel;
-  }
-
-  /**
-   * Get channel (initialize if needed)
-   */
-  async getChannel() {
-    if (!this.channel) {
-      await this.init();
-    }
-    return this.channel;
-  }
-
-  /**
-   * Publish clothing upload event
-   */
-  async publishClothingUpload(clothingData) {
-    try {
-      const channel = await this.getChannel();
-      
-      const message = {
-        clothingId: clothingData._id.toString(),
-        userId: clothingData.userId.toString(),
-        imageUrl: clothingData.imageURL,
-        category: clothingData.category,
-        timestamp: new Date(),
-        useOllama: true // Prefer Ollama for processing
-      };
-
-      // Publish to queue for immediate processing
-      await publishToQueue(channel, QUEUES.IMAGE_PROCESSING, message);
-      
-      // Publish event to exchange for other subscribers
-      await publishToExchange(
-        channel,
-        EXCHANGES.CLOTHING_EVENTS,
-        ROUTING_KEYS.CLOTHING_UPLOADED,
-        message
-      );
-      
-      console.log(`📤 Published clothing upload event: ${clothingData._id}`);
-      return true;
-    } catch (error) {
-      console.error('Failed to publish clothing upload:', error);
+exports.publishMessage = async (routingKey, message) => {
+  try {
+    if (!channel) {
+      console.warn('RabbitMQ channel not available, skipping message');
       return false;
     }
+
+    const content = Buffer.from(JSON.stringify(message));
+    
+    channel.publish(EXCHANGE_NAME, routingKey, content, {
+      persistent: true,
+      contentType: 'application/json',
+      timestamp: Date.now()
+    });
+
+    console.log(`📤 Published message to ${routingKey}`);
+    return true;
+  } catch (error) {
+    console.error('Failed to publish message:', error);
+    return false;
   }
+};
 
-  /**
-   * Publish outfit generation request
-   */
-  async publishOutfitGeneration(userId, options = {}) {
-    try {
-      const channel = await this.getChannel();
-      
-      const message = {
-        userId: userId.toString(),
-        occasion: options.occasion || 'casual',
-        weather: options.weather,
-        maxSuggestions: options.maxSuggestions || 5,
-        timestamp: new Date()
-      };
-
-      await publishToQueue(channel, QUEUES.OUTFIT_GENERATION, message);
-      
-      console.log(`📤 Published outfit generation request for user: ${userId}`);
-      return true;
-    } catch (error) {
-      console.error('Failed to publish outfit generation:', error);
+exports.publishToQueue = async (queueName, message) => {
+  try {
+    if (!channel) {
+      console.warn('RabbitMQ channel not available, skipping message');
       return false;
     }
+
+    const content = Buffer.from(JSON.stringify(message));
+    
+    channel.sendToQueue(queueName, content, {
+      persistent: true,
+      contentType: 'application/json',
+      timestamp: Date.now()
+    });
+
+    console.log(`📤 Published message to queue: ${queueName}`);
+    return true;
+  } catch (error) {
+    console.error('Failed to publish to queue:', error);
+    return false;
   }
+};
 
-  /**
-   * Publish fashion advice request (using Ollama)
-   */
-  async publishFashionAdvice(userId, query, options = {}) {
-    try {
-      const channel = await this.getChannel();
-      
-      const message = {
-        userId: userId.toString(),
-        query,
-        occasion: options.occasion,
-        timestamp: new Date(),
-        responseQueue: options.responseQueue
-      };
-
-      await publishToQueue(channel, QUEUES.FASHION_ADVICE, message);
-      
-      console.log(`📤 Published fashion advice request for user: ${userId}`);
-      return true;
-    } catch (error) {
-      console.error('Failed to publish fashion advice:', error);
-      return false;
-    }
-  }
-
-  /**
-   * Request fashion advice with response (RPC pattern)
-   */
-  async requestFashionAdviceWithResponse(userId, query, timeout = 30000) {
-    try {
-      const channel = await this.getChannel();
-      
-      // Create temporary response queue
-      const responseQueue = await channel.assertQueue('', { exclusive: true });
-      const correlationId = this.generateUuid();
-      
-      // Promise to wait for response
-      const responsePromise = new Promise((resolve, reject) => {
-        const timeoutId = setTimeout(() => {
-          reject(new Error('Fashion advice request timed out'));
-        }, timeout);
-
-        channel.consume(responseQueue.queue, (msg) => {
-          if (msg.properties.correlationId === correlationId) {
-            clearTimeout(timeoutId);
-            resolve(JSON.parse(msg.content.toString()));
-            channel.ack(msg);
-          }
-        }, { noAck: false });
-      });
-
-      // Send request
-      const message = {
-        userId: userId.toString(),
-        query,
-        timestamp: new Date()
-      };
-
-      await channel.sendToQueue(
-        QUEUES.FASHION_ADVICE,
-        Buffer.from(JSON.stringify(message)),
-        {
-          replyTo: responseQueue.queue,
-          correlationId,
-          persistent: true
-        }
-      );
-
-      // Wait for response
-      const response = await responsePromise;
-      return response;
-    } catch (error) {
-      console.error('Failed to request fashion advice:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Publish AI analysis request
-   */
-  async publishAIAnalysis(data) {
-    try {
-      const channel = await this.getChannel();
-      
-      const message = {
-        type: data.type, // 'image', 'outfit', 'wardrobe'
-        data: data.payload,
-        userId: data.userId?.toString(),
-        timestamp: new Date()
-      };
-
-      await publishToQueue(channel, QUEUES.AI_ANALYSIS, message);
-      
-      console.log(`📤 Published AI analysis request`);
-      return true;
-    } catch (error) {
-      console.error('Failed to publish AI analysis:', error);
-      return false;
-    }
-  }
-
-  /**
-   * Publish notification
-   */
-  async publishNotification(userId, notification) {
-    try {
-      const channel = await this.getChannel();
-      
-      const message = {
-        userId: userId.toString(),
-        type: notification.type,
-        title: notification.title,
-        message: notification.message,
-        data: notification.data,
-        timestamp: new Date()
-      };
-
-      await publishToQueue(channel, QUEUES.NOTIFICATIONS, message);
-      
-      console.log(`📤 Published notification for user: ${userId}`);
-      return true;
-    } catch (error) {
-      console.error('Failed to publish notification:', error);
-      return false;
-    }
-  }
-
-  /**
-   * Generate UUID for correlation
-   */
-  generateUuid() {
-    return Math.random().toString() +
-           Math.random().toString() +
-           Math.random().toString();
-  }
-
-  /**
-   * Close connection
-   */
-  async close() {
-    if (this.rabbitMQ) {
-      await this.rabbitMQ.close();
-    }
-  }
-}
-
-// Export singleton instance
-module.exports = new MessageQueueService();
+exports.QUEUES = QUEUES;
+exports.EXCHANGE_NAME = EXCHANGE_NAME;

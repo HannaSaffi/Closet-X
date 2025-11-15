@@ -1,35 +1,81 @@
-// src/index.js
-const mongoose = require('mongoose');
-const amqp = require('amqplib');
-require('dotenv').config();
-const Clothing = require('./models/Clothing');
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const morgan = require('morgan');
+const { connectDatabase } = require('./config/database');
+const { connectRabbitMQ } = require('./services/messageQueue');
+const clothingRoutes = require('./routes/clothingRoutes');
+const healthRoutes = require('./routes/healthRoutes');
 
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://wardrobe_service:service_password_123@mongodb:27017/closetx_wardrobe';
-const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://guest:guest@rabbitmq:5672';
+const app = express();
+const PORT = process.env.PORT || 3003;
 
-async function start() {
+app.use(helmet());
+app.use(cors({ origin: process.env.CORS_ORIGIN || '*', credentials: true }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(morgan('combined'));
+
+app.use('/health', healthRoutes);
+app.use('/api/wardrobe', clothingRoutes);
+
+app.get('/', (req, res) => {
+  res.json({
+    service: 'Closet-X Wardrobe Service',
+    version: '1.0.0',
+    status: 'running',
+    storage: 'MongoDB GridFS',
+    endpoints: {
+      health: '/health',
+      wardrobe: '/api/wardrobe',
+      images: '/api/wardrobe/image/:fileId'
+    }
+  });
+});
+
+app.use((req, res) => {
+  res.status(404).json({
+    error: 'Not Found',
+    message: `Route ${req.method} ${req.path} not found`,
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.use((err, req, res, next) => {
+  console.error('Error:', err);
+  res.status(err.status || 500).json({
+    error: err.message || 'Internal Server Error',
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+  });
+});
+
+async function startServer() {
   try {
-    // Connect to MongoDB
-    await mongoose.connect(MONGO_URI);
-    console.log('✅ Connected to MongoDB');
+    await connectDatabase();
+    console.log('✅ Database connected');
 
-    // Connect to RabbitMQ
-    const connection = await amqp.connect(RABBITMQ_URL);
-    const channel = await connection.createChannel();
-    console.log('✅ Connected to RabbitMQ');
+    if (process.env.RABBITMQ_URL) {
+      await connectRabbitMQ();
+      console.log('✅ RabbitMQ connected');
+    } else {
+      console.warn('⚠️  RabbitMQ URL not configured');
+    }
 
-    // Example queue for wardrobe events
-    await channel.assertQueue('wardrobe_queue');
-    channel.consume('wardrobe_queue', msg => {
-      console.log('Received message:', msg.content.toString());
-      channel.ack(msg);
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log('='.repeat(70));
+      console.log(`🚀 Wardrobe Service running on port ${PORT}`);
+      console.log(`💚 Health Check: http://localhost:${PORT}/health`);
+      console.log(`🖼️  Images stored in MongoDB GridFS`);
+      console.log('='.repeat(70));
     });
-
-    console.log('🚀 Wardrobe service is running...');
-  } catch (err) {
-    console.error('❌ Error starting service:', err);
+  } catch (error) {
+    console.error('❌ Failed to start server:', error);
     process.exit(1);
   }
 }
 
-start();
+process.on('SIGTERM', () => process.exit(0));
+process.on('SIGINT', () => process.exit(0));
+
+startServer();
+module.exports = app;

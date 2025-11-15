@@ -1,4 +1,4 @@
-# services/user-service/k8s/configmap.yaml
+# k8s/services/user-service/configmap.yaml
 
 apiVersion: v1
 kind: ConfigMap

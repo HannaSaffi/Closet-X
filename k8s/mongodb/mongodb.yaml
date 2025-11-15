@@ -1,0 +1,170 @@
+#k8s/mongodb/mongodb.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mongodb-init
+  namespace: kates-closet-x
+data:
+  mongo-init.js: |
+    db = db.getSiblingDB('admin');
+    
+    db.createUser({
+      user: 'user_service',
+      pwd: 'service_password_123',
+      roles: [
+        { role: 'readWrite', db: 'closetx_users' }
+      ]
+    });
+    
+    db.createUser({
+      user: 'wardrobe_service',
+      pwd: 'service_password_123',
+      roles: [
+        { role: 'readWrite', db: 'closetx_wardrobe' }
+      ]
+    });
+    
+    db.createUser({
+      user: 'outfit_service',
+      pwd: 'service_password_123',
+      roles: [
+        { role: 'readWrite', db: 'closetx_outfits' }
+      ]
+    });
+    
+    db = db.getSiblingDB('closetx_users');
+    db.createCollection('users');
+    
+    db = db.getSiblingDB('closetx_wardrobe');
+    db.createCollection('clothing');
+    
+    db = db.getSiblingDB('closetx_outfits');
+    db.createCollection('outfits');
+    db.createCollection('usage_history');
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mongodb-secret
+  namespace: kates-closet-x
+type: Opaque
+stringData:
+  mongodb-root-username: closetxuser
+  mongodb-root-password: supersecurepassword
+  mongodb-user-service-uri: mongodb://user_service:service_password_123@mongodb-service:27017/closetx_users?authSource=admin
+  mongodb-wardrobe-service-uri: mongodb://wardrobe_service:service_password_123@mongodb-service:27017/closetx_wardrobe?authSource=admin
+  mongodb-outfit-service-uri: mongodb://outfit_service:service_password_123@mongodb-service:27017/closetx_outfits?authSource=admin
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongodb
+  namespace: kates-closet-x
+  labels:
+    app: mongodb
+    component: database
+spec:
+  serviceName: "mongodb-service"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongodb
+  template:
+    metadata:
+      labels:
+        app: mongodb
+        component: database
+    spec:
+      containers:
+      - name: mongodb
+        image: mongo:7.0
+        ports:
+        - containerPort: 27017
+          name: mongodb
+        env:
+        - name: MONGO_INITDB_ROOT_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: mongodb-secret
+              key: mongodb-root-username
+        - name: MONGO_INITDB_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mongodb-secret
+              key: mongodb-root-password
+        - name: MONGO_INITDB_DATABASE
+          value: "closetx"
+        volumeMounts:
+        - name: mongodb-data
+          mountPath: /data/db
+        - name: mongodb-config
+          mountPath: /data/configdb
+        - name: mongodb-init-script
+          mountPath: /docker-entrypoint-initdb.d
+          readOnly: true
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        livenessProbe:
+          exec:
+            command:
+            - mongosh
+            - --eval
+            - "db.adminCommand('ping')"
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 6
+        readinessProbe:
+          exec:
+            command:
+            - mongosh
+            - --eval
+            - "db.adminCommand('ping')"
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+      volumes:
+      - name: mongodb-init-script
+        configMap:
+          name: mongodb-init
+  volumeClaimTemplates:
+  - metadata:
+      name: mongodb-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 10Gi
+  - metadata:
+      name: mongodb-config
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb-service
+  namespace: kates-closet-x
+  labels:
+    app: mongodb
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+  - port: 27017
+    targetPort: 27017
+    name: mongodb
+  selector:
+    app: mongodb

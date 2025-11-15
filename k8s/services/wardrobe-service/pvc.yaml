@@ -1,4 +1,4 @@
-# services/wardrobe-service/k8s/pvc.yaml
+# k8s/services/wardrobe-service/pvc.yaml
 
 apiVersion: v1
 kind: PersistentVolumeClaim

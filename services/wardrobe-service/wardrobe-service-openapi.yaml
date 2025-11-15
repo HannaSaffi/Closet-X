@@ -1,0 +1,595 @@
+# services/wardrobe-service/wardrobe-service-openapi.yaml
+
+openapi: 3.0.3
+info:
+  title: Closet-X Wardrobe Service API
+  description: |
+    Wardrobe management service for Closet-X.
+    
+    This service handles:
+    - Clothing item CRUD operations
+    - Image upload and storage
+    - Clothing categorization and filtering
+    - Wardrobe organization
+  version: 1.0.0
+  contact:
+    name: Closet-X Team
+    email: support@closetx.com
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:3002/api
+    description: Development server
+  - url: http://wardrobe-service:3002/api
+    description: Kubernetes internal
+  - url: https://api.closetx.com/wardrobe/api
+    description: Production server
+
+tags:
+  - name: Clothing
+    description: Clothing item management
+  - name: Categories
+    description: Clothing categories and filters
+  - name: Health
+    description: Health check endpoints
+
+paths:
+  # ============================================================================
+  # CLOTHING ENDPOINTS
+  # ============================================================================
+
+  /clothes:
+    get:
+      tags:
+        - Clothing
+      summary: List all clothing items
+      description: Get all clothing items for the authenticated user with optional filters
+      operationId: listClothes
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: category
+          in: query
+          description: Filter by category
+          schema:
+            type: string
+            enum: [shirt, pants, jacket, shoes, accessories, dress, skirt]
+        - name: color
+          in: query
+          description: Filter by color
+          schema:
+            type: string
+        - name: season
+          in: query
+          description: Filter by season
+          schema:
+            type: string
+            enum: [spring, summer, fall, winter, all]
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Clothing items retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  count:
+                    type: integer
+                  total:
+                    type: integer
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ClothingItem'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      tags:
+        - Clothing
+      summary: Add new clothing item
+      description: Upload a new clothing item to the wardrobe
+      operationId: createClothingItem
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - image
+                - category
+                - color
+              properties:
+                image:
+                  type: string
+                  format: binary
+                  description: Clothing item image
+                category:
+                  type: string
+                  enum: [shirt, pants, jacket, shoes, accessories, dress, skirt]
+                subcategory:
+                  type: string
+                color:
+                  type: string
+                fabric:
+                  type: string
+                season:
+                  type: string
+                  enum: [spring, summer, fall, winter, all]
+                brand:
+                  type: string
+                tags:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '201':
+          description: Clothing item created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/ClothingItem'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /clothes/{id}:
+    get:
+      tags:
+        - Clothing
+      summary: Get clothing item by ID
+      description: Get details of a specific clothing item
+      operationId: getClothingItem
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Clothing item ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Clothing item retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/ClothingItem'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    put:
+      tags:
+        - Clothing
+      summary: Update clothing item
+      description: Update details of a clothing item
+      operationId: updateClothingItem
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateClothingRequest'
+      responses:
+        '200':
+          description: Clothing item updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/ClothingItem'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      tags:
+        - Clothing
+      summary: Delete clothing item
+      description: Remove a clothing item from the wardrobe
+      operationId: deleteClothingItem
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Clothing item deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /clothes/{id}/wear:
+    post:
+      tags:
+        - Clothing
+      summary: Mark item as worn
+      description: Log that a clothing item was worn on a specific date
+      operationId: markAsWorn
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                date:
+                  type: string
+                  format: date
+                  description: Date the item was worn (defaults to today)
+                occasion:
+                  type: string
+      responses:
+        '200':
+          description: Wear logged successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  wearCount:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ============================================================================
+  # CATEGORY & FILTER ENDPOINTS
+  # ============================================================================
+
+  /categories:
+    get:
+      tags:
+        - Categories
+      summary: Get all categories
+      description: Get list of all available clothing categories
+      operationId: getCategories
+      responses:
+        '200':
+          description: Categories retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      categories:
+                        type: array
+                        items:
+                          type: string
+                      seasons:
+                        type: array
+                        items:
+                          type: string
+
+  /clothes/stats:
+    get:
+      tags:
+        - Categories
+      summary: Get wardrobe statistics
+      description: Get statistics about the user's wardrobe
+      operationId: getWardrobeStats
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Statistics retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      totalItems:
+                        type: integer
+                      byCategory:
+                        type: object
+                        additionalProperties:
+                          type: integer
+                      byColor:
+                        type: object
+                        additionalProperties:
+                          type: integer
+                      bySeason:
+                        type: object
+                        additionalProperties:
+                          type: integer
+                      mostWorn:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/ClothingItem'
+                      leastWorn:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/ClothingItem'
+
+  # ============================================================================
+  # HEALTH ENDPOINTS
+  # ============================================================================
+
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Health check
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /ready:
+    get:
+      tags:
+        - Health
+      summary: Readiness check
+      operationId: readinessCheck
+      responses:
+        '200':
+          description: Service is ready
+        '503':
+          description: Service not ready
+
+  /live:
+    get:
+      tags:
+        - Health
+      summary: Liveness check
+      operationId: livenessCheck
+      responses:
+        '200':
+          description: Service is alive
+
+# ============================================================================
+# COMPONENTS
+# ============================================================================
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    ClothingItem:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: 507f1f77bcf86cd799439011
+        userId:
+          type: string
+          example: 507f1f77bcf86cd799439012
+        imageURL:
+          type: string
+          format: uri
+          example: https://s3.amazonaws.com/closetx/clothes/item123.jpg
+        category:
+          type: string
+          enum: [shirt, pants, jacket, shoes, accessories, dress, skirt]
+          example: shirt
+        subcategory:
+          type: string
+          example: t-shirt
+        color:
+          type: string
+          example: blue
+        fabric:
+          type: string
+          example: cotton
+        season:
+          type: string
+          enum: [spring, summer, fall, winter, all]
+          example: summer
+        brand:
+          type: string
+          example: Nike
+        dateUploaded:
+          type: string
+          format: date-time
+        wearCount:
+          type: integer
+          default: 0
+          example: 5
+        lastWorn:
+          type: string
+          format: date-time
+          nullable: true
+        tags:
+          type: array
+          items:
+            type: string
+          example: [casual, comfortable, everyday]
+        isActive:
+          type: boolean
+          default: true
+
+    UpdateClothingRequest:
+      type: object
+      properties:
+        category:
+          type: string
+        subcategory:
+          type: string
+        color:
+          type: string
+        fabric:
+          type: string
+        season:
+          type: string
+        brand:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        isActive:
+          type: boolean
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: healthy
+        service:
+          type: string
+          example: wardrobe-service
+        timestamp:
+          type: string
+          format: date-time
+        uptime:
+          type: number
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Forbidden:
+      description: Forbidden - cannot access this resource
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'

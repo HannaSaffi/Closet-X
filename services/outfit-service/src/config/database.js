@@ -1,4 +1,4 @@
-// config/database.js
+// services/outfit-service/src/config/database.js
 const mongoose = require('mongoose');
 
 const connectDB = async () => {

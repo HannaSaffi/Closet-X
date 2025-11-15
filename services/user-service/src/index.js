@@ -1,3 +1,4 @@
+// services/user-service/src/index.js
 const express = require('express');
 const mongoose = require('mongoose');
 const amqp = require('amqplib');
@@ -5,6 +6,7 @@ const helmet = require('helmet');
 const cors = require('cors');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
+const authRoutes = require('./routes/authRoutes');
 require('dotenv').config();
 
 const User = require('./models/User');
@@ -28,6 +30,7 @@ app.use(helmet()); // Security headers
 app.use(cors()); // CORS
 app.use(express.json()); // JSON body parser
 app.use(express.urlencoded({ extended: true }));
+app.use('/api/auth', authRoutes);
 
 // Logging
 if (NODE_ENV === 'development') {
@@ -248,8 +251,6 @@ app.use((err, req, res, next) => {
 async function connectMongoDB() {
   try {
     await mongoose.connect(MONGO_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
       serverSelectionTimeoutMS: 5000
     });
     console.log('✅ Connected to MongoDB');

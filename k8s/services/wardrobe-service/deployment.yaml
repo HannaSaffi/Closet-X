@@ -1,4 +1,4 @@
-# services/wardrobe-service/k8s/deployment.yaml
+# k8s/services/wardrobe-service/deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:

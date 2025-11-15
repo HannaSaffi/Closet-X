@@ -1,4 +1,4 @@
-# services/user-service/k8s/hpa.yaml
+# k8s/services/user-service/hpa.yaml
 
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler

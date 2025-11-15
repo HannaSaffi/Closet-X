@@ -1,4 +1,4 @@
-# services/wardrobe-service/k8s/configmap.yaml
+# k8s/services/wardrobe-service/configmap.yaml
 
 apiVersion: v1
 kind: ConfigMap

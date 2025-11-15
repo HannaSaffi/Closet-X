@@ -1,4 +1,4 @@
-# services/user-service/k8s/service.yaml
+# k8s/services/user-service/service.yaml
 
 apiVersion: v1
 kind: Service

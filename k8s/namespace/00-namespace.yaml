@@ -1,0 +1,53 @@
+#k8s/namespace/00-namespace.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kates-closet-x
+  labels:
+    name: kates-closet-x
+    team: kates
+    environment: production
+    project: closet-x
+
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: kates-closet-x-quota
+  namespace: kates-closet-x
+spec:
+  hard:
+    requests.cpu: "20"
+    requests.memory: 32Gi
+    requests.storage: 100Gi
+    persistentvolumeclaims: "10"
+    pods: "50"
+    services: "20"
+    services.loadbalancers: "5"
+
+---
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: kates-closet-x-limit-range
+  namespace: kates-closet-x
+spec:
+  limits:
+  - max:
+      cpu: "2"
+      memory: "4Gi"
+    min:
+      cpu: "50m"
+      memory: "64Mi"
+    default:
+      cpu: "500m"
+      memory: "512Mi"
+    defaultRequest:
+      cpu: "100m"
+      memory: "128Mi"
+    type: Container
+  - max:
+      storage: "10Gi"
+    min:
+      storage: "1Gi"
+    type: PersistentVolumeClaim

@@ -1,6 +1,6 @@
 // services/outfit-service/src/services/outfitGenerator.js
 
-const Clothing = require('../../../wardrobe-service/src/models/Clothing'); // Cross-service model access
+const wardrobeClient = require('./wardrobeClient');
 const weatherService = require('./weatherService');
 const { colorMatching } = require('../algorithms/colorMatching');
 const { styleMatching } = require('../algorithms/styleMatching');
@@ -22,7 +22,7 @@ class OutfitGeneratorService {
       } = options;
 
       // Get user's clothing items
-      const userClothing = await this.getUserClothing(userId);
+      const userClothing = await this.getUserClothing(userId, options.token);
       
       if (userClothing.length < 2) {
         throw new Error('Not enough clothing items to generate outfits');
@@ -69,15 +69,17 @@ class OutfitGeneratorService {
   /**
    * Get user's clothing items
    */
-  async getUserClothing(userId) {
-    // In production, this would call the wardrobe service API
-    // For now, direct database access
-    const clothing = await Clothing.find({
-      userId,
-      isActive: true
-    }).lean();
-
-    return clothing;
+  async getUserClothing(userId, token) {
+    // Call wardrobe service API to get clothing items
+    try {
+      const clothing = await wardrobeClient.getClothingItems(token, {
+        isActive: true
+      });
+      return clothing;
+    } catch (error) {
+      console.error('Failed to fetch user clothing:', error);
+      throw new Error('Could not retrieve wardrobe items');
+    }
   }
 
   /**

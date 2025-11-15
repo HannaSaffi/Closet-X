@@ -1,4 +1,4 @@
-// models/Outfit.js
+// services/outfit-service/src/models/Outfit.js
 const mongoose = require('mongoose');
 
 const outfitSchema = new mongoose.Schema({

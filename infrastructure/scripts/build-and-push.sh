@@ -1,5 +1,5 @@
 #!/bin/bash
-# build-and-push-harbor.sh
+# infrastructure/scripts/build-and-push-harbor.sh
 # Complete script to build and push all Docker images to Harbor
 
 set -e  # Exit on error

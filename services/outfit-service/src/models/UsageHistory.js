@@ -1,4 +1,4 @@
-// models/UsageHistory.js
+// services/outfit-service/src/models/UsageHistory.js
 const mongoose = require('mongoose');
 
 const usageHistorySchema = new mongoose.Schema({

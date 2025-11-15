@@ -1,3 +1,4 @@
+// workers/outfit-generator/src/index.js
 /**
  * Outfit Generator Worker
  * 
@@ -18,8 +19,8 @@ const winston = require('winston');
 require('dotenv').config();
 
 // MongoDB Models (assuming shared models)
-const Clothing = require('../../src/models/Clothing');
-const Outfit = require('../../outfit-service/src/models/Outfit');
+const Clothing = require('../../../../shared/models/Clothing');
+const Outfit = require('../../../../services/outfit-service/src/models/Outfit');
 
 // Configuration
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://closetx-mongodb:27017/closetx';

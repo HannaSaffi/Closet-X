@@ -4,10 +4,10 @@
 const mongoose = require('mongoose');
 require('dotenv').config();
 
-const { RabbitMQConnection, QUEUES, consumeQueue } = require('../../../shared/config/rabbitmq');
-const ollamaService = require('../../../services/outfit-service/src/services/ollamaService');
-const Clothing = require('../../wardrobe-service/src/models/Clothing');
-const User = require('../../user-service/src/models/User');
+const { RabbitMQConnection, QUEUES, consumeQueue, setupRabbitMQ } = require('../../../shared/config/rabbitmq');
+const ollamaService = require('../../../../shared/services/ollamaService');
+const Clothing = require('../../../../shared/models/Clothing');
+const User = require('../../../../services/user-service/src/models/User');
 
 // Connect to MongoDB
 async function connectDB() {

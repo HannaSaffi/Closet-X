@@ -1,4 +1,4 @@
-# services/outfit-service/k8s/configmap.yaml
+# k8s/services/outfit-service/configmap.yaml
 
 apiVersion: v1
 kind: ConfigMap

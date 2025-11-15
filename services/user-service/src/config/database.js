@@ -1,4 +1,4 @@
-// config/database.js
+// services/user-service/src/config/database.js
 const mongoose = require('mongoose');
 
 const connectDB = async () => {

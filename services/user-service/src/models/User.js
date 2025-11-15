@@ -1,4 +1,4 @@
-// models/User.js
+// services/user-service/src/models/User.js
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
@@ -11,6 +11,18 @@ const userSchema = new mongoose.Schema({
     trim: true,
     match: [/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/, 'Please provide a valid email']
   },
+
+  username: {
+  type: String,
+  required: [true, 'Username is required'],
+  unique: true,
+  lowercase: true,
+  trim: true,
+  minlength: [3, 'Username must be at least 3 characters'],
+  maxlength: [20, 'Username cannot exceed 20 characters'],
+  match: [/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores']
+},
+
   password: {
     type: String,
     required: [true, 'Password is required'],
@@ -82,6 +94,7 @@ const userSchema = new mongoose.Schema({
 // Indexes for performance
 userSchema.index({ email: 1 });
 userSchema.index({ createdAt: -1 });
+userSchema.index({ username: 1 });
 
 // Virtual for user's clothing items
 userSchema.virtual('clothingItems', {

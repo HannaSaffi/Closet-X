@@ -1,4 +1,4 @@
-# services/outfit-service/k8s/service.yaml
+# k8s/services/outfit-service/service.yaml
 
 apiVersion: v1
 kind: Service

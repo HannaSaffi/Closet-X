@@ -1,0 +1,17 @@
+on: push
+jobs:
+   first-job:
+   runs-on: ubuntu-latest
+   steps:
+      -run: node --version
+      -run: npm --version
+      -run: npm install
+      -run: npm run build
+      -run: npm test
+      -run: echo "Build and tests completed successfully!"
+      
+
+
+
+
+

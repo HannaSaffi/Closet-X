@@ -7,8 +7,8 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm install && npm cache clean --force
+# Install dependencies WITH legacy peer deps flag
+RUN npm install --legacy-peer-deps && npm cache clean --force
 
 # Copy application files
 COPY . .
@@ -21,12 +21,12 @@ WORKDIR /app
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
 
-# Copy package files and install production dependencies
+# Copy package files and install production dependencies WITH legacy peer deps
 COPY package*.json ./
-RUN npm install --production && npm cache clean --force
+RUN npm install --production --legacy-peer-deps && npm cache clean --force
 
-# Copy application from builder
-COPY --from=builder --chown=nodejs:nodejs /app .
+# Copy application from builder (including src directory)
+COPY --from=builder --chown=nodejs:nodejs /app/src ./src
 
 # Create logs directory
 RUN mkdir -p logs && chown nodejs:nodejs logs

@@ -1,12 +1,54 @@
 {
-  "name": "closet-x-backend",
+  "name": "closet-x",
   "version": "1.0.0",
-  "main": "dist/server.js",
-  "type": "commonjs",
+  "description": "AI-powered digital wardrobe management application",
+  "private": true,
   "scripts": {
-    "dev": "ts-node-dev --transpile-only --respawn src/server.ts",
-    "build": "tsc",
-    "start": "node dist/server.js",
-    "lint": "eslint . --ext .ts"
+    "install:all": "npm run install:services && npm run install:workers",
+    "install:services": "cd services/user-service && npm install && cd ../wardrobe-service && npm install && cd ../outfit-service && npm install && cd ../ai-advice-service && pip install -r requirements.txt",
+    "install:workers": "cd workers/image-processor && npm install",
+    "test": "npm run test:services && npm run test:workers && npm run test:integration",
+    "test:services": "cd services/user-service && npm test && cd ../wardrobe-service && npm test && cd ../outfit-service && npm test",
+    "test:workers": "cd workers/image-processor && npm test",
+    "test:integration": "jest --config=jest.integration.config.js --detectOpenHandles",
+    "test:e2e": "jest --config=jest.e2e.config.js --detectOpenHandles",
+    "test:all": "npm run test:services && npm run test:workers && npm run test:integration && npm run test:e2e",
+    "lint": "npm run lint:services && npm run lint:workers",
+    "lint:services": "cd services/user-service && npm run lint && cd ../wardrobe-service && npm run lint && cd ../outfit-service && npm run lint",
+    "lint:workers": "cd workers/image-processor && npm run lint",
+    "dev": "docker-compose up",
+    "dev:build": "docker-compose up --build",
+    "dev:down": "docker-compose down",
+    "migrate:up": "node database/migrations/001_initial_schema.js up",
+    "migrate:down": "node database/migrations/001_initial_schema.js down",
+    "build": "./build-and-push.sh",
+    "deploy": "./deploy-to-k8s.sh"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-team/Closet-X.git"
+  },
+  "keywords": [
+    "closet",
+    "wardrobe",
+    "ai",
+    "fashion",
+    "microservices",
+    "kubernetes"
+  ],
+  "author": "Team Kates - Aleksandra Postolova, Kuany Kuany, Hanna Saffi",
+  "license": "MIT",
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^6.3.3",
+    "jest-junit": "^16.0.0",
+    "@types/jest": "^29.5.11"
+  },
+  "dependencies": {
+    "mongodb": "^6.3.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
   }
 }

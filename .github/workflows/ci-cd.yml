@@ -1,0 +1,320 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  HARBOR_REGISTRY: harbor.javajon.duckdns.org
+  HARBOR_PROJECT: kates
+  NODE_VERSION: '18'
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  # ============================================================================
+  # TESTING JOBS
+  # ============================================================================
+  
+  test-user-service:
+    name: Test User Service
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: services/user-service/package-lock.json
+      
+      - name: Install dependencies
+        working-directory: services/user-service
+        run: npm ci
+      
+      - name: Run tests with coverage
+        working-directory: services/user-service
+        run: npm run test:ci
+        env:
+          MONGO_URI_TEST: mongodb://localhost:27017/test
+      
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: services/user-service/coverage/coverage-final.json
+          flags: user-service
+    
+    services:
+      mongodb:
+        image: mongo:7.0
+        ports:
+          - 27017:27017
+  
+  test-wardrobe-service:
+    name: Test Wardrobe Service
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      
+      - name: Install dependencies
+        working-directory: services/wardrobe-service
+        run: npm ci
+      
+      - name: Run tests with coverage
+        working-directory: services/wardrobe-service
+        run: npm run test:ci
+        env:
+          MONGO_URI_TEST: mongodb://localhost:27017/test
+      
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: services/wardrobe-service/coverage/coverage-final.json
+          flags: wardrobe-service
+    
+    services:
+      mongodb:
+        image: mongo:7.0
+        ports:
+          - 27017:27017
+  
+  test-outfit-service:
+    name: Test Outfit Service
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      
+      - name: Install dependencies
+        working-directory: services/outfit-service
+        run: npm ci
+      
+      - name: Run tests with coverage
+        working-directory: services/outfit-service
+        run: npm run test:ci
+      
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: services/outfit-service/coverage/coverage-final.json
+          flags: outfit-service
+    
+    services:
+      mongodb:
+        image: mongo:7.0
+        ports:
+          - 27017:27017
+  
+  test-ai-service:
+    name: Test AI Advice Service
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Install dependencies
+        working-directory: services/ai-advice-service
+        run: |
+          pip install -r requirements.txt
+          pip install pytest pytest-cov pytest-asyncio
+      
+      - name: Run tests with coverage
+        working-directory: services/ai-advice-service
+        run: pytest --cov=app --cov-report=xml
+      
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: services/ai-advice-service/coverage.xml
+          flags: ai-service
+  
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: [test-user-service, test-wardrobe-service, test-outfit-service, test-ai-service]
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      
+      - name: Start services with Docker Compose
+        run: docker-compose up -d
+      
+      - name: Wait for services to be ready
+        run: |
+          sleep 30
+          docker-compose ps
+      
+      - name: Run integration tests
+        run: |
+          npm install
+          npm run test:integration
+      
+      - name: Show service logs on failure
+        if: failure()
+        run: docker-compose logs
+
+  # ============================================================================
+  # BUILD AND PUSH JOBS
+  # ============================================================================
+  
+  build-and-push:
+    name: Build and Push Images
+    runs-on: ubuntu-latest
+    needs: [test-user-service, test-wardrobe-service, test-outfit-service, test-ai-service]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    
+    strategy:
+      matrix:
+        service:
+          - user-service
+          - wardrobe-service
+          - outfit-service
+          - ai-advice-service
+          - image-processor
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      
+      - name: Login to Harbor
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.HARBOR_REGISTRY }}
+          username: ${{ secrets.HARBOR_USERNAME }}
+          password: ${{ secrets.HARBOR_PASSWORD }}
+      
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.HARBOR_REGISTRY }}/${{ env.HARBOR_PROJECT }}/${{ matrix.service }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix={{branch}}-
+      
+      - name: Determine context path
+        id: context
+        run: |
+          if [[ "${{ matrix.service }}" == "image-processor" ]]; then
+            echo "path=workers/image-processor" >> $GITHUB_OUTPUT
+          else
+            echo "path=services/${{ matrix.service }}" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Build and push
+        uses: docker/build-push-action@v4
+        with:
+          context: ${{ steps.context.outputs.path }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ============================================================================
+  # DEPLOYMENT JOB
+  # ============================================================================
+  
+  deploy-to-kubernetes:
+    name: Deploy to Kubernetes
+    runs-on: ubuntu-latest
+    needs: [build-and-push, integration-tests]
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v3
+      
+      - name: Configure kubectl
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
+      
+      - name: Update image tags in manifests
+        run: |
+          export IMAGE_TAG="${GITHUB_SHA::7}"
+          for file in k8s/*.yaml; do
+            sed -i "s|:v1.0.0|:main-${IMAGE_TAG}|g" $file
+          done
+      
+      - name: Deploy to Kubernetes
+        run: |
+          kubectl apply -f k8s/00-namespace.yaml
+          kubectl apply -f k8s/01-imagepullsecret.yaml
+          kubectl apply -f k8s/02-config-secrets.yaml
+          kubectl apply -f k8s/03-mongodb.yaml
+          
+          # Wait for MongoDB
+          kubectl wait --for=condition=ready pod -l app=mongodb -n kates-closetx --timeout=300s
+          
+          kubectl apply -f k8s/04-user-service.yaml
+          kubectl apply -f k8s/05-wardrobe-service.yaml
+          kubectl apply -f k8s/06-outfit-service.yaml
+          kubectl apply -f k8s/07-ai-advice-service.yaml
+          kubectl apply -f k8s/08-image-processor.yaml
+      
+      - name: Verify deployment
+        run: |
+          kubectl rollout status deployment/user-service -n kates-closetx
+          kubectl rollout status deployment/wardrobe-service -n kates-closetx
+          kubectl rollout status deployment/outfit-service -n kates-closetx
+          kubectl rollout status deployment/ai-advice-service -n kates-closetx
+          kubectl get all -n kates-closetx
+      
+      - name: Run smoke tests
+        run: |
+          kubectl port-forward svc/user-service 3001:3001 -n kates-closetx &
+          sleep 5
+          curl -f http://localhost:3001/health || exit 1
+          echo "✅ Deployment successful!"
+
+  # ============================================================================
+  # CODE QUALITY JOBS
+  # ============================================================================
+  
+  code-quality:
+    name: Code Quality Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      
+      - name: Install ESLint
+        run: npm install -g eslint
+      
+      - name: Run linting
+        run: |
+          cd services/user-service && npm run lint || true
+          cd ../wardrobe-service && npm run lint || true
+          cd ../outfit-service && npm run lint || true

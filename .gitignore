@@ -1,51 +1,88 @@
-# Dependencies
+# ==========================================
+# Node.js
+# ==========================================
 node_modules/
-package-lock.json
-yarn.lock
-
-# Environment variables
-.env
-.env.local
-.env.development
-.env.test
-.env.production
-
-# Build outputs
-build/
-dist/
-out/
-.next/
-
-# Logs
-logs/
-*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+package-lock.json
+.npm
+.eslintcache
 
-# OS files
-.DS_Store
-Thumbs.db
+# ==========================================
+# Python
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+htmlcov/
+.coverage
+.coverage.*
+*.cover
+.hypothesis/
 
-# IDE files
+# ==========================================
+# Environment Variables
+# ==========================================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+
+# ==========================================
+# IDEs
+# ==========================================
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
+.DS_Store
 
-# Testing
+# ==========================================
+# Build artifacts
+# ==========================================
+dist/
+build/
+*.egg-info/
 coverage/
 .nyc_output/
 
-# Misc
-.cache/
-.tmp/
-.temp/
+# ==========================================
+# Docker
+# ==========================================
+*.log
+docker-compose.override.yml
 
-# Images/uploads (if storing locally during development)
-uploads/
-public/uploads/
+# ==========================================
+# Kubernetes secrets
+# ==========================================
+*-kubeconfig.yaml
+*-harbor-credentials.txt
+*-imagepullsecret.yaml
+.secrets
+kube-config/
 
-# MongoDB
-*.mongodb
+# ==========================================
+# Test artifacts
+# ==========================================
+junit.xml
+test-results/
+*.test.js.snap
+
+# ==========================================
+# OS
+# ==========================================
+.DS_Store
+Thumbs.db

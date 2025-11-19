@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -10,8 +11,8 @@ const healthRoutes = require('./routes/healthRoutes');
 const app = express();
 const PORT = process.env.PORT || 3003;
 
-app.use(helmet());
-app.use(cors({ origin: process.env.CORS_ORIGIN || '*', credentials: true }));
+app.use(helmet({ crossOriginResourcePolicy: false }));
+app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(morgan('combined'));

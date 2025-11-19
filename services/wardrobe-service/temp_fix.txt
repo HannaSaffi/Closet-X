@@ -1,0 +1,19 @@
+exports.getImage = async (req, res) => {
+  try {
+    const { fileId } = req.params;
+
+    const { stream, contentType, filename } = await downloadImage(fileId);
+
+    // Add CORS headers explicitly
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Access-Control-Allow-Methods', 'GET');
+    res.set('Content-Type', contentType);
+    res.set('Content-Disposition', `inline; filename="${filename}"`);
+    res.set('Cache-Control', 'public, max-age=86400');
+
+    stream.pipe(res);
+  } catch (error) {
+    console.error('Error serving image:', error);
+    res.status(404).json({ success: false, error: 'Image not found' });
+  }
+};

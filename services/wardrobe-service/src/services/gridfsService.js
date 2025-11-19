@@ -20,11 +20,13 @@ exports.uploadImage = async (file, folder = 'wardrobe') => {
     const gridfs = initGridFS();
 
     const optimizedBuffer = await sharp(file.buffer)
+      .rotate()
       .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
       .jpeg({ quality: 85 })
       .toBuffer();
 
     const thumbnailBuffer = await sharp(file.buffer)
+      .rotate()
       .resize(300, 300, { fit: 'cover' })
       .jpeg({ quality: 80 })
       .toBuffer();

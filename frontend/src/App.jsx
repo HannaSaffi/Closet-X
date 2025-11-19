@@ -12,23 +12,31 @@ import './App.css';
 function Navigation() {
   const { user, logout } = useAuth();
 
-  if (!user) return null;
-
   return (
     <nav className="navbar">
       <div className="nav-brand">
         <Link to="/">Digital Closet</Link>
       </div>
-      <ul className="nav-links">
-        <li><Link to="/">Home</Link></li>
-        <li><Link to="/closet">My Closet</Link></li>
-        <li><Link to="/outfit-inspo">Outfit Inspo</Link></li>
-        <li><Link to="/add">Add Item</Link></li>
-      </ul>
-      <div className="nav-user">
-        <span>Hi, {user.name}!</span>
-        <button onClick={logout} className="btn-logout">Logout</button>
-      </div>
+      
+      {user ? (
+        <>
+          <ul className="nav-links">
+            <li><Link to="/">Home</Link></li>
+            <li><Link to="/closet">My Closet</Link></li>
+            <li><Link to="/outfit-inspo">Outfit Inspo</Link></li>
+            <li><Link to="/add">Add Item</Link></li>
+          </ul>
+          <div className="nav-user">
+            <span>Hi, {user.name}!</span>
+            <button onClick={logout} className="btn-logout">Logout</button>
+          </div>
+        </>
+      ) : (
+        <ul className="nav-links">
+          <li><Link to="/login">Login</Link></li>
+          <li><Link to="/register">Sign Up</Link></li>
+        </ul>
+      )}
     </nav>
   );
 }

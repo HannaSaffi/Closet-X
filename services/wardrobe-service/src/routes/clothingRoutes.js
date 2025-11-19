@@ -3,10 +3,20 @@ const router = express.Router();
 const clothingController = require('../controllers/clothingController');
 const { authenticateToken } = require('../middleware/auth');
 const multer = require('multer');
+const cors = require('cors');
 
 const upload = multer({ storage: multer.memoryStorage() });
 
-router.get('/image/:fileId', clothingController.getImage);
+// Specific CORS config for image routes - allow all origins without credentials
+const imageCorsOptions = {
+  origin: '*',
+  methods: ['GET', 'OPTIONS'],
+  credentials: false
+};
+
+// Apply CORS to image routes
+router.options('/image/:fileId', cors(imageCorsOptions));
+router.get('/image/:fileId', cors(imageCorsOptions), clothingController.getImage);
 
 router.use(authenticateToken);
 

@@ -118,7 +118,7 @@ services:
       JWT_SECRET: your-super-secret-jwt-key-minimum-32-characters-long
       WARDROBE_SERVICE_URL: http://wardrobe-service:3003
       OLLAMA_HOST: http://host.docker.internal:11434
-      OPENWEATHER_API_KEY: your_openweather_key
+      OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY}
       GOOGLE_VISION_API_KEY: your_google_key
     depends_on:
       mongodb:

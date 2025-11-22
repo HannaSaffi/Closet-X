@@ -1,16 +1,6 @@
 # ============================================================================
 # Closet-X Docker Compose - Complete Development Environment
 # ============================================================================
-# This docker-compose file provides a complete local development setup with:
-# - MongoDB database
-# - RabbitMQ message queue
-# - All microservices (user, outfit, wardrobe)
-# - Worker services
-# - Health checks and proper dependencies
-# - Volume mounts for development
-# ============================================================================
-
-# FILE PATH: docker-compose.yaml
 
 services:
   # MongoDB
@@ -21,8 +11,8 @@ services:
     ports:
       - "27017:27017"
     environment:
-      MONGO_INITDB_ROOT_USERNAME: closetxuser
-      MONGO_INITDB_ROOT_PASSWORD: supersecurepassword
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-closetxuser}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-supersecurepassword}
     volumes:
       - mongodb-data:/data/db
       - ./infrastructure/scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
@@ -42,9 +32,9 @@ services:
     ports:
       - "8081:8081"
     environment:
-      ME_CONFIG_MONGODB_ADMINUSERNAME: closetxuser
-      ME_CONFIG_MONGODB_ADMINPASSWORD: supersecurepassword
-      ME_CONFIG_MONGODB_URL: mongodb://closetxuser:supersecurepassword@mongodb:27017/
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_INITDB_ROOT_USERNAME:-closetxuser}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-supersecurepassword}
+      ME_CONFIG_MONGODB_URL: mongodb://${MONGO_INITDB_ROOT_USERNAME:-closetxuser}:${MONGO_INITDB_ROOT_PASSWORD:-supersecurepassword}@mongodb:27017/
       ME_CONFIG_BASICAUTH_USERNAME: admin
       ME_CONFIG_BASICAUTH_PASSWORD: admin123
     depends_on:
@@ -62,8 +52,8 @@ services:
       - "5672:5672"
       - "15672:15672"
     environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-guest}
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
     healthcheck:
@@ -84,10 +74,10 @@ services:
     ports:
       - "3001:3001"
     environment:
-      NODE_ENV: development
+      NODE_ENV: ${NODE_ENV:-development}
       PORT: 3001
-      MONGO_URI: mongodb://closetxuser:supersecurepassword@mongodb:27017/closetx_users?authSource=admin
-      JWT_SECRET: your-super-secret-jwt-key-minimum-32-characters-long
+      MONGO_URI: mongodb://${MONGO_INITDB_ROOT_USERNAME:-closetxuser}:${MONGO_INITDB_ROOT_PASSWORD:-supersecurepassword}@mongodb:27017/closetx_users?authSource=admin
+      JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-minimum-32-characters-long}
     depends_on:
       mongodb:
         condition: service_healthy
@@ -111,15 +101,16 @@ services:
     ports:
       - "3002:3002"
     environment:
-      NODE_ENV: development
+      NODE_ENV: ${NODE_ENV:-development}
       PORT: 3002
-      MONGO_URI: mongodb://closetxuser:supersecurepassword@mongodb:27017/closetx_outfits?authSource=admin
-      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
-      JWT_SECRET: your-super-secret-jwt-key-minimum-32-characters-long
-      WARDROBE_SERVICE_URL: http://wardrobe-service:3003
-      OLLAMA_HOST: http://host.docker.internal:11434
+      MONGO_URI: mongodb://${MONGO_INITDB_ROOT_USERNAME:-closetxuser}:${MONGO_INITDB_ROOT_PASSWORD:-supersecurepassword}@mongodb:27017/closetx_outfits?authSource=admin
+      RABBITMQ_URL: ${RABBITMQ_URL:-amqp://guest:guest@rabbitmq:5672}
+      JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-minimum-32-characters-long}
+      USER_SERVICE_URL: ${USER_SERVICE_URL:-http://user-service:3001}
+      WARDROBE_SERVICE_URL: ${WARDROBE_SERVICE_URL:-http://wardrobe-service:3003}
+      OLLAMA_HOST: ${OLLAMA_HOST:-}
       OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY}
-      GOOGLE_VISION_API_KEY: your_google_key
+      GOOGLE_VISION_API_KEY: ${GOOGLE_VISION_API_KEY:-}
     depends_on:
       mongodb:
         condition: service_healthy
@@ -145,11 +136,11 @@ services:
     ports:
       - "3003:3003"
     environment:
-      NODE_ENV: development
+      NODE_ENV: ${NODE_ENV:-development}
       PORT: 3003
-      MONGO_URI: mongodb://closetxuser:supersecurepassword@mongodb:27017/closetx_wardrobe?authSource=admin
-      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
-      JWT_SECRET: your-super-secret-jwt-key-minimum-32-characters-long
+      MONGO_URI: mongodb://${MONGO_INITDB_ROOT_USERNAME:-closetxuser}:${MONGO_INITDB_ROOT_PASSWORD:-supersecurepassword}@mongodb:27017/closetx_wardrobe?authSource=admin
+      RABBITMQ_URL: ${RABBITMQ_URL:-amqp://guest:guest@rabbitmq:5672}
+      JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-minimum-32-characters-long}
     depends_on:
       mongodb:
         condition: service_healthy
@@ -173,12 +164,13 @@ services:
     container_name: closetx-image-processor
     restart: unless-stopped
     environment:
-      NODE_ENV: development
-      MONGO_URI: mongodb://closetxuser:supersecurepassword@mongodb:27017/closetx_wardrobe?authSource=admin
-      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
-      WARDROBE_SERVICE_URL: http://wardrobe-service:3003
-      OLLAMA_HOST: http://host.docker.internal:11434
-      GOOGLE_VISION_API_KEY: your_google_key
+      NODE_ENV: ${NODE_ENV:-development}
+      MONGO_URI: mongodb://${MONGO_INITDB_ROOT_USERNAME:-closetxuser}:${MONGO_INITDB_ROOT_PASSWORD:-supersecurepassword}@mongodb:27017/closetx_wardrobe?authSource=admin
+      RABBITMQ_URL: ${RABBITMQ_URL:-amqp://guest:guest@rabbitmq:5672}
+      WARDROBE_SERVICE_URL: ${WARDROBE_SERVICE_URL:-http://wardrobe-service:3003}
+      OLLAMA_HOST: ${OLLAMA_HOST:-}
+      GOOGLE_VISION_API_KEY: ${GOOGLE_VISION_API_KEY:-}
+      CLARIFAI_PAT: ${CLARIFAI_PAT:-}
     depends_on:
       mongodb:
         condition: service_healthy
@@ -197,13 +189,14 @@ services:
     container_name: closetx-ai-advice-service
     restart: unless-stopped
     ports:
-      - "5001:3004"  # ← CHANGE THIS (was 5000:3004)
+      - "5001:3004"
     environment:
       PORT: 3004
-      MONGO_URI: mongodb://closetxuser:supersecurepassword@mongodb:27017/closetx_ai?authSource=admin
-      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      MONGO_URI: mongodb://${MONGO_INITDB_ROOT_USERNAME:-closetxuser}:${MONGO_INITDB_ROOT_PASSWORD:-supersecurepassword}@mongodb:27017/closetx_ai?authSource=admin
+      RABBITMQ_URL: ${RABBITMQ_URL:-amqp://guest:guest@rabbitmq:5672}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      NODE_ENV: development
+      GOOGLE_GEMINI_API_KEY: ${GOOGLE_GEMINI_API_KEY:-}
+      NODE_ENV: ${NODE_ENV:-development}
     depends_on:
       mongodb:
         condition: service_healthy

@@ -1,21 +1,17 @@
 // services/outfit-service/src/index.js
-/**
- * Outfit Service - Main Entry Point
- * 
- * Features:
- * - User Authentication (Login/Register)
- * - Daily Outfit Recommendations (Weather + AI)
- * - Outfit Generation
- * - Color & Style Matching
- */
-
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 
-const app = express();
-const PORT = process.env.PORT || 3002;
+// Import routes
+const authRoutes = require('./routes/authRoutes');
+const dailyOutfitRoutes = require('./routes/dailyOutfitRoutes');
 
+const app = express();
+const PORT = process.env.PORT || 3003;
+
+// Middleware
 app.use(cors());
 app.use(express.json());
 
@@ -38,6 +34,10 @@ app.get('/', (req, res) => {
     status: 'running'
   });
 });
+
+// API Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/outfits', dailyOutfitRoutes);
 
 // Connect to MongoDB and start server
 async function start() {

@@ -1,7 +1,7 @@
 import axios from "axios";
 
-const WARDROBE_API_URL = "http://localhost:3003/api";
-const OUTFIT_API_URL = "http://localhost:3002/api";
+const WARDROBE_API_URL = "http://localhost:3002/api";
+const OUTFIT_API_URL = "http://localhost:3003/api";
 
 // Create axios instance for wardrobe service
 const wardrobeApi = axios.create({
@@ -65,6 +65,16 @@ export const deleteClothing = async (id) => {
 };
 
 // Outfit API calls
+export const getDailyOutfit = async (city = 'New York') => {
+  try {
+    const response = await outfitApi.get(`/outfits?city=${city}&includeAI=true`);
+    return response.data.data || response.data;
+  } catch (error) {
+    console.error("Error getting daily outfit:", error);
+    throw error;
+  }
+};
+
 export const generateOutfit = async (preferences) => {
   try {
     const response = await outfitApi.post("/outfits/generate", preferences);

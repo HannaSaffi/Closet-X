@@ -1,42 +1,50 @@
 import { useState } from 'react';
+import { getDailyOutfit } from '../services/api';
 import './OutfitInspo.css';
 
 function OutfitInspo() {
   const [outfit, setOutfit] = useState(null);
   const [loading, setLoading] = useState(false);
   const [weather, setWeather] = useState(null);
-
-  // Mock outfit data
-  const mockOutfits = [
-    {
-      weather: { temp: 72, condition: 'Sunny', icon: '☀️' },
-      items: [
-        { id: '1', name: 'White T-Shirt', category: 'tops', image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=300' },
-        { id: '2', name: 'Black Jeans', category: 'bottoms', image: 'https://images.unsplash.com/photo-1542272604-787c3835535d?w=300' },
-        { id: '3', name: 'White Sneakers', category: 'shoes', image: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=300' }
-      ]
-    },
-    {
-      weather: { temp: 55, condition: 'Rainy', icon: '🌧️' },
-      items: [
-        { id: '4', name: 'Black Jacket', category: 'outerwear', image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=300' },
-        { id: '2', name: 'Black Jeans', category: 'bottoms', image: 'https://images.unsplash.com/photo-1542272604-787c3835535d?w=300' },
-        { id: '3', name: 'White Sneakers', category: 'shoes', image: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=300' }
-      ]
-    }
-  ];
+  const [error, setError] = useState(null);
+  const [city, setCity] = useState('New York');
 
   const generateOutfit = async () => {
     setLoading(true);
+    setError(null);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    // Pick random outfit
-    const randomOutfit = mockOutfits[Math.floor(Math.random() * mockOutfits.length)];
-    setWeather(randomOutfit.weather);
-    setOutfit(randomOutfit.items);
-    setLoading(false);
+    try {
+      const data = await getDailyOutfit(city);
+      
+      // Set weather data
+      if (data.weather) {
+        setWeather({
+          temp: data.weather.temperature,
+          condition: data.weather.description,
+          icon: getWeatherIcon(data.weather.description)
+        });
+      }
+      
+      // Set outfit items
+      if (data.outfit) {
+        setOutfit(data.outfit);
+      }
+      
+    } catch (err) {
+      console.error('Error generating outfit:', err);
+      setError('Failed to generate outfit. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getWeatherIcon = (condition) => {
+    const lower = condition.toLowerCase();
+    if (lower.includes('sun') || lower.includes('clear')) return '☀️';
+    if (lower.includes('rain')) return '🌧️';
+    if (lower.includes('cloud')) return '☁️';
+    if (lower.includes('snow')) return '❄️';
+    return '🌤️';
   };
 
   return (
@@ -47,6 +55,13 @@ function OutfitInspo() {
       </div>
 
       <div className="generate-section">
+        <input
+          type="text"
+          value={city}
+          onChange={(e) => setCity(e.target.value)}
+          placeholder="Enter your city"
+          className="city-input"
+        />
         <button 
           className="btn-generate" 
           onClick={generateOutfit}
@@ -65,6 +80,12 @@ function OutfitInspo() {
         </button>
       </div>
 
+      {error && (
+        <div className="error-message">
+          {error}
+        </div>
+      )}
+
       {weather && (
         <div className="weather-card">
           <span className="weather-icon">{weather.icon}</span>
@@ -80,9 +101,12 @@ function OutfitInspo() {
           <h2>Your Perfect Outfit Today:</h2>
           <div className="outfit-items">
             {outfit.map((item) => (
-              <div key={item.id} className="outfit-item">
+              <div key={item._id || item.id} className="outfit-item">
                 <div className="outfit-item-image">
-                  <img src={item.image} alt={item.name} />
+                  <img 
+                    src={item.imageUrl || item.image || 'https://via.placeholder.com/300'} 
+                    alt={item.name} 
+                  />
                 </div>
                 <div className="outfit-item-info">
                   <p className="item-category">{item.category}</p>
@@ -97,7 +121,7 @@ function OutfitInspo() {
         </div>
       )}
 
-      {!outfit && !loading && (
+      {!outfit && !loading && !error && (
         <div className="empty-inspo">
           <p>Click the button above to get your personalized outfit!</p>
         </div>

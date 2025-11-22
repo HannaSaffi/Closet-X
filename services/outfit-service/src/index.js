@@ -3,10 +3,10 @@
  * Outfit Service - Main Entry Point
  * 
  * Features:
- * - User Authentication (Login/Register)
  * - Daily Outfit Recommendations (Weather + AI)
  * - Outfit Generation
  * - Color & Style Matching
+ * - Uses User Service for authentication
  */
 
 const express = require('express');
@@ -18,6 +18,9 @@ const PORT = process.env.PORT || 3002;
 
 app.use(cors());
 app.use(express.json());
+
+// Import routes
+const dailyOutfitRoutes = require('./routes/dailyOutfitRoutes');
 
 // Health check
 app.get('/health', async (req, res) => {
@@ -34,10 +37,20 @@ app.get('/health', async (req, res) => {
 app.get('/', (req, res) => {
   res.json({
     service: 'Closet-X Outfit Service',
-    version: '1.0.0',
-    status: 'running'
+    version: '2.0.0',
+    status: 'running',
+    authentication: 'Uses User Service tokens (centralized auth)',
+    endpoints: {
+      'GET /health': 'Health check',
+      'GET /api/daily-outfit': 'Daily outfit recommendation (requires user-service token)',
+      'GET /api/daily-outfit/weekly': 'Weekly outfit plan',
+      'POST /api/daily-outfit/save': 'Save favorite outfit'
+    }
   });
 });
+
+// Mount routes
+app.use('/api/daily-outfit', dailyOutfitRoutes);
 
 // Connect to MongoDB and start server
 async function start() {
@@ -45,6 +58,7 @@ async function start() {
     const mongoUri = process.env.MONGO_URI || 'mongodb://localhost:27017/closetx_outfits';
     await mongoose.connect(mongoUri);
     console.log('✅ MongoDB connected');
+    console.log('🔐 Authentication: Using User Service tokens (no local users)');
 
     app.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 Outfit Service running on port ${PORT}`);

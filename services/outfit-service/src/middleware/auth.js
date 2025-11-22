@@ -1,13 +1,13 @@
 // services/outfit-service/src/middleware/auth.js
 
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
 
-// JWT Secret (same as in authController)
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this-in-production';
+// JWT Secret (MUST match user-service)
+const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-minimum-32-characters-long';
 
 /**
- * Protect routes - verify JWT token
+ * Protect routes - verify JWT token from user-service
+ * Does NOT query local database - trusts user-service tokens
  */
 exports.protect = async (req, res, next) => {
   try {
@@ -15,12 +15,7 @@ exports.protect = async (req, res, next) => {
 
     // Check for token in Authorization header
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-      // Extract token from "Bearer <token>"
       token = req.headers.authorization.split(' ')[1];
-    }
-    // Also check for token in cookies (if using cookie-based auth)
-    else if (req.cookies && req.cookies.token) {
-      token = req.cookies.token;
     }
 
     // Check if token exists
@@ -32,33 +27,17 @@ exports.protect = async (req, res, next) => {
     }
 
     try {
-      // Verify token
+      // Verify token (created by user-service)
       const decoded = jwt.verify(token, JWT_SECRET);
 
-      // Get user from token
-      const user = await User.findById(decoded.id);
-
-      if (!user) {
-        return res.status(401).json({
-          success: false,
-          message: 'User no longer exists'
-        });
-      }
-
-      if (!user.isActive) {
-        return res.status(401).json({
-          success: false,
-          message: 'User account is deactivated'
-        });
-      }
-
-      // Attach user to request
+      // Extract user info from token (no database lookup!)
+      // User-service tokens have { userId, email, iat, exp }
       req.user = {
-        id: user._id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName
+        id: decoded.userId || decoded.id,
+        email: decoded.email
       };
+
+      console.log(`✅ Authenticated user: ${req.user.id} (${req.user.email})`);
 
       next();
 
@@ -99,26 +78,17 @@ exports.optionalAuth = async (req, res, next) => {
 
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
       token = req.headers.authorization.split(' ')[1];
-    } else if (req.cookies && req.cookies.token) {
-      token = req.cookies.token;
     }
 
     if (token) {
       try {
         const decoded = jwt.verify(token, JWT_SECRET);
-        const user = await User.findById(decoded.id);
-
-        if (user && user.isActive) {
-          req.user = {
-            id: user._id,
-            email: user.email,
-            firstName: user.firstName,
-            lastName: user.lastName
-          };
-        }
+        req.user = {
+          id: decoded.userId || decoded.id,
+          email: decoded.email
+        };
       } catch (error) {
         // Token invalid, but that's okay for optional auth
-        // Just continue without user
       }
     }
 
@@ -126,22 +96,6 @@ exports.optionalAuth = async (req, res, next) => {
 
   } catch (error) {
     console.error('Optional Auth Error:', error);
-    next(); // Continue even if error
+    next();
   }
-};
-
-/**
- * Check if user is admin (for future use)
- */
-exports.isAdmin = (req, res, next) => {
-  if (!req.user) {
-    return res.status(401).json({
-      success: false,
-      message: 'Not authorized'
-    });
-  }
-
-  // In future, check if user has admin role
-  // For now, just pass through
-  next();
 };

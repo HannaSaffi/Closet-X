@@ -1,6 +1,5 @@
 // services/outfit-service/src/controllers/dailyOutfitController.js
 
-const User = require('../models/User');
 const weatherService = require('../services/weatherService');
 const aiAdviceService = require('../services/aiAdviceService');
 const outfitGenerator = require('../services/outfitGenerator');
@@ -12,7 +11,7 @@ const { styleMatching } = require('../algorithms/styleMatching');
  * GET /api/daily-outfit
  * 
  * This connects:
- * 1. User authentication (must be logged in)
+ * 1. User authentication (token from user-service)
  * 2. Weather API (gets current weather)
  * 3. AI Service (gets fashion advice)
  * 4. User's clothing database (generates outfits)
@@ -20,38 +19,34 @@ const { styleMatching } = require('../algorithms/styleMatching');
  */
 exports.getDailyOutfit = async (req, res) => {
   try {
-    const userId = req.user.id; // From auth middleware
+    const userId = req.user.id; // From auth middleware (user-service token)
+    const userEmail = req.user.email;
     const { city, includeAI = true } = req.query;
 
-    // ========================================================================
-    // STEP 1: Get User Info and Preferences
-    // ========================================================================
-    const user = await User.findById(userId);
-    
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'User not found'
-      });
-    }
+    console.log(`🎯 Daily outfit request for user: ${userId} (${userEmail})`);
 
-    // Use user's default city if not provided
-    const targetCity = city || user.preferences.defaultCity || 'New York';
+    // ========================================================================
+    // STEP 1: Set default preferences (no local user database)
+    // ========================================================================
+    const targetCity = city || 'New York';
+    const userStyle = 'casual'; // Default style
 
     // ========================================================================
     // STEP 2: Get Current Weather
     // ========================================================================
-    console.log(`Fetching weather for ${targetCity}...`);
+    console.log(`🌤️  Fetching weather for ${targetCity}...`);
     
     let weather;
     try {
       weather = await weatherService.getCurrentWeather(targetCity);
+      console.log(`✅ Weather: ${weather.temp}°F, ${weather.description}`);
     } catch (error) {
+      console.error('Weather fetch failed:', error.message);
       return res.status(400).json({
         success: false,
         message: 'Failed to get weather data',
         error: error.message,
-        hint: 'Please check the city name'
+        hint: 'Please check the city name or API key'
       });
     }
 
@@ -61,15 +56,31 @@ exports.getDailyOutfit = async (req, res) => {
     // ========================================================================
     // STEP 3: Generate Outfits from User's Wardrobe
     // ========================================================================
-    console.log(`Generating outfits for user ${userId}...`);
+    console.log(`👔 Generating outfits for user ${userId}...`);
     
-    const outfits = await outfitGenerator.generateOutfits(userId, {
-      occasion: 'casual',
-      weather,
-      maxSuggestions: 5,
-      includeWeather: true,
-      userStyle: user.preferences.style
-    });
+    let outfits;
+    try {
+      // Pass the auth token to outfitGenerator so it can fetch wardrobe
+      const token = req.headers.authorization.split(' ')[1];
+      
+      outfits = await outfitGenerator.generateOutfits(userId, {
+        occasion: 'casual',
+        weather,
+        maxSuggestions: 5,
+        includeWeather: true,
+        userStyle,
+        token // Pass token for wardrobe service calls
+      });
+
+      console.log(`✅ Generated ${outfits.length} outfits`);
+    } catch (error) {
+      console.error('Outfit generation failed:', error.message);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to generate daily outfit',
+        error: error.message
+      });
+    }
 
     if (outfits.length === 0) {
       return res.status(404).json({
@@ -81,159 +92,57 @@ exports.getDailyOutfit = async (req, res) => {
     }
 
     // ========================================================================
-    // STEP 4: Get AI Fashion Advice (if enabled)
+    // STEP 4: Get AI Fashion Advice (Optional)
     // ========================================================================
     let aiAdvice = null;
-    let aiAnalysis = null;
     
-    if (includeAI === 'true' || includeAI === true) {
-      console.log('Getting AI fashion advice...');
-      
-      const isAIAvailable = await aiAdviceService.isAvailable();
-      
-      if (isAIAvailable) {
-        // Get general fashion advice
-        const adviceResult = await aiAdviceService.getFashionAdvice({
-          occasion: 'daily casual',
-          weather: weather.current.condition.description,
-          temperature: `${weather.current.temperature.value}°F`,
-          colors: outfits[0].colors,
-          style: user.preferences.style || 'casual'
+    if (includeAI) {
+      try {
+        console.log('🤖 Getting AI fashion advice...');
+        aiAdvice = await aiAdviceService.getAdvice({
+          weather,
+          outfits: outfits.slice(0, 3),
+          occasion: 'casual',
+          userStyle
         });
-        
-        if (adviceResult.success) {
-          aiAdvice = {
-            advice: adviceResult.advice,
-            provider: adviceResult.provider
-          };
-        }
-
-        // Analyze the top outfit
-        const topOutfit = outfits[0];
-        const analysisResult = await aiAdviceService.analyzeOutfit({
-          top: topOutfit.items.find(i => i.category === 'tops'),
-          bottom: topOutfit.items.find(i => i.category === 'bottoms'),
-          shoes: topOutfit.items.find(i => i.category === 'shoes'),
-          outerwear: topOutfit.items.find(i => i.category === 'outerwear')
-        });
-        
-        if (analysisResult.success) {
-          aiAnalysis = {
-            analysis: analysisResult.analysis,
-            provider: analysisResult.provider
-          };
-        }
-      } else {
-        console.log('AI service not available, using algorithmic recommendations');
+        console.log('✅ AI advice generated');
+      } catch (error) {
+        console.error('AI advice failed (non-critical):', error.message);
+        // Don't fail the request if AI fails
       }
     }
 
     // ========================================================================
-    // STEP 5: Increment User's Outfit Counter
+    // STEP 5: Return Complete Response
     // ========================================================================
-    await user.incrementOutfits();
-
-    // ========================================================================
-    // STEP 6: Format and Return Response
-    // ========================================================================
-    const response = {
+    return res.json({
       success: true,
-      message: 'Daily outfit recommendations generated successfully',
+      message: 'Daily outfit recommendations generated',
       data: {
-        // User Info
-        user: {
-          name: user.fullName,
-          style: user.preferences.style,
-          outfitsGenerated: user.outfitsGenerated + 1
-        },
-
-        // Date and Location
-        date: new Date().toLocaleDateString('en-US', { 
-          weekday: 'long', 
-          year: 'numeric', 
-          month: 'long', 
-          day: 'numeric' 
-        }),
-        location: {
-          city: weather.location.city,
-          region: weather.location.region,
-          country: weather.location.country
-        },
-
-        // Weather Information
+        date: new Date().toISOString(),
+        location: targetCity,
         weather: {
-          temperature: {
-            current: `${weather.current.temperature.value}°F`,
-            feelsLike: `${weather.current.temperature.feelsLike}°F`,
-            category: weather.current.temperature.category
-          },
-          condition: {
-            description: weather.current.condition.description,
-            icon: weather.current.condition.icon
-          },
-          humidity: `${weather.current.humidity}%`,
-          windSpeed: `${weather.current.wind.speed} mph`,
-          recommendation: weatherRecs.summary
+          temp: weather.temp,
+          feelsLike: weather.feelsLike,
+          condition: weather.main,
+          description: weather.description,
+          humidity: weather.humidity,
+          windSpeed: weather.windSpeed
         },
-
-        // Weather-Based Suggestions
-        weatherTips: {
-          shouldBring: weatherRecs.suggested,
-          layering: weatherRecs.layering || 'Standard layering',
-          accessories: weatherRecs.accessories || []
-        },
-
-        // Outfit Recommendations (Multiple Options)
-        outfits: outfits.map((outfit, index) => ({
-          rank: index + 1,
-          items: outfit.items.map(item => ({
-            id: item._id,
-            category: item.category,
-            subcategory: item.subcategory,
-            color: item.color.primary,
-            secondaryColors: item.color.secondary,
-            brand: item.brand,
-            imageURL: item.imageURL,
-            style: item.style
-          })),
-          score: {
-            overall: outfit.score,
-            colorHarmony: Math.round(colorMatching.calculateColorHarmony(outfit.colors) * 100),
-            styleCoherence: Math.round(styleMatching.calculateStyleCoherence(outfit.styles) * 100),
-            weatherAppropriate: outfit.weatherScore || 100
-          },
-          colors: outfit.colors,
-          styles: outfit.styles,
-          whyThisWorks: [
-            `Color harmony: ${Math.round(colorMatching.calculateColorHarmony(outfit.colors) * 100)}%`,
-            `Style coherence: ${Math.round(styleMatching.calculateStyleCoherence(outfit.styles) * 100)}%`,
-            `Weather appropriate for ${weather.current.temperature.category} conditions`,
-            `Matches your ${user.preferences.style} style preference`
-          ]
-        })),
-
-        // AI-Powered Insights (if available)
-        aiInsights: aiAdvice ? {
-          fashionAdvice: aiAdvice.advice,
-          outfitAnalysis: aiAnalysis ? aiAnalysis.analysis : null,
-          provider: aiAdvice.provider,
-          note: 'AI-powered recommendations based on current trends and weather'
-        } : null,
-
-        // Quick Summary for Dashboard
-        summary: {
-          topRecommendation: `${outfits[0].items.find(i => i.category === 'tops')?.color.primary || ''} ${outfits[0].items.find(i => i.category === 'tops')?.subcategory || 'top'} with ${outfits[0].items.find(i => i.category === 'bottoms')?.color.primary || ''} ${outfits[0].items.find(i => i.category === 'bottoms')?.subcategory || 'bottoms'}`,
-          weatherSummary: `${weather.current.temperature.value}°F and ${weather.current.condition.description.toLowerCase()}`,
-          recommendation: weatherRecs.summary
-        }
+        weatherRecommendations: weatherRecs,
+        outfits: outfits.slice(0, 3), // Top 3 outfits
+        aiAdvice,
+        tips: [
+          `It's ${weather.temp}°F in ${targetCity}`,
+          weatherRecs.recommendation,
+          aiAdvice ? 'AI-powered suggestions included' : 'Try enabling AI for personalized tips'
+        ]
       }
-    };
-
-    res.json(response);
+    });
 
   } catch (error) {
     console.error('Daily Outfit Error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Failed to generate daily outfit',
       error: error.message
@@ -242,58 +151,57 @@ exports.getDailyOutfit = async (req, res) => {
 };
 
 /**
- * Get weekly outfit plan
- * GET /api/weekly-outfits
+ * GET /api/daily-outfit/weekly
+ * Get outfit recommendations for the entire week
  */
 exports.getWeeklyOutfits = async (req, res) => {
   try {
     const userId = req.user.id;
     const { city } = req.query;
+    const targetCity = city || 'New York';
 
-    const user = await User.findById(userId);
-    const targetCity = city || user.preferences.defaultCity || 'New York';
+    console.log(`📅 Weekly outfits request for ${targetCity}`);
 
-    // Get 7-day forecast
-    const forecast = await weatherService.getWeatherForecast(targetCity);
+    // Get 7-day weather forecast
+    const forecast = await weatherService.getWeeklyForecast(targetCity);
+
+    const weeklyOutfits = [];
 
     // Generate outfit for each day
-    const weeklyPlan = await Promise.all(
-      forecast.map(async (day, index) => {
+    for (const day of forecast) {
+      try {
+        const token = req.headers.authorization.split(' ')[1];
         const outfits = await outfitGenerator.generateOutfits(userId, {
           occasion: 'casual',
-          weather: { current: day },
-          maxSuggestions: 1
+          weather: day.weather,
+          maxSuggestions: 1,
+          includeWeather: true,
+          token
         });
 
-        return {
-          day: new Date(Date.now() + index * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { weekday: 'long' }),
-          date: new Date(Date.now() + index * 24 * 60 * 60 * 1000).toLocaleDateString(),
-          weather: {
-            temperature: `${day.temperature.value}°F`,
-            condition: day.condition.description
-          },
-          outfit: outfits[0] ? {
-            items: outfits[0].items.map(item => ({
-              category: item.category,
-              color: item.color.primary,
-              imageURL: item.imageURL
-            }))
-          } : null
-        };
-      })
-    );
+        weeklyOutfits.push({
+          date: day.date,
+          dayOfWeek: day.dayOfWeek,
+          weather: day.weather,
+          outfit: outfits[0] || null
+        });
+      } catch (error) {
+        console.error(`Failed to generate outfit for ${day.date}:`, error.message);
+      }
+    }
 
-    res.json({
+    return res.json({
       success: true,
+      message: 'Weekly outfit plan generated',
       data: {
-        weeklyPlan,
-        location: targetCity
+        location: targetCity,
+        weeklyOutfits
       }
     });
 
   } catch (error) {
     console.error('Weekly Outfits Error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Failed to generate weekly outfits',
       error: error.message
@@ -302,28 +210,31 @@ exports.getWeeklyOutfits = async (req, res) => {
 };
 
 /**
- * Save outfit as favorite
  * POST /api/daily-outfit/save
+ * Save an outfit as favorite
  */
 exports.saveFavoriteOutfit = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { outfitItems, occasion, notes } = req.body;
+    const { outfitId, name } = req.body;
 
-    // Here you would save to a SavedOutfits collection
-    // For now, just acknowledge
+    // TODO: Implement saving favorite outfits
+    // For now, just acknowledge the request
 
-    res.json({
+    return res.json({
       success: true,
-      message: 'Outfit saved to favorites',
+      message: 'Outfit saved as favorite',
       data: {
-        saved: true
+        userId,
+        outfitId,
+        name,
+        savedAt: new Date().toISOString()
       }
     });
 
   } catch (error) {
-    console.error('Save Favorite Error:', error);
-    res.status(500).json({
+    console.error('Save Outfit Error:', error);
+    return res.status(500).json({
       success: false,
       message: 'Failed to save outfit',
       error: error.message

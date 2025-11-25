@@ -39,10 +39,10 @@
   "author": "Team Kates - Aleksandra Postolova, Kuany Kuany, Hanna Saffi",
   "license": "MIT",
   "devDependencies": {
+    "@types/jest": "^29.5.14",
     "jest": "^29.7.0",
-    "supertest": "^6.3.3",
     "jest-junit": "^16.0.0",
-    "@types/jest": "^29.5.11"
+    "supertest": "^6.3.4"
   },
   "dependencies": {
     "mongodb": "^6.3.0"

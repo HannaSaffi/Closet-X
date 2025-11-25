@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fashion-advice
+  namespace: kates-closetx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fashion-advice
+  template:
+    metadata:
+      labels:
+        app: fashion-advice
+    spec:
+      containers:
+      - name: fashion-advice
+        image: harbor.javajon.duckdns.org/kates/fashion-advice:v1.0.0
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: MONGO_URI
+          value: "mongodb://ai_service:service_password_123@mongodb-service.kates-closetx.svc.cluster.local:27017/closetx_ai?authSource=admin"
+        - name: RABBITMQ_URL
+          value: "amqp://admin:admin@rabbitmq.rabbitmq.svc.cluster.local:5672"
+        - name: AI_SERVICE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: closetx-config
+              key: AI_SERVICE_URL
+        - name: OUTFIT_SERVICE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: closetx-config
+              key: OUTFIT_SERVICE_URL
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: closetx-secrets
+              key: OPENAI_API_KEY
+        - name: GEMINI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: closetx-secrets
+              key: GEMINI_API_KEY
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        livenessProbe:
+          exec:
+            command:
+            - node
+            - -e
+            - "process.exit(0)"
+          initialDelaySeconds: 30
+          periodSeconds: 30

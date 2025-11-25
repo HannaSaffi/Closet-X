@@ -1,624 +1,1090 @@
-# 👗 Closet-X - Your Digital Closet Assistant
+# 🧥 Closet-X: AI-Powered Digital Wardrobe
 
-> AI-powered wardrobe management web application that helps you organize your closet, get outfit suggestions, and make smarter fashion decisions based on weather and usage patterns.
+**A cloud-native microservices application for intelligent wardrobe management and outfit recommendations**
 
-## 🌟 Overview
+[![Kubernetes](https://img.shields.io/badge/Kubernetes-326CE5?style=flat&logo=kubernetes&logoColor=white)](https://kubernetes.io/)
+[![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white)](https://www.docker.com/)
+[![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat&logo=node.js&logoColor=white)](https://nodejs.org/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=flat&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
+[![RabbitMQ](https://img.shields.io/badge/RabbitMQ-FF6600?style=flat&logo=rabbitmq&logoColor=white)](https://www.rabbitmq.com/)
+[![React](https://img.shields.io/badge/React-61DAFB?style=flat&logo=react&logoColor=black)](https://reactjs.org/)
 
-Closet-X is a digital closet web application that revolutionizes how you manage your wardrobe. Upload photos of your clothing items and let AI handle the rest! Get personalized outfit suggestions, track your most-worn items, receive weather-based recommendations, and even get suggestions on items you might want to sell.
+---
 
-## ✨ Key Features
+## 📋 Table of Contents
 
-- 📸 **Photo Upload** - Easily upload photos of your clothing items
-- 🤖 **AI-Powered Outfit Suggestions** - Get fashion-forward outfit combinations based on your wardrobe
-- 🌤️ **Weather Integration** - Receive outfit recommendations tailored to current weather conditions
-- 📊 **Usage Tracking** - See which items you wear most and least frequently
-- 💰 **Smart Sell Suggestions** - Get notified about items you rarely wear that could be sold
-- 🎨 **Fashion Trend Analysis** - AI integrates with fashion datasets for trendy suggestions
-- 🔐 **Secure Authentication** - JWT-based authentication with OAuth support
+- [Overview](#-overview)
+- [Features](#-features)
+- [Architecture](#-architecture)
+- [Technology Stack](#-technology-stack)
+- [Getting Started](#-getting-started)
+- [Services](#-services)
+- [API Documentation](#-api-documentation)
+- [Testing](#-testing)
+- [Deployment](#-deployment)
+- [Monitoring](#-monitoring)
+- [Team](#-team)
 
-## 🏗️ System Architecture
+---
 
-```mermaid
-graph TB
-    subgraph "Client Layer"
-        FE[React Frontend<br/>Port: 3000]
-    end
+## 🎯 Overview
 
-    subgraph "API Gateway / Load Balancer"
-        LB[Load Balancer / API Gateway]
-    end
+**Closet-X** is a comprehensive digital wardrobe management application built with cloud-native principles. It helps users organize their clothing, get AI-powered outfit recommendations based on weather and occasion, and discover new styling possibilities from their existing wardrobe.
 
-    subgraph "Microservices Layer"
-        US[User Service<br/>Port: 3001<br/>Authentication & Profiles]
-        WS[Wardrobe Service<br/>Port: 3002<br/>Clothing Management]
-        OS[Outfit Service<br/>Port: 3003<br/>Outfit Generation]
-    end
+### **Core Value Proposition**
 
-    subgraph "Worker Layer"
-        IP[Image Processor Worker<br/>Background Processing]
-    end
+> **"What Should I Wear Today?"** - Get personalized, AI-powered outfit recommendations that consider weather, occasion, and your personal style preferences.
 
-    subgraph "Message Queue"
-        RMQ[RabbitMQ<br/>Port: 5672<br/>Event Streaming]
-    end
+### **Key Differentiators**
 
-    subgraph "Database Layer"
-        MDB1[(MongoDB<br/>User DB)]
-        MDB2[(MongoDB<br/>Wardrobe DB)]
-        MDB3[(MongoDB<br/>Outfits DB)]
-    end
+- 🤖 **AI-Powered Analysis**: Automatic clothing categorization and color/style detection using Google Vision AI
+- 🌤️ **Weather Integration**: Real-time weather-based outfit suggestions using OpenWeather API
+- 🎨 **Smart Algorithms**: Color harmony and style compatibility matching
+- ☁️ **Cloud-Native**: Built with microservices architecture, deployed on Kubernetes
+- 🔄 **Asynchronous Processing**: RabbitMQ message queues for scalable background tasks
 
-    subgraph "Storage Layer"
-        S3[AWS S3<br/>Image Storage]
-    end
+---
 
-    subgraph "External APIs"
-        WEATHER[OpenWeather API]
-        VISION[Google Vision AI]
-        CLARIFAI[Clarifai API]
-    end
+## ✨ Features
 
-    FE -->|HTTP/REST| LB
-    LB --> US
-    LB --> WS
-    LB --> OS
+### **User Features**
 
-    US -->|JWT Auth| MDB1
-    WS -->|CRUD| MDB2
-    OS -->|CRUD| MDB3
+- **Digital Wardrobe Management**
+  - Upload clothing photos with automatic AI categorization
+  - Organize items by category, color, season, brand
+  - Track purchase dates, prices, and wear frequency
+  - Add custom tags and notes
 
-    WS -->|Publish Events| RMQ
-    OS -->|Publish Events| RMQ
-    RMQ -->|Consume Events| IP
+- **Intelligent Outfit Recommendations**
+  - Daily outfit suggestions based on weather
+  - Color harmony and style compatibility analysis
+  - Occasion-specific outfit filtering (casual, business, formal, athletic)
+  - AI-powered fashion advice using local LLM (Ollama)
 
-    WS -->|Upload/Retrieve| S3
-    IP -->|Process & Store| S3
+- **Weather Integration**
+  - Real-time weather data from OpenWeather API
+  - 7-day forecast for weekly outfit planning
+  - Temperature-appropriate clothing recommendations
+  - Precipitation alerts and rain gear suggestions
 
-    OS -->|Weather Data| WEATHER
-    IP -->|Image Analysis| VISION
-    IP -->|Fashion Tags| CLARIFAI
-    OS -->|Image Analysis| VISION
+- **User Preferences**
+  - Customizable style preferences
+  - Favorite outfits and combinations
+  - Preferred colors and styles
+  - Size and fit preferences
 
-    US -.->|Verify User| WS
-    US -.->|Verify User| OS
-    OS -.->|Fetch Items| WS
+### **Technical Features**
 
-    style FE fill:#61dafb
-    style US fill:#68a063
-    style WS fill:#68a063
-    style OS fill:#68a063
-    style IP fill:#ff6b6b
-    style RMQ fill:#ff6600
-    style MDB1 fill:#4db33d
-    style MDB2 fill:#4db33d
-    style MDB3 fill:#4db33d
-    style S3 fill:#ff9900
+- **Microservices Architecture**: 4 independent services with clear boundaries
+- **Message Queues**: Asynchronous processing with RabbitMQ
+- **Container Orchestration**: Kubernetes deployment with auto-scaling
+- **Image Storage**: MongoDB GridFS for efficient image management
+- **API Gateway**: Centralized routing and authentication
+- **CI/CD Pipeline**: Automated testing and deployment
+- **Monitoring**: Health checks and logging
+
+---
+
+## 🏗️ Architecture
+
+### **System Architecture Diagram**
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                           CLIENT LAYER                              │
+│  ┌──────────────────────────────────────────────────────────────┐  │
+│  │                     React Frontend                            │  │
+│  │              (Vite + Tailwind CSS)                            │  │
+│  └──────────────────────────────────────────────────────────────┘  │
+└────────────────────────────────┬────────────────────────────────────┘
+                                 │ HTTPS
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                        KUBERNETES CLUSTER                           │
+│                                                                     │
+│  ┌──────────────────────────────────────────────────────────────┐  │
+│  │                      Ingress Controller                       │  │
+│  │                    (Nginx / Traefik)                          │  │
+│  └───────────────────┬──────────────────────────────────────────┘  │
+│                      │                                             │
+│         ┌────────────┴────────────┬────────────┬──────────────┐   │
+│         │                         │            │              │   │
+│  ┌──────▼──────┐          ┌──────▼──────┐   ┌─▼─────────┐  ┌─▼────────┐
+│  │   User      │          │  Wardrobe   │   │  Outfit   │  │  API     │
+│  │   Service   │◄────────►│   Service   │◄──┤  Service  │  │ Gateway  │
+│  │  (Node.js)  │          │  (Node.js)  │   │ (Node.js) │  │(Optional)│
+│  │   :3001     │          │    :3003    │   │   :3002   │  └──────────┘
+│  └─────────────┘          └──────┬──────┘   └─────┬─────┘
+│        │                         │                 │
+│        │                         │ Publishes       │
+│        │                         ▼                 │
+│        │              ┌──────────────────┐         │
+│        │              │    RabbitMQ      │         │
+│        │              │   Message Broker │         │
+│        │              │     :5672        │         │
+│        │              └────────┬─────────┘         │
+│        │                       │ Consumes          │
+│        │         ┌─────────────┼─────────────┐     │
+│        │         │             │             │     │
+│        │    ┌────▼────┐  ┌────▼────┐  ┌────▼────┐│
+│        │    │ Image   │  │ Fashion │  │ Outfit  ││
+│        │    │Processor│  │ Advice  │  │Generator││
+│        │    │ Worker  │  │ Worker  │  │ Worker  ││
+│        │    └─────────┘  └─────────┘  └─────────┘│
+│        │                                          │
+│        └──────────┬───────────────────────────────┘
+│                   │
+│         ┌─────────▼──────────┐
+│         │     MongoDB        │
+│         │   (StatefulSet)    │
+│         │  GridFS + Replica  │
+│         │      :27017        │
+│         └────────────────────┘
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+
+                        EXTERNAL SERVICES
+                    ┌────────────────────┐
+                    │  OpenWeather API   │
+                    │  Google Vision AI  │
+                    │  Clarifai API      │
+                    └────────────────────┘
 ```
 
-### Architecture Overview
+### **Service Communication**
 
-**Closet-X** follows a **microservices architecture** with the following components:
+```
+User Registration/Login:
+Frontend → User Service → MongoDB
 
-#### Frontend Layer
-- **React Web Application**: Single-page application providing the user interface
-- Communicates with backend services via REST APIs
-- State management with React Context/Redux
+Upload Clothing Photo:
+Frontend → Wardrobe Service → GridFS → RabbitMQ → Image Processor Worker → Google Vision AI
 
-#### Microservices
-1. **User Service** (Port 3001)
-   - User authentication and authorization (JWT)
-   - User profile management
-   - OAuth integration (Google/Facebook)
+Request Daily Outfit:
+Frontend → Outfit Service → Weather API → RabbitMQ → Outfit Generator Worker → MongoDB
 
-2. **Wardrobe Service** (Port 3002)
-   - Clothing item CRUD operations
-   - Image upload handling
-   - Wardrobe organization and filtering
-   - Publishes events to RabbitMQ for async processing
+Get Fashion Advice:
+Frontend → Outfit Service → RabbitMQ → Fashion Advice Worker (Ollama) → MongoDB
+```
 
-3. **Outfit Service** (Port 3003)
-   - AI-powered outfit generation
-   - Weather-based recommendations
-   - Usage tracking and analytics
-   - Fashion trend integration
+### **Microservices Architecture Principles**
 
-#### Worker Layer
-- **Image Processor Worker**: Background job processor
-  - Consumes events from RabbitMQ
-  - Performs AI image analysis (Google Vision, Clarifai)
-  - Generates clothing metadata and tags
-  - Optimizes and stores images in S3
+- ✅ **Service Independence**: Each service has its own database and can be deployed independently
+- ✅ **API-First Design**: All communication via RESTful APIs
+- ✅ **Async Processing**: Heavy tasks (image analysis, AI) processed asynchronously via RabbitMQ
+- ✅ **Stateless Services**: Services don't maintain session state (enables horizontal scaling)
+- ✅ **Decoupled Communication**: Services communicate via APIs and message queues, not direct calls
 
-#### Infrastructure
-- **MongoDB**: Separate databases for each service (users, wardrobe, outfits)
-- **RabbitMQ**: Message queue for asynchronous event processing
-- **AWS S3**: Scalable image storage
-- **Docker**: Containerization for all services
-- **Kubernetes**: Orchestration (production deployment)
+---
 
-#### External Integrations
-- **OpenWeather API**: Real-time weather data
-- **Google Vision AI**: Advanced image recognition
-- **Clarifai API**: Fashion-specific image tagging
+## 🛠️ Technology Stack
 
-### Data Flow Example: Uploading a Clothing Item
-
-1. User uploads image via **React Frontend**
-2. Request routed to **Wardrobe Service**
-3. Wardrobe Service stores image temporarily and publishes event to **RabbitMQ**
-4. **Image Processor Worker** consumes event
-5. Worker processes image with **Google Vision/Clarifai**
-6. Worker uploads optimized image to **S3**
-7. Worker updates **MongoDB** with metadata
-8. Frontend receives confirmation and displays item
-
-## 🛠️ Tech Stack
-
-### Frontend
-- **Framework**: React.js
-- **Styling**: Material-UI / Tailwind CSS
-- **State Management**: React Context / Redux
+### **Frontend**
+- **Framework**: React 18 with Vite
+- **Styling**: Tailwind CSS
+- **State Management**: React Hooks (useState, useEffect, useContext)
 - **HTTP Client**: Axios
+- **Routing**: React Router v6
 
-### Backend Microservices
-- **Runtime**: Node.js
+### **Backend Services**
+- **Runtime**: Node.js 18 LTS
 - **Framework**: Express.js
-- **Authentication**: JWT, OAuth (Google/Facebook)
+- **Authentication**: JWT (JSON Web Tokens)
+- **Password Hashing**: bcrypt
 - **Image Processing**: Multer, Sharp
-- **API Documentation**: Swagger/OpenAPI
+- **Testing**: Jest, Supertest
 
-### Database & Storage
-- **Database**: MongoDB (NoSQL) - Separate DBs per service
-- **Image Storage**: AWS S3
-- **Caching**: Redis (planned)
+### **Workers**
+- **Message Queue**: RabbitMQ (amqplib)
+- **AI/ML**: 
+  - Google Vision API (image recognition)
+  - Clarifai API (backup image analysis)
+  - Ollama (local LLM for fashion advice)
 
-### Message Queue
-- **Message Broker**: RabbitMQ
-- **Protocol**: AMQP
+### **Database**
+- **Primary Database**: MongoDB 6.0
+- **Image Storage**: MongoDB GridFS
+- **ODM**: Mongoose
+- **Deployment**: StatefulSet with persistent volumes
 
-### AI & External APIs
+### **External APIs**
+- **Weather**: OpenWeather API (Current & 7-day forecast)
 - **Image Recognition**: Google Vision AI, Clarifai
-- **Weather Data**: OpenWeather API
-- **Fashion Trends**: Custom ML models
+- **AI Model**: Ollama (llama3.2 model)
 
-### DevOps & Infrastructure
-- **Containerization**: Docker
-- **Orchestration**: Kubernetes
-- **CI/CD**: GitHub Actions (planned)
-- **Monitoring**: Prometheus + Grafana (planned)
+### **Infrastructure**
+- **Container Runtime**: Docker 24.0
+- **Orchestration**: Kubernetes 1.28
+- **Registry**: Harbor (private registry)
+- **CI/CD**: GitHub Actions
+- **Reverse Proxy**: Nginx Ingress Controller
 
-### Testing
-- **Frontend**: React Testing Library, Jest
-- **Backend**: Jest, Mocha, Supertest
+### **Development Tools**
+- **Version Control**: Git + GitHub
 - **API Testing**: Postman
+- **Code Editor**: VS Code
+- **Linting**: ESLint
+- **Formatting**: Prettier
 
-## 📋 Project Structure
-
-```
-Closet-X/
-├── frontend/                 # React web application
-│   ├── src/
-│   ├── public/
-│   └── package.json
-├── services/
-│   ├── user-service/        # User authentication & management
-│   │   ├── src/
-│   │   ├── Dockerfile
-│   │   └── package.json
-│   ├── wardrobe-service/    # Clothing item management
-│   │   ├── src/
-│   │   ├── uploads/
-│   │   ├── Dockerfile
-│   │   └── package.json
-│   └── outfit-service/      # Outfit generation & recommendations
-│       ├── src/
-│       ├── cache/
-│       ├── Dockerfile
-│       └── package.json
-├── workers/
-│   └── image-processor/     # Background image processing
-│       ├── src/
-│       ├── Dockerfile
-│       └── package.json
-├── infrastructure/
-│   └── scripts/             # Database initialization scripts
-├── k8s/                     # Kubernetes deployment configs
-├── shared/                  # Shared utilities and types
-├── docs/                    # Additional documentation
-├── docker-compose.yaml      # Local development setup
-└── package.json             # Root package file
-```
+---
 
 ## 🚀 Getting Started
 
-### Prerequisites
-- **Node.js** (v18 or higher)
-- **Docker** & **Docker Compose**
-- **MongoDB** (or use Docker container)
-- **npm** or **yarn**
+### **Prerequisites**
 
-### Environment Variables
+- Node.js 18+ and npm
+- Docker Desktop (with Kubernetes enabled)
+- kubectl CLI tool
+- MongoDB 6.0+
+- RabbitMQ 3.12+
+- Git
 
-Create a `.env` file in the root directory with the following variables:
+### **Environment Variables**
 
+Create `.env` files in each service directory:
+
+#### **User Service (.env)**
 ```bash
-# AWS S3
-AWS_ACCESS_KEY_ID=your-aws-access-key
-AWS_SECRET_ACCESS_KEY=your-aws-secret-key
-S3_BUCKET=closet-x-dev
-AWS_REGION=us-east-1
+# Server
+PORT=3001
+NODE_ENV=development
 
-# External APIs
-OPENWEATHER_API_KEY=your-openweather-api-key
+# MongoDB
+MONGO_URI=mongodb://localhost:27017/closetx_users
+
+# JWT
+JWT_SECRET=your-super-secret-jwt-key-change-in-production
+JWT_EXPIRES_IN=7d
+
+# CORS
+FRONTEND_URL=http://localhost:5173
+```
+
+#### **Wardrobe Service (.env)**
+```bash
+# Server
+PORT=3003
+NODE_ENV=development
+
+# MongoDB
+MONGO_URI=mongodb://localhost:27017/closetx_wardrobe
+
+# User Service
+USER_SERVICE_URL=http://localhost:3001
+
+# RabbitMQ
+RABBITMQ_URL=amqp://guest:guest@localhost:5672
+
+# Google Vision API
 GOOGLE_VISION_API_KEY=your-google-vision-api-key
-CLARIFAI_API_KEY=your-clarifai-api-key
+
+# CORS
+FRONTEND_URL=http://localhost:5173
 ```
 
-### Installation & Setup
-
-#### Option 1: Using Docker (Recommended)
-
-1. **Clone the repository**
+#### **Outfit Service (.env)**
 ```bash
-git clone git@github.com:HannaSaffi/Closet-X.git
+# Server
+PORT=3002
+NODE_ENV=development
+
+# MongoDB
+MONGO_URI=mongodb://localhost:27017/closetx_outfits
+
+# User Service
+USER_SERVICE_URL=http://localhost:3001
+
+# Wardrobe Service
+WARDROBE_SERVICE_URL=http://localhost:3003
+
+# RabbitMQ
+RABBITMQ_URL=amqp://guest:guest@localhost:5672
+
+# OpenWeather API
+OPENWEATHER_API_KEY=your-openweather-api-key
+
+# Google Gemini (for AI advice)
+GOOGLE_API_KEY=your-google-gemini-api-key
+
+# Ollama (local LLM)
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL=llama3.2
+
+# CORS
+FRONTEND_URL=http://localhost:5173
+```
+
+### **Local Development Setup**
+
+#### **1. Clone the Repository**
+
+```bash
+git clone https://github.com/yourusername/Closet-X.git
 cd Closet-X
 ```
 
-2. **Install all dependencies**
+#### **2. Install Dependencies**
+
 ```bash
-npm run install-all
+# Install all service dependencies
+cd services/user-service && npm install
+cd ../wardrobe-service && npm install
+cd ../outfit-service && npm install
+
+# Install worker dependencies
+cd ../../workers/image-processor && npm install
+cd ../fashion-advice && npm install
+cd ../outfit-generator && npm install
+
+# Install frontend dependencies
+cd ../../frontend && npm install
 ```
 
-3. **Start all services with Docker Compose**
-```bash
-npm run start-dev
-```
+#### **3. Start MongoDB**
 
-This will start:
-- MongoDB (Port 27017)
-- RabbitMQ (Port 5672, Management UI: 15672)
-- User Service (Port 3001)
-- Wardrobe Service (Port 3002)
-- Outfit Service (Port 3003)
-- Image Processor Worker
-
-4. **Access the services**
-- Frontend: http://localhost:3000
-- User Service API: http://localhost:3001
-- Wardrobe Service API: http://localhost:3002
-- Outfit Service API: http://localhost:3003
-- RabbitMQ Management: http://localhost:15672 (user: closetx, pass: closetx123)
-
-#### Option 2: Manual Setup
-
-1. **Clone the repository**
-```bash
-git clone git@github.com:HannaSaffi/Closet-X.git
-cd Closet-X
-```
-
-2. **Install dependencies for each service**
-```bash
-# Install all services
-npm run install-services
-
-# Install workers
-npm run install-workers
-
-# Install frontend
-cd frontend && npm install && cd ..
-```
-
-3. **Start MongoDB**
-```bash
-mongod
-```
-
-4. **Start RabbitMQ**
 ```bash
 # Using Docker
-docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3.12-management-alpine
+docker run -d -p 27017:27017 --name closetx-mongodb mongo:6.0
+
+# Or using local MongoDB
+mongod --dbpath /path/to/data/db
 ```
 
-5. **Run services individually**
+#### **4. Start RabbitMQ**
+
 ```bash
-# Terminal 1 - User Service
+# Using Docker
+docker run -d -p 5672:5672 -p 15672:15672 --name closetx-rabbitmq rabbitmq:3-management
+
+# Access management UI: http://localhost:15672
+# Login: guest / guest
+```
+
+#### **5. Start Services (in separate terminals)**
+
+```bash
+# Terminal 1: User Service
 cd services/user-service
 npm run dev
 
-# Terminal 2 - Wardrobe Service
+# Terminal 2: Wardrobe Service
 cd services/wardrobe-service
 npm run dev
 
-# Terminal 3 - Outfit Service
+# Terminal 3: Outfit Service
 cd services/outfit-service
 npm run dev
 
-# Terminal 4 - Image Processor
+# Terminal 4: Workers
 cd workers/image-processor
 npm start
 
-# Terminal 5 - Frontend
-cd frontend
+cd workers/fashion-advice
+npm start
+
+cd workers/outfit-generator
 npm start
 ```
 
-### Database Initialization
-
-Initialize the MongoDB databases with default schemas:
+#### **6. Start Frontend**
 
 ```bash
-npm run init-db
+cd frontend
+npm run dev
+
+# Access: http://localhost:5173
 ```
 
-Seed the database with sample data (optional):
+### **Docker Compose (Recommended for Development)**
 
 ```bash
-npm run seed
+# Start all services with Docker Compose
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop all services
+docker-compose down
 ```
 
-## 🎯 API Endpoints
+---
 
-### User Service (Port 3001)
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - User login
+## 📦 Services
+
+### **1. User Service** (Port 3001)
+
+**Purpose**: User authentication, registration, and profile management
+
+**Endpoints**:
+- `POST /api/users/register` - Register new user
+- `POST /api/users/login` - Login and get JWT token
 - `GET /api/users/profile` - Get user profile
 - `PUT /api/users/profile` - Update user profile
+- `PUT /api/users/preferences` - Update style preferences
+- `PUT /api/users/password` - Change password
 
-### Wardrobe Service (Port 3002)
-- `POST /api/wardrobe/items` - Upload clothing item
-- `GET /api/wardrobe/items` - Get all clothing items
-- `GET /api/wardrobe/items/:id` - Get specific item
-- `PUT /api/wardrobe/items/:id` - Update clothing item
-- `DELETE /api/wardrobe/items/:id` - Delete clothing item
+**Database**: `closetx_users`
+
+**Key Features**:
+- JWT-based authentication
+- bcrypt password hashing (10 salt rounds)
+- User preferences (colors, styles, sizes)
+- Token expiration (7 days)
+
+### **2. Wardrobe Service** (Port 3003)
+
+**Purpose**: Clothing item management and image storage
+
+**Endpoints**:
+- `POST /api/wardrobe/clothing` - Upload clothing item with photo
+- `GET /api/wardrobe/clothing` - Get all clothing items (with filters)
+- `GET /api/wardrobe/clothing/:id` - Get single item
+- `PUT /api/wardrobe/clothing/:id` - Update clothing item
+- `DELETE /api/wardrobe/clothing/:id` - Delete item
+- `GET /api/wardrobe/clothing/:id/image` - Get full-size image
+- `GET /api/wardrobe/clothing/:id/thumbnail` - Get thumbnail
 - `GET /api/wardrobe/stats` - Get wardrobe statistics
 
-### Outfit Service (Port 3003)
-- `POST /api/outfits/generate` - Generate outfit suggestions
-- `GET /api/outfits` - Get saved outfits
-- `POST /api/outfits/weather` - Get weather-based recommendations
-- `GET /api/outfits/trending` - Get trending outfit ideas
-- `GET /api/outfits/analytics` - Get usage analytics
+**Database**: `closetx_wardrobe`
 
-## 📱 Features in Detail
+**Key Features**:
+- MongoDB GridFS for image storage
+- Automatic thumbnail generation
+- AI image analysis via RabbitMQ
+- Category, color, season filtering
+- Tag-based organization
 
-### 🖥️ Frontend (React Web App)
+### **3. Outfit Service** (Port 3002)
 
-#### Core Components
-- **Authentication Pages**: Login, Register, Password Reset
-- **Dashboard**: Overview of wardrobe and recent outfits
-- **Clothing Upload**: Drag-and-drop interface with image preview
-- **Closet View**: Grid/list view with advanced filtering (type, color, season, fabric)
-- **Outfit Generator**: AI-powered outfit suggestions with visual previews
-- **Analytics Dashboard**: Visual charts showing wear patterns and trends
-- **Settings**: User preferences and account management
+**Purpose**: Outfit generation, weather integration, and AI advice
 
-### 🔧 Backend Services
+**Endpoints**:
+- `POST /api/outfits/daily` - Get daily outfit recommendations
+- `GET /api/outfits/weekly` - Get 7-day outfit forecast
+- `POST /api/outfits/save` - Save favorite outfit
+- `GET /api/outfits/favorites` - Get saved outfits
+- `POST /api/outfits/ai-advice` - Get AI fashion advice
+- `GET /api/outfits/weather` - Get current weather
 
-#### User Service
-- JWT-based authentication
-- OAuth integration (Google, Facebook)
-- User profile management
-- Password reset functionality
-- Role-based access control (future)
+**Database**: `closetx_outfits`
 
-#### Wardrobe Service
-- Image upload and storage
-- CRUD operations for clothing items
-- Advanced search and filtering
-- Category and tag management
-- Integration with S3 for scalable storage
+**Key Features**:
+- Real-time weather integration (OpenWeather API)
+- Color harmony algorithm
+- Style compatibility matching
+- Occasion-based filtering
+- AI-powered advice (Ollama LLM)
 
-#### Outfit Service
-- AI-powered outfit generation algorithms
-- Weather API integration for context-aware suggestions
-- Usage tracking (most/least worn items)
-- Sell suggestions based on wear patterns
-- Fashion trend analysis
+### **4. Image Processor Worker**
 
-#### Image Processor Worker
-- Asynchronous image processing
-- AI-powered image categorization
-- Automatic tagging (color, fabric, style)
-- Image optimization and compression
-- Thumbnail generation
+**Purpose**: Asynchronous image analysis using Google Vision AI
 
-### 🗄️ Database Schema Examples
+**Queue**: `image_processing_queue`
 
-#### Users Collection (User Service DB)
-```javascript
-{
-  _id: ObjectId,
-  email: String,
-  password: String (hashed),
-  name: String,
-  preferences: {
-    style: [String],
-    favoriteColors: [String],
-    location: String
-  },
-  createdAt: Date,
-  updatedAt: Date
-}
+**Routing Key**: `image.analyze`
+
+**Process**:
+1. Receives message when user uploads clothing photo
+2. Calls Google Vision AI for analysis
+3. Extracts: category, colors, style, fabric, occasion
+4. Updates clothing item in database with AI metadata
+5. Acknowledges message completion
+
+**Key Features**:
+- Automatic categorization (tops, bottoms, shoes, etc.)
+- Multi-color detection
+- Style classification (casual, formal, athletic)
+- Occasion suggestions
+- 92%+ confidence threshold
+
+### **5. Fashion Advice Worker**
+
+**Purpose**: Generate personalized fashion advice using local LLM
+
+**Queue**: `fashion_advice_queue`
+
+**Routing Key**: `fashion.advice`
+
+**Process**:
+1. Receives fashion advice request
+2. Queries user's wardrobe from database
+3. Builds context with preferences and occasion
+4. Sends prompt to Ollama (llama3.2)
+5. Returns AI-generated fashion advice
+
+**Key Features**:
+- Local LLM (no API costs)
+- Personalized based on wardrobe
+- Considers user preferences
+- Context-aware suggestions
+
+### **6. Outfit Generator Worker**
+
+**Purpose**: Generate outfit combinations with advanced algorithms
+
+**Queue**: `outfit_generation_queue`
+
+**Routing Key**: `outfit.generate`
+
+**Process**:
+1. Receives outfit generation request
+2. Fetches user's clothing items
+3. Applies color harmony algorithm
+4. Checks style compatibility
+5. Filters by weather appropriateness
+6. Ranks outfits by composite score
+7. Returns top N suggestions
+
+**Algorithms**:
+- **Color Harmony**: Complementary, analogous, neutral matching
+- **Style Compatibility**: Formal/casual grouping, compatibility scores
+- **Weather Scoring**: Temperature-appropriate weight/fabric
+- **Composite Scoring**: Weighted average of all factors
+
+---
+
+## 📚 API Documentation
+
+### **Authentication**
+
+All protected endpoints require JWT token in Authorization header:
+
+```bash
+Authorization: Bearer <your-jwt-token>
 ```
 
-#### Clothing Collection (Wardrobe Service DB)
-```javascript
+### **User Service API**
+
+#### **Register User**
+
+```http
+POST /api/users/register
+Content-Type: application/json
+
 {
-  _id: ObjectId,
-  userId: ObjectId,
-  imageURL: String,
-  thumbnailURL: String,
-  category: String, // shirt, pants, jacket, shoes, etc.
-  subcategory: String,
-  color: [String],
-  fabric: String,
-  brand: String,
-  season: [String], // spring, summer, fall, winter
-  tags: [String],
-  wearCount: Number,
-  lastWorn: Date,
-  dateUploaded: Date,
-  aiMetadata: {
-    confidence: Number,
-    detectedObjects: [String]
+  "email": "user@example.com",
+  "password": "securepassword123",
+  "username": "johndoe"
+}
+
+Response: 201 Created
+{
+  "success": true,
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "_id": "507f1f77bcf86cd799439011",
+    "email": "user@example.com",
+    "username": "johndoe"
   }
 }
 ```
 
-#### Outfits Collection (Outfit Service DB)
-```javascript
+#### **Login**
+
+```http
+POST /api/users/login
+Content-Type: application/json
+
 {
-  _id: ObjectId,
-  userId: ObjectId,
-  outfitName: String,
-  clothingItems: [ObjectId],
-  occasion: String,
-  weather: {
-    temperature: Number,
-    condition: String,
-    date: Date
-  },
-  fashionScore: Number,
-  wornCount: Number,
-  lastWorn: Date,
-  generatedAt: Date
+  "email": "user@example.com",
+  "password": "securepassword123"
+}
+
+Response: 200 OK
+{
+  "success": true,
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "_id": "507f1f77bcf86cd799439011",
+    "email": "user@example.com",
+    "username": "johndoe"
+  }
 }
 ```
 
-## 🎯 Roadmap
+### **Wardrobe Service API**
 
-### Phase 1: Core Functionality (Current)
-- [x] Project architecture setup
-- [x] Docker containerization
-- [x] MongoDB database design
-- [x] User authentication service
-- [ ] Frontend UI components
-- [ ] Wardrobe management service
-- [ ] Basic outfit generation
+#### **Upload Clothing Item**
 
-### Phase 2: AI Integration
-- [ ] Image recognition integration
-- [ ] AI outfit suggestion algorithm
-- [ ] Weather-based recommendations
-- [ ] Usage tracking system
-- [ ] Sell suggestions feature
+```http
+POST /api/wardrobe/clothing
+Authorization: Bearer <token>
+Content-Type: multipart/form-data
 
-### Phase 3: Advanced Features
-- [ ] Social features (outfit sharing)
-- [ ] Calendar integration for outfit planning
-- [ ] Shopping recommendations
-- [ ] Wardrobe analytics dashboard
-- [ ] Export/import functionality
+- file: <image file>
+- category: "tops"
+- primaryColor: "blue"
+- brand: "Nike"
+- season: "summer,spring"
 
-### Phase 4: Optimization & Scaling
-- [ ] Kubernetes deployment
-- [ ] CI/CD pipeline
-- [ ] Performance optimization
-- [ ] Monitoring and logging
-- [ ] Load testing
-- [ ] Production deployment
-
-## 🤝 Contributing
-
-This is a team project with 3 developers. Please follow these guidelines:
-
-### Branch Naming Convention
-- `feature/` - New features
-- `bugfix/` - Bug fixes
-- `hotfix/` - Urgent fixes
-- `refactor/` - Code refactoring
-
-### Workflow
-
-1. **Create a new branch**
-```bash
-git checkout -b feature/your-feature-name
+Response: 201 Created
+{
+  "success": true,
+  "data": {
+    "_id": "507f1f77bcf86cd799439012",
+    "userId": "507f1f77bcf86cd799439011",
+    "category": "tops",
+    "color": {
+      "primary": "blue",
+      "secondary": []
+    },
+    "imageUrl": "/gridfs/507f1f77bcf86cd799439013",
+    "thumbnailUrl": "/gridfs/507f1f77bcf86cd799439014",
+    "aiAnalysis": null,  // Will be populated by worker
+    "createdAt": "2024-11-25T19:00:00.000Z"
+  }
+}
 ```
 
-2. **Make your changes and commit**
-```bash
-git add .
-git commit -m "Add: description of your changes"
+#### **Get All Clothing Items**
+
+```http
+GET /api/wardrobe/clothing?category=tops&color=blue&season=summer
+Authorization: Bearer <token>
+
+Response: 200 OK
+{
+  "success": true,
+  "count": 5,
+  "total": 50,
+  "data": [
+    {
+      "_id": "507f1f77bcf86cd799439012",
+      "category": "tops",
+      "color": { "primary": "blue" },
+      "imageUrl": "/gridfs/...",
+      "aiAnalysis": {
+        "category": "tops",
+        "colors": ["blue", "white"],
+        "style": "casual",
+        "confidence": 0.95
+      }
+    }
+  ]
+}
 ```
 
-3. **Push your branch**
-```bash
-git push origin feature/your-feature-name
+### **Outfit Service API**
+
+#### **Get Daily Outfit**
+
+```http
+POST /api/outfits/daily
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "city": "Hartford",
+  "occasion": "casual",
+  "includeAI": true
+}
+
+Response: 200 OK
+{
+  "success": true,
+  "data": {
+    "weather": {
+      "temp": 72,
+      "condition": "Clear",
+      "description": "clear sky",
+      "city": "Hartford"
+    },
+    "outfits": [
+      {
+        "items": [
+          {
+            "_id": "...",
+            "category": "tops",
+            "color": { "primary": "blue" },
+            "imageUrl": "..."
+          },
+          {
+            "_id": "...",
+            "category": "bottoms",
+            "color": { "primary": "black" },
+            "imageUrl": "..."
+          }
+        ],
+        "score": 87,
+        "colorHarmony": 0.92,
+        "styleMatch": 0.88,
+        "weatherScore": 0.85
+      }
+    ],
+    "aiAdvice": "Based on the weather, I recommend..."
+  }
+}
 ```
 
-4. **Create a Pull Request** for review
+#### **Get Weekly Forecast**
 
-### Commit Message Format
-- `Add:` - New feature
-- `Fix:` - Bug fix
-- `Update:` - Update existing feature
-- `Refactor:` - Code refactoring
-- `Docs:` - Documentation changes
-- `Style:` - Code style changes (formatting, etc.)
-- `Test:` - Adding or updating tests
+```http
+GET /api/outfits/weekly?city=Hartford
+Authorization: Bearer <token>
+
+Response: 200 OK
+{
+  "success": true,
+  "data": [
+    {
+      "date": "2024-11-26",
+      "weather": {
+        "temp": 68,
+        "condition": "Clouds"
+      },
+      "outfit": { ... },
+      "recommendations": ["Light jacket recommended"]
+    }
+  ]
+}
+```
+
+---
 
 ## 🧪 Testing
 
-### Run all tests
+### **Test Coverage**
+
+```
+Overall Coverage: 28.33%
+
+User Service:    64% coverage, 163 tests
+Wardrobe Service: (Not shown in current stats)
+Outfit Service:  28% coverage, 138 tests
+
+Controllers:     97% coverage ✅
+Algorithms:      42% coverage
+Services:        27% coverage
+```
+
+### **Running Tests**
+
 ```bash
+# Run all tests with coverage
 npm test
+
+# Run tests in watch mode
+npm test -- --watch
+
+# Run specific test file
+npm test -- outfit.test.js
+
+# Run tests with verbose output
+npm test -- --verbose
+
+# Generate coverage report
+npm test -- --coverage
 ```
 
-### Run tests for specific service
+### **Test Structure**
+
+```
+services/
+  user-service/
+    tests/
+      auth.test.js              # Authentication tests
+      user-logic.test.js        # Business logic tests
+      controller-real.test.js   # Integration tests
+  
+  wardrobe-service/
+    tests/
+      clothing.test.js
+      gridfs.test.js
+      integration.test.js
+  
+  outfit-service/
+    tests/
+      outfit.test.js            # 39 tests
+      outfit-logic.test.js      # 48 tests
+      outfit-controller-real.test.js  # 13 tests
+      colorMatching-real.test.js     # 80 tests
+      styleMatching-real.test.js     # 70 tests
+```
+
+### **Test Examples**
+
+```javascript
+// Integration Test Example
+describe('Outfit Controller - Real Source Code Tests', () => {
+  test('should generate daily outfit successfully', async () => {
+    const mockReq = {
+      user: { userId: 'user123', email: 'test@example.com' },
+      body: { city: 'New York' }
+    };
+    const mockRes = {
+      json: jest.fn(),
+      status: jest.fn(() => mockRes)
+    };
+    
+    await controller.getDailyOutfit(mockReq, mockRes);
+    
+    expect(mockRes.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: true,
+        data: expect.objectContaining({
+          weather: expect.any(Object),
+          outfits: expect.any(Array)
+        })
+      })
+    );
+  });
+});
+```
+
+---
+
+## 🚢 Deployment
+
+### **Kubernetes Deployment**
+
+#### **Prerequisites**
+
+- Kubernetes cluster (1.28+)
+- kubectl configured
+- Harbor registry access
+- MongoDB StatefulSet
+- RabbitMQ deployment
+
+#### **Namespace Setup**
+
 ```bash
-cd services/user-service
-npm test
+# Create namespace
+kubectl create namespace closetx
+
+# Create Harbor registry secret
+kubectl create secret docker-registry harbor-registry \
+  --docker-server=harbor.javajon.duckdns.org \
+  --docker-username=your-username \
+  --docker-password=your-password \
+  --namespace closetx
 ```
 
-### Run frontend tests
+#### **Create ConfigMap**
+
 ```bash
-cd frontend
-npm test
+kubectl apply -f - <<EOF
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: closetx-config
+  namespace: closetx
+data:
+  OPENWEATHER_API_KEY: "75b4246ff3ecccbef11f5cdc6ed5341f"
+  GOOGLE_VISION_API_KEY: "AIzaSyAF2pdB28_C2wYSQl-JtDY4v4Io2z7OgkI"
+  FRONTEND_URL: "http://closetx.local"
+  NODE_ENV: "production"
+EOF
 ```
 
-## 📊 Monitoring & Logs
+#### **Deploy MongoDB**
 
-Each service writes logs to its respective `logs/` directory:
-- `services/user-service/logs/`
-- `services/wardrobe-service/logs/`
-- `services/outfit-service/logs/`
-
-View live logs with Docker:
 ```bash
-docker-compose logs -f [service-name]
+kubectl apply -f k8s/mongodb-statefulset.yaml
+kubectl apply -f k8s/mongodb-service.yaml
 ```
 
-## 🐛 Troubleshooting
+#### **Deploy RabbitMQ**
 
-### Services won't start
 ```bash
-# Stop all containers
-docker-compose down
-
-# Remove volumes
-docker-compose down -v
-
-# Rebuild and restart
-docker-compose up --build
+kubectl apply -f k8s/rabbitmq-deployment.yaml
+kubectl apply -f k8s/rabbitmq-service.yaml
 ```
 
-### MongoDB connection issues
-- Ensure MongoDB container is healthy: `docker ps`
-- Check connection string in service environment variables
-- Verify MongoDB is accepting connections: `docker logs closetx-mongodb`
+#### **Deploy Services**
 
-### RabbitMQ connection issues
-- Access RabbitMQ management UI: http://localhost:15672
-- Check queue status and messages
-- Verify credentials in docker-compose.yaml
+```bash
+# User Service
+kubectl apply -f k8s/user-service-deployment.yaml
+kubectl apply -f k8s/user-service-service.yaml
+
+# Wardrobe Service
+kubectl apply -f k8s/wardrobe-service-deployment.yaml
+kubectl apply -f k8s/wardrobe-service-service.yaml
+
+# Outfit Service
+kubectl apply -f k8s/outfit-service-deployment.yaml
+kubectl apply -f k8s/outfit-service-service.yaml
+```
+
+#### **Deploy Workers**
+
+```bash
+kubectl apply -f k8s/image-processor-deployment.yaml
+kubectl apply -f k8s/fashion-advice-deployment.yaml
+kubectl apply -f k8s/outfit-generator-deployment.yaml
+```
+
+#### **Deploy Ingress**
+
+```bash
+kubectl apply -f k8s/ingress.yaml
+```
+
+### **Scaling**
+
+```bash
+# Scale outfit service
+kubectl scale deployment outfit-service --replicas=3 -n closetx
+
+# Scale workers
+kubectl scale deployment image-processor --replicas=2 -n closetx
+
+# Auto-scaling (HPA)
+kubectl autoscale deployment outfit-service \
+  --cpu-percent=70 \
+  --min=2 \
+  --max=10 \
+  -n closetx
+```
+
+### **CI/CD Pipeline**
+
+#### **GitHub Actions Workflow**
+
+```yaml
+# .github/workflows/deploy.yml
+name: Deploy to Kubernetes
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Build Docker images
+        run: |
+          docker build -t harbor.javajon.duckdns.org/kates/user-service:${{ github.sha }} services/user-service
+          docker build -t harbor.javajon.duckdns.org/kates/wardrobe-service:${{ github.sha }} services/wardrobe-service
+          docker build -t harbor.javajon.duckdns.org/kates/outfit-service:${{ github.sha }} services/outfit-service
+      
+      - name: Push to Harbor
+        run: |
+          docker login harbor.javajon.duckdns.org -u ${{ secrets.HARBOR_USERNAME }} -p ${{ secrets.HARBOR_PASSWORD }}
+          docker push harbor.javajon.duckdns.org/kates/user-service:${{ github.sha }}
+          docker push harbor.javajon.duckdns.org/kates/wardrobe-service:${{ github.sha }}
+          docker push harbor.javajon.duckdns.org/kates/outfit-service:${{ github.sha }}
+      
+      - name: Deploy to Kubernetes
+        run: |
+          kubectl set image deployment/user-service user-service=harbor.javajon.duckdns.org/kates/user-service:${{ github.sha }} -n closetx
+          kubectl set image deployment/wardrobe-service wardrobe-service=harbor.javajon.duckdns.org/kates/wardrobe-service:${{ github.sha }} -n closetx
+          kubectl set image deployment/outfit-service outfit-service=harbor.javajon.duckdns.org/kates/outfit-service:${{ github.sha }} -n closetx
+```
+
+---
+
+## 📊 Monitoring
+
+### **Health Checks**
+
+```bash
+# Check service health
+kubectl get pods -n closetx
+
+# Check service logs
+kubectl logs -f deployment/outfit-service -n closetx
+
+# Check RabbitMQ
+kubectl port-forward svc/rabbitmq 15672:15672 -n closetx
+# Access: http://localhost:15672
+
+# Check MongoDB
+kubectl exec -it mongodb-0 -n closetx -- mongosh
+```
+
+### **Metrics**
+
+```bash
+# Get resource usage
+kubectl top pods -n closetx
+kubectl top nodes
+
+# Get deployment status
+kubectl get deployments -n closetx
+kubectl describe deployment outfit-service -n closetx
+```
+
+### **RabbitMQ Monitoring**
+
+Access RabbitMQ Management UI:
+```bash
+kubectl port-forward svc/rabbitmq 15672:15672 -n closetx
+```
+
+Navigate to: http://localhost:15672
+- **Username**: guest
+- **Password**: guest
+
+**Key Metrics to Monitor**:
+- Queue depth (messages ready)
+- Consumer count
+- Message rate (publish/deliver)
+- Unacknowledged messages
+- Connection status
+
+---
 
 ## 👥 Team
 
-- **Kuany Kuany** - Backend Developer
-- **Hanna Saffi** - Frontend Developer
-- **Aleksandra Postolov** - Database
+### **Team Kates**
 
-## 📧 Contact
+- **[Your Name]** - Project Lead, Database Design, Testing, Kubernetes Deployment
+- **Kuany Kuany** - CI/CD Pipeline, DevOps
+- **Hanna Saffi** - AI Integration, Workers
 
-For questions or suggestions, please open an issue or contact the team.
+### **Course Information**
+
+- **Course**: CPSC 415 - Building Cloud Native Apps
+- **Semester**: Fall 2024
+- **University**: [Your University Name]
+- **Presentation Date**: December 2, 2025
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 🙏 Acknowledgments
+
+- **OpenWeather API** for weather data
+- **Google Vision AI** for image recognition
+- **Ollama** for local LLM capabilities
+- **Harbor** for private container registry
+- **Kubernetes** community for excellent documentation
+
+---
+
+## 📞 Contact
+
+For questions or support, please contact:
+- **Email**: [your-email@example.com]
+- **GitHub Issues**: [https://github.com/yourusername/Closet-X/issues]
+
+---
+
+## 🗺️ Roadmap
+
+### **Future Enhancements**
+
+- [ ] Mobile app (React Native)
+- [ ] Social features (share outfits, follow users)
+- [ ] Virtual try-on using AR
+- [ ] Outfit calendar and planning
+- [ ] Shopping recommendations
+- [ ] Sustainability tracking (cost per wear)
+- [ ] Style analytics and insights
+- [ ] Integration with clothing brands
+- [ ] Machine learning for better recommendations
+- [ ] Multi-language support
+
+---
+
+**Built with ❤️ by Team Kates**

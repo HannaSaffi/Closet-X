@@ -1,18 +1,20 @@
 .outfit-inspo {
   max-width: 900px;
   margin: 0 auto;
-  padding: 30px 20px;
+  padding: 2rem;
+  background-color: #F5E5E1;
+  min-height: 100vh;
 }
 
 .inspo-header {
   text-align: center;
-  margin-bottom: 40px;
+  margin-bottom: 2rem;
 }
 
 .inspo-header h1 {
-  color: #174143;
   font-size: 2.5rem;
-  margin-bottom: 10px;
+  color: #174143;
+  margin-bottom: 0.5rem;
 }
 
 .inspo-header p {
@@ -21,41 +23,160 @@
 }
 
 .generate-section {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 30px;
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
 }
 
-.btn-generate {
-  padding: 18px 40px;
-  background: linear-gradient(135deg, #F9B487 0%, #427A76 100%);
-  color: white;
-  border: none;
-  border-radius: 12px;
-  font-size: 1.2rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.3s;
-  box-shadow: 0 4px 15px rgba(249, 180, 135, 0.3);
+/* Preference input */
+.preference-input-container {
+  margin-bottom: 1.5rem;
+}
+
+.preference-input-container label {
+  display: block;
+  font-weight: 600;
+  color: #174143;
+  margin-bottom: 0.5rem;
+  font-size: 1.1rem;
+}
+
+.preference-input {
+  width: 100%;
+  padding: 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: inherit;
+  resize: vertical;
+  transition: border-color 0.3s;
+}
+
+.preference-input:focus {
+  outline: none;
+  border-color: #427A76;
+}
+
+.preference-input::placeholder {
+  color: #a0aec0;
+}
+
+/* Weather toggle */
+.weather-toggle-container {
+  margin-bottom: 1.5rem;
+}
+
+.toggle-label {
   display: flex;
   align-items: center;
-  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggle-checkbox {
+  display: none;
+}
+
+.toggle-slider {
+  position: relative;
+  width: 50px;
+  height: 24px;
+  background-color: #cbd5e0;
+  border-radius: 24px;
+  transition: background-color 0.3s;
+  margin-right: 0.75rem;
+}
+
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background-color: white;
+  top: 3px;
+  left: 3px;
+  transition: transform 0.3s;
+}
+
+.toggle-checkbox:checked + .toggle-slider {
+  background-color: #427A76;
+}
+
+.toggle-checkbox:checked + .toggle-slider::before {
+  transform: translateX(26px);
+}
+
+.toggle-text {
+  font-weight: 500;
+  color: #174143;
+}
+
+/* City input */
+.city-input-container {
+  margin-bottom: 1.5rem;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.city-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.3s;
+}
+
+.city-input:focus {
+  outline: none;
+  border-color: #427A76;
+}
+
+/* Generate button */
+.btn-generate {
+  width: 100%;
+  padding: 1rem 2rem;
+  background: linear-gradient(135deg, #F9B487 0%, #427A76 50%, #174143 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
 .btn-generate:hover:not(:disabled) {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 25px rgba(249, 180, 135, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 12px rgba(66, 122, 118, 0.4);
 }
 
 .btn-generate:disabled {
-  opacity: 0.7;
+  opacity: 0.6;
   cursor: not-allowed;
 }
 
 .spinner {
-  width: 20px;
-  height: 20px;
-  border: 3px solid rgba(255, 255, 255, 0.3);
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
   border-top-color: white;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
@@ -65,70 +186,116 @@
   to { transform: rotate(360deg); }
 }
 
+/* Error message */
+.error-message {
+  background-color: #fed7d7;
+  color: #c53030;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+/* Weather card */
 .weather-card {
   background: linear-gradient(135deg, #427A76 0%, #174143 100%);
   color: white;
-  padding: 20px;
+  padding: 1.5rem;
   border-radius: 12px;
   display: flex;
   align-items: center;
-  gap: 20px;
-  margin-bottom: 30px;
-  box-shadow: 0 4px 15px rgba(23, 65, 67, 0.2);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
 }
 
 .weather-icon {
-  font-size: 4rem;
+  font-size: 3rem;
 }
 
 .weather-info h3 {
-  font-size: 1.5rem;
-  margin-bottom: 5px;
+  margin: 0 0 0.25rem 0;
+  font-size: 1.25rem;
 }
 
 .weather-info p {
-  font-size: 1.2rem;
+  margin: 0;
   opacity: 0.9;
 }
 
+/* AI Advice */
+.ai-advice-card {
+  background: white;
+  border-left: 4px solid #F9B487;
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  animation: fadeIn 0.5s ease-out;
+}
+
+.ai-advice-card h3 {
+  margin: 0 0 0.75rem 0;
+  color: #174143;
+  font-size: 1.1rem;
+}
+
+.ai-advice-card p {
+  margin: 0;
+  color: #427A76;
+  line-height: 1.6;
+}
+
+/* Outfit display */
 .outfit-display {
   background: white;
-  padding: 30px;
   border-radius: 12px;
-  box-shadow: 0 4px 15px rgba(23, 65, 67, 0.1);
-  border: 2px solid #F9B487;
+  padding: 2rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  animation: fadeIn 0.5s ease-out;
 }
 
 .outfit-display h2 {
-  color: #174143;
   text-align: center;
-  margin-bottom: 25px;
-  font-size: 1.8rem;
+  color: #174143;
+  margin-bottom: 0.5rem;
+}
+
+.outfit-subtitle {
+  text-align: center;
+  color: #427A76;
+  font-style: italic;
+  margin-bottom: 2rem;
 }
 
 .outfit-items {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 20px;
-  margin-bottom: 25px;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
 }
 
 .outfit-item {
   background: #F5E5E1;
-  border-radius: 10px;
+  border-radius: 8px;
   overflow: hidden;
-  transition: transform 0.2s;
-  border: 2px solid #F9B487;
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .outfit-item:hover {
-  transform: scale(1.05);
+  transform: translateY(-4px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
 }
 
 .outfit-item-image {
   width: 100%;
   height: 200px;
   overflow: hidden;
+  background: white;
 }
 
 .outfit-item-image img {
@@ -138,45 +305,71 @@
 }
 
 .outfit-item-info {
-  padding: 15px;
-  text-align: center;
+  padding: 1rem;
 }
 
 .item-category {
-  color: #427A76;
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
+  color: #427A76;
+  margin-bottom: 0.25rem;
   font-weight: 600;
-  margin-bottom: 5px;
 }
 
 .item-name {
-  color: #174143;
   font-size: 1rem;
-  font-weight: 500;
+  font-weight: 600;
+  color: #174143;
+  margin-bottom: 0.25rem;
+}
+
+.item-color {
+  font-size: 0.875rem;
+  color: #427A76;
 }
 
 .btn-regenerate {
   width: 100%;
-  padding: 14px;
-  background: linear-gradient(135deg, #427A76 0%, #174143 100%);
-  color: white;
-  border: none;
+  padding: 0.75rem 1.5rem;
+  background: white;
+  color: #427A76;
+  border: 2px solid #427A76;
   border-radius: 8px;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.2s;
 }
 
 .btn-regenerate:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(23, 65, 67, 0.3);
+  background: #427A76;
+  color: white;
 }
 
+/* Empty state */
 .empty-inspo {
   text-align: center;
-  padding: 60px 20px;
+  padding: 3rem;
   color: #427A76;
   font-size: 1.1rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .outfit-inspo {
+    padding: 1rem;
+  }
+
+  .inspo-header h1 {
+    font-size: 2rem;
+  }
+
+  .outfit-items {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1rem;
+  }
+
+  .generate-section {
+    padding: 1.5rem;
+  }
 }

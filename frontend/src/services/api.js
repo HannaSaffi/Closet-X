@@ -1,11 +1,12 @@
 import axios from "axios";
 
-const WARDROBE_API_URL = "http://localhost:3002/api";
-const OUTFIT_API_URL = "http://localhost:3003/api";
+const USER_API_URL = "http://localhost:3001/api";
+const OUTFIT_API_URL = "http://localhost:3002/api";
+const WARDROBE_API_URL = "http://localhost:3003/api";
 
-// Create axios instance for wardrobe service
-const wardrobeApi = axios.create({
-  baseURL: WARDROBE_API_URL,
+// Create axios instance for user service
+const userApi = axios.create({
+  baseURL: USER_API_URL,
   headers: {
     "Content-Type": "application/json",
   },
@@ -14,6 +15,14 @@ const wardrobeApi = axios.create({
 // Create axios instance for outfit service
 const outfitApi = axios.create({
   baseURL: OUTFIT_API_URL,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+// Create axios instance for wardrobe service
+const wardrobeApi = axios.create({
+  baseURL: WARDROBE_API_URL,
   headers: {
     "Content-Type": "application/json",
   },
@@ -28,8 +37,9 @@ const addAuthHeader = (config) => {
   return config;
 };
 
-wardrobeApi.interceptors.request.use(addAuthHeader);
+userApi.interceptors.request.use(addAuthHeader);
 outfitApi.interceptors.request.use(addAuthHeader);
+wardrobeApi.interceptors.request.use(addAuthHeader);
 
 // Wardrobe API calls
 export const getAllClothes = async () => {
@@ -65,9 +75,27 @@ export const deleteClothing = async (id) => {
 };
 
 // Outfit API calls
-export const getDailyOutfit = async (city = 'New York') => {
+export const getDailyOutfit = async (params = {}) => {
   try {
-    const response = await outfitApi.get(`/outfits?city=${city}&includeAI=true`);
+    // Build query string
+    const queryParams = new URLSearchParams();
+    
+    if (params.city) {
+      queryParams.append('city', params.city);
+    }
+    
+    if (params.preference) {
+      queryParams.append('preference', params.preference);
+    }
+    
+    if (params.includeAI !== undefined) {
+      queryParams.append('includeAI', params.includeAI);
+    }
+    
+    const queryString = queryParams.toString();
+    const url = queryString ? `/daily-outfit?${queryString}` : '/daily-outfit';
+    
+    const response = await outfitApi.get(url);
     return response.data.data || response.data;
   } catch (error) {
     console.error("Error getting daily outfit:", error);
@@ -85,4 +113,4 @@ export const generateOutfit = async (preferences) => {
   }
 };
 
-export { wardrobeApi, outfitApi };
+export { userApi, outfitApi, wardrobeApi };

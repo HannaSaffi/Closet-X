@@ -1,0 +1,70 @@
+#k8s/06-outfit-service.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: outfit-service
+  namespace: kates-closetx
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: outfit-service
+  template:
+    metadata:
+      labels:
+        app: outfit-service
+    spec:
+      containers:
+      - name: outfit-service
+        image: harbor.javajon.duckdns.org/kates/outfit-service:v1.0.0
+        ports:
+        - containerPort: 3002
+        env:
+        - name: PORT
+          value: "3002"
+        - name: NODE_ENV
+          value: "production"
+        - name: MONGO_URI
+          value: "mongodb://outfit_service:service_password_123@mongodb-service.kates-closetx.svc.cluster.local:27017/closetx_outfits?authSource=admin"
+        - name: RABBITMQ_URL
+          value: "amqp://admin:admin@rabbitmq.rabbitmq.svc.cluster.local:5672"
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: closetx-secrets
+              key: JWT_SECRET
+        - name: WARDROBE_SERVICE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: closetx-config
+              key: WARDROBE_SERVICE_URL
+        - name: AI_SERVICE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: closetx-config
+              key: AI_SERVICE_URL
+        - name: OPENWEATHER_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: closetx-secrets
+              key: OPENWEATHER_API_KEY
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: outfit-service
+  namespace: kates-closetx
+spec:
+  selector:
+    app: outfit-service
+  ports:
+  - port: 3002
+    targetPort: 3002
+  type: ClusterIP

@@ -1,30 +1,38 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ai-advice-service
+  name: fashion-advice
   namespace: kates-closetx
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
-      app: ai-advice-service
+      app: fashion-advice
   template:
     metadata:
       labels:
-        app: ai-advice-service
+        app: fashion-advice
     spec:
       containers:
-      - name: ai-advice-service
-        image: harbor.javajon.duckdns.org/kates/ai-advice-service:v1.0.0
-        ports:
-        - containerPort: 3004
+      - name: fashion-advice
+        image: harbor.javajon.duckdns.org/kates/fashion-advice:v1.0.0
         env:
-        - name: PORT
-          value: "3004"
+        - name: NODE_ENV
+          value: "production"
         - name: MONGO_URI
           value: "mongodb://ai_service:service_password_123@mongodb-service.kates-closetx.svc.cluster.local:27017/closetx_ai?authSource=admin"
         - name: RABBITMQ_URL
           value: "amqp://admin:admin@rabbitmq.rabbitmq.svc.cluster.local:5672"
+        - name: AI_SERVICE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: closetx-config
+              key: AI_SERVICE_URL
+        - name: OUTFIT_SERVICE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: closetx-config
+              key: OUTFIT_SERVICE_URL
         - name: OPENAI_API_KEY
           valueFrom:
             secretKeyRef:
@@ -37,21 +45,16 @@ spec:
               key: GEMINI_API_KEY
         resources:
           requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
             memory: "256Mi"
             cpu: "200m"
-          limits:
-            memory: "512Mi"
-            cpu: "500m"
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: ai-advice-service
-  namespace: kates-closetx
-spec:
-  selector:
-    app: ai-advice-service
-  ports:
-  - port: 3004
-    targetPort: 3004
-  type: ClusterIP
+        livenessProbe:
+          exec:
+            command:
+            - node
+            - -e
+            - "process.exit(0)"
+          initialDelaySeconds: 30
+          periodSeconds: 30

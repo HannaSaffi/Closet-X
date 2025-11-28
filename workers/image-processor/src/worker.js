@@ -1,7 +1,9 @@
+require("dotenv").config();
 // workers/image-processor/src/worker.js
 const amqp = require('amqplib');
 const mongoose = require('mongoose');
 const axios = require('axios');
+const { processImageBackgroundRemoval } = require('./backgroundRemovalService');
 require('dotenv').config();
 
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/closetx_wardrobe';
@@ -48,7 +50,7 @@ async function connectRabbitMQ() {
           console.log('✅ Image processed successfully');
         } catch (error) {
           console.error('❌ Error processing image:', error);
-          channel.nack(msg, false, false); // Don't requeue on failure
+          channel.nack(msg, false, false);
         }
       }
     });
@@ -71,11 +73,27 @@ async function connectRabbitMQ() {
 async function processImage(data) {
   const { itemId, userId, imageUrl, imageId } = data;
   
-  console.log(`🔍 Analyzing image: ${imageUrl}`);
+  console.log(`🔍 Processing image: ${imageUrl}`);
   
   try {
-    // Simulate AI image analysis
-    // In production, this would call Google Vision API, Clarifai, or Ollama
+    // Step 1: Remove background (if API key is configured)
+    let processedImageId = null;
+    if (process.env.REMOVEBG_API_KEY) {
+      console.log('🎨 Starting background removal...');
+      const bgRemovalResult = await processImageBackgroundRemoval(imageId, userId, `item-${itemId}.jpg`);
+      
+      if (bgRemovalResult.success) {
+        processedImageId = bgRemovalResult.processedImageId;
+        console.log(`✅ Background removed! New image ID: ${processedImageId}`);
+        console.log(`📊 Size: ${bgRemovalResult.originalSize} → ${bgRemovalResult.processedSize} bytes`);
+      } else {
+        console.warn('⚠️  Background removal failed, continuing with original image');
+      }
+    } else {
+      console.log('ℹ️  Background removal skipped (no API key configured)');
+    }
+    
+    // Step 2: AI image analysis
     const analysis = {
       category: 'tops',
       colors: ['blue', 'white'],
@@ -88,23 +106,20 @@ async function processImage(data) {
     
     console.log('🤖 AI Analysis complete:', analysis);
 
-    // Update clothing item via Wardrobe Service API
-    // Note: In production, you'd need proper authentication/service-to-service auth
-    await updateClothingItem(itemId, analysis);
+    // Step 3: Update clothing item with both analysis and processed image
+    await updateClothingItem(itemId, analysis, processedImageId);
     
-    console.log(`💾 Updated clothing item ${itemId} with AI analysis`);
+    console.log(`💾 Updated clothing item ${itemId} with AI analysis${processedImageId ? ' and processed image' : ''}`);
     
-    return analysis;
+    return { analysis, processedImageId };
   } catch (error) {
     console.error('❌ Failed to process image:', error);
     throw error;
   }
 }
 
-async function updateClothingItem(itemId, analysis) {
+async function updateClothingItem(itemId, analysis, processedImageId = null) {
   try {
-    // Call wardrobe service to update the item
-    // In production, you'd use service-to-service authentication
     const updateData = {
       aiAnalysis: {
         category: analysis.category,
@@ -116,12 +131,16 @@ async function updateClothingItem(itemId, analysis) {
       }
     };
 
-    // Since we don't have user token in worker, we'll update via internal endpoint
-    // For now, we'll use direct MongoDB update (acceptable for background workers)
-    const ClothingItem = mongoose.model('ClothingItem', new mongoose.Schema({}, { strict: false }));
+    if (processedImageId) {
+      updateData.processedImageId = processedImageId;
+      updateData.processedImageUrl = `/api/wardrobe/image/${processedImageId}`;
+      updateData.hasBackgroundRemoved = true;
+    }
+
+    const ClothingItem = mongoose.models.ClothingItem || mongoose.model('ClothingItem', new mongoose.Schema({}, { strict: false }));
     
     await ClothingItem.findByIdAndUpdate(itemId, {
-      $set: { aiAnalysis: updateData.aiAnalysis }
+      $set: updateData
     });
 
     console.log(`✅ Updated item ${itemId} in database`);
@@ -159,7 +178,6 @@ async function start() {
   }
 }
 
-// Graceful shutdown
 process.on('SIGTERM', async () => {
   console.log('SIGTERM received, shutting down...');
   if (channel) await channel.close();

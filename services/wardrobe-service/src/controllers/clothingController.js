@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 // services/wardrobe-service/src/controllers/clothingController.js
 const ClothingItem = require('../models/ClothingItem');
 const { uploadImage, deleteImage, downloadImage } = require('../services/gridfsService');
@@ -6,7 +7,7 @@ const { publishMessage } = require('../services/messageQueue');
 exports.getAllClothingItems = async (req, res) => {
   try {
     const { category, color, season, isActive, tags, sortBy, order, limit, skip } = req.query;
-    const userId = req.user.userId;
+    const userId = new mongoose.Types.ObjectId(req.user.userId);
 
     const filter = { userId };
     if (category) filter.category = category;
@@ -40,7 +41,7 @@ exports.getAllClothingItems = async (req, res) => {
 exports.getClothingItemById = async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.user.userId;
+    const userId = new mongoose.Types.ObjectId(req.user.userId);
 
     const item = await ClothingItem.findOne({ _id: id, userId });
 
@@ -57,7 +58,7 @@ exports.getClothingItemById = async (req, res) => {
 
 exports.createClothingItem = async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = new mongoose.Types.ObjectId(req.user.userId);
     const file = req.file;
 
     if (!file) {
@@ -117,7 +118,7 @@ exports.createClothingItem = async (req, res) => {
 exports.updateClothingItem = async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.user.userId;
+    const userId = new mongoose.Types.ObjectId(req.user.userId);
     const updates = req.body;
 
     const item = await ClothingItem.findOneAndUpdate(
@@ -140,7 +141,7 @@ exports.updateClothingItem = async (req, res) => {
 exports.deleteClothingItem = async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.user.userId;
+    const userId = new mongoose.Types.ObjectId(req.user.userId);
 
     const item = await ClothingItem.findOne({ _id: id, userId });
 
@@ -164,7 +165,7 @@ exports.deleteClothingItem = async (req, res) => {
 exports.markAsWorn = async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.user.userId;
+    const userId = new mongoose.Types.ObjectId(req.user.userId);
 
     const item = await ClothingItem.findOneAndUpdate(
       { _id: id, userId },
@@ -185,10 +186,11 @@ exports.markAsWorn = async (req, res) => {
 
 exports.getWardrobeStats = async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = new mongoose.Types.ObjectId(req.user.userId);
+    console.log('📊 Stats query for userId:', userId);
 
     const stats = await ClothingItem.aggregate([
-      { $match: { userId: userId, isActive: true } },
+      { $match: { userId: userId } },
       {
         $group: {
           _id: null,
@@ -200,7 +202,7 @@ exports.getWardrobeStats = async (req, res) => {
     ]);
 
     const categoryStats = await ClothingItem.aggregate([
-      { $match: { userId: userId, isActive: true } },
+      { $match: { userId: userId } },
       { $group: { _id: '$category', count: { $sum: 1 }, totalValue: { $sum: '$price' } } }
     ]);
 

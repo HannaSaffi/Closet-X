@@ -13,6 +13,9 @@ const clothingItemSchema = new mongoose.Schema({
   thumbnailUrl: String,
   imageId: String,
   thumbnailId: String,
+  processedImageId: String,
+  processedImageUrl: String,
+  hasBackgroundRemoved: { type: Boolean, default: false },
   category: {
     type: String,
     required: true,

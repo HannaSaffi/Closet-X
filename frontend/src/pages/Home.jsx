@@ -1,13 +1,35 @@
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import './Home.css';
+import axios from 'axios';
 
 function Home() {
   const [stats, setStats] = useState({
-    totalItems: 4,
-    outfitsCreated: 0,
-    categories: 4
-  });
+  totalItems: 0,
+  outfitsCreated: 0,
+  categories: 0
+});
+
+useEffect(() => {
+  const fetchStats = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get('http://localhost:3003/api/wardrobe/stats', {
+       headers: { Authorization: `Bearer ${token}` }
+      });
+      console.log("Stats response:", JSON.stringify(response.data, null, 2));      
+
+      setStats({
+       totalItems: response.data.data.overall?.totalItems || 0,
+       outfitsCreated: 0,
+       categories: response.data.data.byCategory?.length || 0
+      });
+    } catch (error) {
+      console.error('Failed to fetch stats:', error);
+    }
+  };
+  fetchStats();
+}, []);
 
   return (
     <div className="home">
@@ -31,7 +53,7 @@ function Home() {
 
         <Link to="/outfit-inspo" className="action-card">
           <div className="card-icon">✨</div>
-          <h3>Make Outfit Inspo</h3>
+          <h3>What should I wear?</h3>
           <p>Create and save outfit combinations</p>
         </Link>
       </div>

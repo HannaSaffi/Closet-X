@@ -2,10 +2,9 @@ import './ClothingCard.css';
 
 function ClothingCard({ clothing, onDelete }) {
   // Fix: Use imageUrl (lowercase) and add backend URL prefix
-  const imageUrl = clothing.imageUrl 
-    ? `http://localhost:3003${clothing.imageUrl}` 
-    : 'https://via.placeholder.com/250';
-
+  const imageUrl = (clothing.processedImageUrl || clothing.imageUrl)
+  ? `http://localhost:3003${clothing.processedImageUrl || clothing.imageUrl}` 
+  : 'https://via.placeholder.com/250';
   return (
     <div className="clothing-card">
       <div className="card-image">

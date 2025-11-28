@@ -111,6 +111,7 @@ services:
       OLLAMA_HOST: ${OLLAMA_HOST:-}
       OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY}
       GOOGLE_VISION_API_KEY: ${GOOGLE_VISION_API_KEY:-}
+      REMOVEBG_API_KEY: ${REMOVEBG_API_KEY:-}
     depends_on:
       mongodb:
         condition: service_healthy

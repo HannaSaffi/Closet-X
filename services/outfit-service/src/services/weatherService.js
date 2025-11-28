@@ -1,3 +1,4 @@
+
 // services/outfit-service/src/services/weatherService.js
 
 const axios = require('axios');
@@ -169,6 +170,7 @@ class WeatherService {
 
       return this.parseWeatherStackResponse(response.data);
     } catch (error) {
+      console.error('WeatherStack Error Details:', error);
       throw new Error(`WeatherStack API Error: ${error.message}`);
     }
   }

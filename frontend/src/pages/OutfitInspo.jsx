@@ -39,7 +39,7 @@ function OutfitInspo() {
       // Set weather data if included
       if (data.weather && includeWeather) {
         setWeather({
-          temp: data.weather.temperature,
+          temp: data.weather.temp,
           condition: data.weather.description,
           icon: getWeatherIcon(data.weather.description)
         });
@@ -48,8 +48,8 @@ function OutfitInspo() {
       }
       
       // Set outfit items
-      if (data.outfit) {
-        setOutfit(data.outfit);
+      if (data.outfits && data.outfits[0]) {
+        setOutfit(data.outfits[0].items);
       }
       
       // Set AI advice if available
@@ -184,14 +184,14 @@ function OutfitInspo() {
               <div key={item._id || item.id || index} className="outfit-item">
                 <div className="outfit-item-image">
                   <img 
-                    src={item.imageUrl || item.image || 'https://via.placeholder.com/300'} 
+                    src={'http://localhost:3003' + item.imageUrl || item.image || 'https://via.placeholder.com/300'} 
                     alt={item.name} 
                   />
                 </div>
                 <div className="outfit-item-info">
                   <p className="item-category">{item.category}</p>
                   <p className="item-name">{item.name}</p>
-                  {item.color && <p className="item-color">Color: {item.color}</p>}
+                  {item.color && <p className="item-color">Color: {item.color.primary}</p>}
                 </div>
               </div>
             ))}

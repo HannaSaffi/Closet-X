@@ -19,7 +19,7 @@ function AddClothing() {
     
     const data = new FormData();
     data.append('category', formData.category);
-    data.append('color[primary]', formData.color);
+    data.append('color', formData.color);
     data.append('season', formData.season);
     data.append('brand', formData.brand);
     if (image) {

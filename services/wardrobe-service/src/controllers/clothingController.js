@@ -75,7 +75,7 @@ exports.createClothingItem = async (req, res) => {
       category: req.body.category || 'other',
       subcategory: req.body.subcategory,
       color: {
-        primary: req.body.primaryColor,
+        primary: req.body.color || req.body.primaryColor,
         secondary: req.body.secondaryColors ? req.body.secondaryColors.split(',') : []
       },
       brand: req.body.brand,

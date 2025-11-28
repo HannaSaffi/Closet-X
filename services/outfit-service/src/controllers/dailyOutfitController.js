@@ -15,43 +15,47 @@ const { styleMatching } = require('../algorithms/styleMatching');
  * 2. Weather API (gets current weather)
  * 3. AI Service (gets fashion advice)
  * 4. User's clothing database (generates outfits)
- * 5. Returns complete recommendations
+ * 5. User preferences (text input for style/occasion)
+ * 6. Returns complete recommendations
  */
 exports.getDailyOutfit = async (req, res) => {
   try {
     const userId = req.user.id; // From auth middleware (user-service token)
     const userEmail = req.user.email;
-    const { city, includeAI = true } = req.query;
+    const { city, includeAI = true, preference = '' } = req.query;
 
     console.log(`🎯 Daily outfit request for user: ${userId} (${userEmail})`);
-
-    // ========================================================================
-    // STEP 1: Set default preferences (no local user database)
-    // ========================================================================
-    const targetCity = city || 'New York';
-    const userStyle = 'casual'; // Default style
-
-    // ========================================================================
-    // STEP 2: Get Current Weather
-    // ========================================================================
-    console.log(`🌤️  Fetching weather for ${targetCity}...`);
-    
-    let weather;
-    try {
-      weather = await weatherService.getCurrentWeather(targetCity);
-      console.log(`✅ Weather: ${weather.temp}°F, ${weather.description}`);
-    } catch (error) {
-      console.error('Weather fetch failed:', error.message);
-      return res.status(400).json({
-        success: false,
-        message: 'Failed to get weather data',
-        error: error.message,
-        hint: 'Please check the city name or API key'
-      });
+    if (preference) {
+      console.log(`💬 User preference: "${preference}"`);
     }
 
-    // Get weather-based clothing recommendations
-    const weatherRecs = weatherService.getClothingRecommendations(weather);
+    // ========================================================================
+    // STEP 1: Parse user preferences from text input
+    // ========================================================================
+    const parsedPreferences = parseUserPreference(preference);
+    const targetCity = city || 'New York';
+
+    console.log('📋 Parsed preferences:', parsedPreferences);
+
+    // ========================================================================
+    // STEP 2: Get Current Weather (if requested)
+    // ========================================================================
+    let weather = null;
+    let weatherRecs = null;
+    
+    if (city) {
+      console.log(`🌤️  Fetching weather for ${targetCity}...`);
+      
+      try {
+        weather = await weatherService.getCurrentWeather(targetCity);
+        console.log(`✅ Weather: ${weather.temp}°F, ${weather.description}`);
+        weatherRecs = weatherService.getClothingRecommendations(weather);
+      } catch (error) {
+        console.error('Weather fetch failed (non-critical):', error.message);
+        // Continue without weather - it's optional
+        weather = null;
+      }
+    }
 
     // ========================================================================
     // STEP 3: Generate Outfits from User's Wardrobe
@@ -64,11 +68,14 @@ exports.getDailyOutfit = async (req, res) => {
       const token = req.headers.authorization.split(' ')[1];
       
       outfits = await outfitGenerator.generateOutfits(userId, {
-        occasion: 'casual',
+        occasion: parsedPreferences.occasion,
         weather,
         maxSuggestions: 5,
-        includeWeather: true,
-        userStyle,
+        includeWeather: !!city,
+        userStyle: parsedPreferences.style,
+        formality: parsedPreferences.formality,
+        comfort: parsedPreferences.comfort,
+        userPreference: preference, // Pass raw preference for AI
         token // Pass token for wardrobe service calls
       });
 
@@ -99,12 +106,16 @@ exports.getDailyOutfit = async (req, res) => {
     if (includeAI) {
       try {
         console.log('🤖 Getting AI fashion advice...');
-        aiAdvice = await aiAdviceService.getAdvice({
-          weather,
-          outfits: outfits.slice(0, 3),
-          occasion: 'casual',
-          userStyle
+        const adviceResult = await aiAdviceService.getFashionAdvice({
+          occasion: parsedPreferences.occasion,
+          weather: weather ? `${weather.temp}°F, ${weather.description}` : "comfortable",
+          preferences: preference || parsedPreferences.style,
+          colors: outfits.length > 0 ? outfits[0].colors : [],
+          style: parsedPreferences.style
         });
+        if (adviceResult.success) {
+          aiAdvice = adviceResult.advice;
+        }
         console.log('✅ AI advice generated');
       } catch (error) {
         console.error('AI advice failed (non-critical):', error.message);
@@ -115,30 +126,33 @@ exports.getDailyOutfit = async (req, res) => {
     // ========================================================================
     // STEP 5: Return Complete Response
     // ========================================================================
-    return res.json({
+    const response = {
       success: true,
       message: 'Daily outfit recommendations generated',
       data: {
         date: new Date().toISOString(),
-        location: targetCity,
-        weather: {
-          temp: weather.temp,
-          feelsLike: weather.feelsLike,
-          condition: weather.main,
-          description: weather.description,
-          humidity: weather.humidity,
-          windSpeed: weather.windSpeed
-        },
-        weatherRecommendations: weatherRecs,
+        userPreference: preference,
+        parsedPreferences,
         outfits: outfits.slice(0, 3), // Top 3 outfits
-        aiAdvice,
-        tips: [
-          `It's ${weather.temp}°F in ${targetCity}`,
-          weatherRecs.recommendation,
-          aiAdvice ? 'AI-powered suggestions included' : 'Try enabling AI for personalized tips'
-        ]
+        aiAdvice
       }
-    });
+    };
+
+    // Add weather info if it was requested
+    if (weather) {
+      response.data.location = targetCity;
+      response.data.weather = {
+        temp: weather.temp,
+        feelsLike: weather.feelsLike,
+        condition: weather.main,
+        description: weather.description,
+        humidity: weather.humidity,
+        windSpeed: weather.windSpeed
+      };
+      response.data.weatherRecommendations = weatherRecs;
+    }
+
+    return res.json(response);
 
   } catch (error) {
     console.error('Daily Outfit Error:', error);
@@ -149,6 +163,57 @@ exports.getDailyOutfit = async (req, res) => {
     });
   }
 };
+
+/**
+ * Parse user preference text into structured data
+ * Examples:
+ * - "I want something comfy" -> { style: 'casual', comfort: 'high' }
+ * - "professional meeting" -> { occasion: 'work', formality: 'formal' }
+ * - "casual date" -> { occasion: 'date', formality: 'casual' }
+ */
+function parseUserPreference(preference) {
+  const lower = preference.toLowerCase();
+  
+  const parsed = {
+    occasion: 'casual',
+    style: 'casual',
+    formality: 'casual',
+    comfort: 'medium'
+  };
+
+  // Parse comfort level
+  if (lower.includes('comfy') || lower.includes('comfortable') || lower.includes('cozy') || lower.includes('relaxed')) {
+    parsed.comfort = 'high';
+    parsed.style = 'casual';
+  }
+
+  // Parse formality
+  if (lower.includes('professional') || lower.includes('business') || lower.includes('formal') || lower.includes('work') || lower.includes('office') || lower.includes('meeting')) {
+    parsed.formality = 'formal';
+    parsed.occasion = 'work';
+    parsed.style = 'professional';
+  } else if (lower.includes('casual') || lower.includes('everyday') || lower.includes('home')) {
+    parsed.formality = 'casual';
+    parsed.style = 'casual';
+  } else if (lower.includes('smart casual') || lower.includes('semi-formal')) {
+    parsed.formality = 'semi-formal';
+    parsed.style = 'smart casual';
+  }
+
+  // Parse occasion
+  if (lower.includes('date') || lower.includes('dinner') || lower.includes('restaurant')) {
+    parsed.occasion = 'date';
+  } else if (lower.includes('party') || lower.includes('celebration') || lower.includes('event')) {
+    parsed.occasion = 'party';
+  } else if (lower.includes('gym') || lower.includes('workout') || lower.includes('exercise')) {
+    parsed.occasion = 'athletic';
+    parsed.style = 'athletic';
+  } else if (lower.includes('coffee') || lower.includes('friends') || lower.includes('hangout')) {
+    parsed.occasion = 'casual';
+  }
+
+  return parsed;
+}
 
 /**
  * GET /api/daily-outfit/weekly

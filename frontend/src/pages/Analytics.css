@@ -1,0 +1,318 @@
+.analytics-container {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.analytics-container h1 {
+  text-align: center;
+  margin-bottom: 2rem;
+  color: #333;
+}
+
+/* Summary Cards */
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.summary-card {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  text-align: center;
+}
+
+.summary-card h3 {
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 0.5rem;
+}
+
+.big-number {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: #2c3e50;
+  margin: 0;
+}
+
+.big-number.warning {
+  color: #e74c3c;
+}
+
+/* Insights */
+.insights-section {
+  margin-bottom: 2rem;
+}
+
+.insights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.insight-card {
+  padding: 1rem;
+  border-radius: 8px;
+  border-left: 4px solid #3498db;
+}
+
+.insight-card.warning {
+  background: #fff3cd;
+  border-left-color: #ffc107;
+}
+
+.insight-card.success {
+  background: #d4edda;
+  border-left-color: #28a745;
+}
+
+.insight-card.tip {
+  background: #d1ecf1;
+  border-left-color: #17a2b8;
+}
+
+.insight-card.info {
+  background: #e7f3ff;
+  border-left-color: #3498db;
+}
+
+.insight-message {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.insight-suggestion {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+/* Charts */
+.charts-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.chart-card {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.chart-card h2 {
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.chart-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.chart-row {
+  display: grid;
+  grid-template-columns: 120px 1fr 60px;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.chart-label {
+  font-size: 0.9rem;
+  color: #555;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.color-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid #ddd;
+}
+
+.chart-bar-container {
+  background: #f0f0f0;
+  border-radius: 4px;
+  height: 24px;
+  position: relative;
+}
+
+.chart-bar {
+  background: linear-gradient(to right, #3498db, #2980b9);
+  height: 100%;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  padding: 0 0.5rem;
+  min-width: 30px;
+  transition: width 0.3s ease;
+}
+
+.chart-value {
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.chart-percent {
+  font-size: 0.9rem;
+  color: #666;
+  text-align: right;
+}
+
+/* Items Section */
+.items-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.items-card {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.items-card h2 {
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.items-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 1rem;
+}
+
+.item-tile {
+  background: #f8f9fa;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: transform 0.2s;
+}
+
+.item-tile:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.item-image {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+}
+
+.item-info {
+  padding: 0.75rem;
+}
+
+.item-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0 0 0.25rem 0;
+  color: #333;
+}
+
+.item-stat {
+  font-size: 0.8rem;
+  color: #666;
+  margin: 0;
+}
+
+/* Cost Per Wear */
+.cost-table {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.cost-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.cost-image {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.cost-details {
+  flex: 1;
+}
+
+.cost-name {
+  font-weight: 600;
+  margin: 0 0 0.25rem 0;
+  color: #333;
+}
+
+.cost-info {
+  font-size: 0.9rem;
+  color: #666;
+  margin: 0;
+}
+
+.cost-info strong {
+  color: #27ae60;
+  font-size: 1.1rem;
+}
+
+/* States */
+.loading, .error, .no-data {
+  text-align: center;
+  padding: 3rem;
+  font-size: 1.2rem;
+  color: #666;
+}
+
+.error {
+  color: #e74c3c;
+}
+
+.success-message {
+  text-align: center;
+  padding: 2rem;
+  color: #27ae60;
+  font-weight: 500;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .analytics-container {
+    padding: 1rem;
+  }
+
+  .summary-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .charts-section {
+    grid-template-columns: 1fr;
+  }
+
+  .items-section {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-row {
+    grid-template-columns: 100px 1fr 50px;
+  }
+}

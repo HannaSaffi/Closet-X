@@ -3,6 +3,8 @@
 const express = require('express');
 const router = express.Router();
 const dailyOutfitController = require('../controllers/dailyOutfitController');
+const eventOutfitController = require('../controllers/eventOutfitController');
+const travelPackingController = require('../controllers/travelPackingController');
 const { protect } = require('../middleware/auth');
 
 /**
@@ -20,5 +22,13 @@ router.get('/weekly', protect, dailyOutfitController.getWeeklyOutfits);
 // Save outfit as favorite
 // POST /api/daily-outfit/save
 router.post('/save', protect, dailyOutfitController.saveFavoriteOutfit);
+
+// Event-based outfit planner
+// POST /api/daily-outfit/event
+router.post('/event', protect, eventOutfitController.getEventOutfit);
+
+// Travel packing assistant
+// POST /api/daily-outfit/travel-plan
+router.post('/travel-plan', protect, travelPackingController.getTravelPackingPlan);
 
 module.exports = router;

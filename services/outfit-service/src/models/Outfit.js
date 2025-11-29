@@ -98,6 +98,19 @@ const outfitSchema = new mongoose.Schema({
   },
   imageURL: {
     type: String // Optional: generated outfit preview image
+  },
+  // Social feature: visibility setting (only active when FEATURE_SOCIAL_ENABLED=true)
+  visibility: {
+    type: String,
+    enum: ['private', 'public'],
+    default: 'private', // SAFE: All existing outfits remain private
+    lowercase: true
+  },
+  // Social feature: share count (only populated when FEATURE_SOCIAL_ENABLED=true)
+  shareCount: {
+    type: Number,
+    default: 0,
+    min: 0
   }
 }, {
   timestamps: true,
@@ -111,6 +124,9 @@ outfitSchema.index({ userId: 1, season: 1 });
 outfitSchema.index({ userId: 1, isFavorite: 1 });
 outfitSchema.index({ userId: 1, timesWorn: -1 });
 outfitSchema.index({ 'weatherCondition.condition': 1 });
+// Social feature index: for public outfit discovery (when FEATURE_SOCIAL_ENABLED=true)
+outfitSchema.index({ visibility: 1, createdAt: -1 });
+outfitSchema.index({ userId: 1, visibility: 1 });
 
 // Virtual to calculate days since last worn
 outfitSchema.virtual('daysSinceLastWorn').get(function() {

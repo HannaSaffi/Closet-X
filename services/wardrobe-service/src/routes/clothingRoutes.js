@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const clothingController = require('../controllers/clothingController');
+const analyticsController = require('../controllers/analyticsController');
 const { authenticateToken } = require('../middleware/auth');
 const multer = require('multer');
 const cors = require('cors');
@@ -22,6 +23,7 @@ router.use(authenticateToken);
 
 router.get('/', clothingController.getAllClothingItems);
 router.get('/stats', clothingController.getWardrobeStats);
+router.get('/analytics', analyticsController.getWardrobeAnalytics);
 router.get('/:id', clothingController.getClothingItemById);
 router.post('/', upload.single('image'), clothingController.createClothingItem);
 router.put('/:id', clothingController.updateClothingItem);

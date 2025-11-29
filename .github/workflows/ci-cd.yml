@@ -163,8 +163,11 @@ jobs:
     name: Build & Push Docker Images
     runs-on: ubuntu-latest
     needs: [test-user-service, test-wardrobe-service, test-outfit-service, test-ai-service, test-image-processor, test-outfit-generator, test-fashion-advice]
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
-    
+    if: |
+      always() && 
+      github.event_name == 'push' && 
+      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+
     strategy:
       matrix:
         include:

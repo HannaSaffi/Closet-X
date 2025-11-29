@@ -3,12 +3,19 @@ const swaggerUi = require('swagger-ui-express');
 const YAML = require('yamljs');
 const path = require('path');
 
-const swaggerDocument = YAML.load(path.join(__dirname, '../../openapi.yaml'));
+// Load the OpenAPI YAML file from the service root directory
+const swaggerDocument = YAML.load(path.join(__dirname, '../../user-service-openapi.yaml'));
 
 module.exports = {
   serve: swaggerUi.serve,
   setup: swaggerUi.setup(swaggerDocument, {
     explorer: true,
-    customCss: '.swagger-ui .topbar { display: none }'
+    customCss: '.swagger-ui .topbar { display: none }',
+    swaggerOptions: {
+      persistAuthorization: true,
+      displayRequestDuration: true,
+      filter: true,
+      tryItOutEnabled: true
+    }
   })
 };

@@ -7,6 +7,7 @@ const cors = require('cors');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const authRoutes = require('./routes/authRoutes');
+const swagger = require('./config/swagger');
 require('dotenv').config();
 
 const User = require('./models/User');
@@ -31,6 +32,10 @@ app.use(cors()); // CORS
 app.use(express.json()); // JSON body parser
 app.use(express.urlencoded({ extended: true }));
 app.use('/api/auth', authRoutes);
+
+// Swagger API Documentation
+app.use('/api-docs', swagger.serve, swagger.setup);
+console.log('📚 Swagger UI available at http://localhost:3001/api-docs');
 
 // Logging
 if (NODE_ENV === 'development') {

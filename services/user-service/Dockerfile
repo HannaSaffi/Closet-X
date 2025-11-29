@@ -28,6 +28,9 @@ RUN npm install --production --legacy-peer-deps && npm cache clean --force
 # Copy application from builder (including src directory)
 COPY --from=builder --chown=nodejs:nodejs /app/src ./src
 
+# Copy OpenAPI spec from builder
+COPY --from=builder --chown=nodejs:nodejs /app/user-service-openapi.yaml ./
+
 # Create logs directory
 RUN mkdir -p logs && chown nodejs:nodejs logs
 

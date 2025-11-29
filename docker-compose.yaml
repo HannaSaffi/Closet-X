@@ -211,6 +211,28 @@ services:
       timeout: 10s
       retries: 3
 
+  # Frontend (React/Vite)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: closetx-frontend
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    environment:
+      NODE_ENV: development
+      VITE_API_URL: http://localhost:3001
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+    networks:
+      - closetx-network
+    depends_on:
+      - user-service
+      - wardrobe-service
+      - outfit-service
+
 networks:
   closetx-network:
     driver: bridge

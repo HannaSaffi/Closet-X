@@ -7,6 +7,7 @@ const { connectDatabase } = require('./config/database');
 const { connectRabbitMQ } = require('./services/messageQueue');
 const clothingRoutes = require('./routes/clothingRoutes');
 const healthRoutes = require('./routes/healthRoutes');
+const swagger = require('./config/swagger');
 
 const app = express();
 const PORT = process.env.PORT || 3003;
@@ -19,6 +20,10 @@ app.use(morgan('combined'));
 
 app.use('/health', healthRoutes);
 app.use('/api/wardrobe', clothingRoutes);
+
+// Swagger API Documentation
+app.use('/api-docs', swagger.serve, swagger.setup);
+console.log('📚 Swagger UI available at http://localhost:3003/api-docs');
 
 app.get('/', (req, res) => {
   res.json({

@@ -19,10 +19,14 @@ const dailyOutfitRoutes = require('./routes/dailyOutfitRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3003;
+const swagger = require('./config/swagger');
 
 // Middleware
 app.use(cors());
 app.use(express.json());
+// Swagger API Documentation
+app.use('/api-docs', swagger.serve, swagger.setup);
+console.log('📚 Swagger UI available at http://localhost:3002/api-docs');
 
 // Health check
 app.get('/health', async (req, res) => {

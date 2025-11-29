@@ -211,7 +211,7 @@ services:
       timeout: 10s
       retries: 3
 
-  # Frontend (React/Vite)
+  # Frontend (React + Vite)
   frontend:
     build:
       context: ./frontend
@@ -221,17 +221,20 @@ services:
     ports:
       - "5173:5173"
     environment:
-      NODE_ENV: development
-      VITE_API_URL: http://localhost:3001
+      - VITE_API_BASE_URL=http://localhost:3001
+      - VITE_USER_SERVICE_URL=http://localhost:3001
+      - VITE_WARDROBE_SERVICE_URL=http://localhost:3003
+      - VITE_OUTFIT_SERVICE_URL=http://localhost:3002
     volumes:
-      - ./frontend/src:/app/src
-      - ./frontend/public:/app/public
+      - ./frontend:/app
+      - /app/node_modules
     networks:
       - closetx-network
     depends_on:
       - user-service
       - wardrobe-service
       - outfit-service
+    command: npm run dev -- --host 0.0.0.0
 
 networks:
   closetx-network:

@@ -1,4 +1,5 @@
 // services/outfit-service/src/controllers/dailyOutfitController.js
+// services/outfit-service/src/controllers/dailyOutfitController.js
 
 const weatherService = require('../services/weatherService');
 const aiAdviceService = require('../services/aiAdviceService');
@@ -47,9 +48,19 @@ exports.getDailyOutfit = async (req, res) => {
       console.log(`🌤️  Fetching weather for ${targetCity}...`);
       
       try {
-        weather = await weatherService.getCurrentWeather(targetCity);
+        const weatherData = await weatherService.getCurrentWeather(targetCity);
+        // Extract the data from the weatherService response structure
+        weather = {
+          temp: weatherData.current.temperature.value,
+          feelsLike: weatherData.current.temperature.feelsLike,
+          main: weatherData.current.condition.main,
+          description: weatherData.current.condition.description,
+          humidity: weatherData.current.humidity,
+          windSpeed: weatherData.current.windSpeed,
+          tempCategory: weatherData.current.temperature.category
+        };
         console.log(`✅ Weather: ${weather.temp}°F, ${weather.description}`);
-        weatherRecs = weatherService.getClothingRecommendations(weather);
+        weatherRecs = weatherService.getClothingRecommendations(weatherData);
       } catch (error) {
         console.error('Weather fetch failed (non-critical):', error.message);
         // Continue without weather - it's optional

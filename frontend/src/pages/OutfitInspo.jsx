@@ -1,32 +1,64 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { getDailyOutfit } from '../services/api';
 import './OutfitInspo.css';
 
 function OutfitInspo() {
-  const [outfit, setOutfit] = useState(null);
+  const [messages, setMessages] = useState([
+    {
+      role: 'assistant',
+      content: "👋 Hi! I'm your AI stylist. Tell me what kind of outfit you're looking for today, and I'll help you pick the perfect look from your wardrobe!",
+      timestamp: new Date()
+    }
+  ]);
+  const [currentInput, setCurrentInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [weather, setWeather] = useState(null);
-  const [error, setError] = useState(null);
-  const [aiAdvice, setAiAdvice] = useState(null);
-  
-  // User inputs
-  const [userPreference, setUserPreference] = useState('');
+  const [currentOutfit, setCurrentOutfit] = useState(null);
   const [includeWeather, setIncludeWeather] = useState(false);
   const [city, setCity] = useState('New York');
+  
+  const messagesEndRef = useRef(null);
+  const inputRef = useRef(null);
 
-  const generateOutfit = async () => {
-    if (!userPreference.trim()) {
-      setError('Please tell us what kind of outfit you want!');
-      return;
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const addMessage = (role, content, outfit = null, weatherData = null, aiAdvice = null) => {
+    const newMessage = {
+      role,
+      content,
+      timestamp: new Date(),
+      outfit,
+      weather: weatherData,
+      aiAdvice
+    };
+    setMessages(prev => [...prev, newMessage]);
+    
+    if (outfit) {
+      setCurrentOutfit(outfit);
     }
+    if (weatherData) {
+      setWeather(weatherData);
+    }
+  };
 
+  const handleSendMessage = async () => {
+    if (!currentInput.trim() || loading) return;
+
+    const userMessage = currentInput.trim();
+    setCurrentInput('');
+    
+    // Add user message to chat
+    addMessage('user', userMessage);
+    
     setLoading(true);
-    setError(null);
     
     try {
       // Build the API request
       const params = {
-        preference: userPreference,
+        preference: userMessage,
         includeAI: true
       };
       
@@ -36,73 +68,91 @@ function OutfitInspo() {
       
       const data = await getDailyOutfit(params);
       
-      // Set weather data if included
+      // Extract weather data if available
+      let weatherData = null;
       if (data.weather && includeWeather) {
-        setWeather({
+        weatherData = {
           temp: data.weather.temp,
-          condition: data.weather.description,
-          icon: getWeatherIcon(data.weather.description)
-        });
-      } else {
-        setWeather(null);
+          feelsLike: data.weather.feelsLike,
+          condition: data.weather.condition || data.weather.description,
+          description: data.weather.description,
+          icon: getWeatherIcon(data.weather.description || data.weather.condition)
+        };
       }
       
-      // Set outfit items
+      // Extract outfit
+      let outfit = null;
       if (data.outfits && data.outfits[0]) {
-        setOutfit(data.outfits[0].items);
+        outfit = data.outfits[0].items;
       }
       
-      // Set AI advice if available
-      if (data.aiAdvice) {
-        setAiAdvice(data.aiAdvice);
+      // Create assistant response message
+      let responseText = '';
+      
+      if (weatherData) {
+        responseText += `🌤️ It's ${weatherData.temp}°F in ${city} - ${weatherData.description}!\n\n`;
       }
+      
+      if (outfit) {
+        responseText += `Perfect! I found a great outfit for you based on "${userMessage}". `;
+      } else {
+        responseText += `I couldn't find any matching outfits in your wardrobe. `;
+      }
+      
+      if (data.aiAdvice) {
+        responseText += `\n\n💡 ${data.aiAdvice}`;
+      }
+      
+      if (!outfit) {
+        responseText += '\n\nWould you like to try a different style, or add more items to your wardrobe?';
+      }
+      
+      addMessage('assistant', responseText, outfit, weatherData, data.aiAdvice);
       
     } catch (err) {
       console.error('Error generating outfit:', err);
-      setError('Failed to generate outfit. Please try again.');
+      addMessage('assistant', '❌ Sorry, I had trouble generating an outfit. Could you try rephrasing your request?');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
   const getWeatherIcon = (condition) => {
-    const lower = condition.toLowerCase();
+    const lower = (condition || '').toLowerCase();
     if (lower.includes('sun') || lower.includes('clear')) return '☀️';
     if (lower.includes('rain')) return '🌧️';
     if (lower.includes('cloud')) return '☁️';
     if (lower.includes('snow')) return '❄️';
+    if (lower.includes('storm')) return '⛈️';
     return '🌤️';
   };
 
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      generateOutfit();
-    }
+  const suggestedPrompts = [
+    "Something comfy for working from home",
+    "Professional outfit for a meeting",
+    "Casual look for coffee with friends",
+    "Date night outfit",
+    "Weekend brunch style"
+  ];
+
+  const handleSuggestedPrompt = (prompt) => {
+    setCurrentInput(prompt);
+    inputRef.current?.focus();
   };
 
   return (
-    <div className="outfit-inspo">
-      <div className="inspo-header">
-        <h1>✨ Outfit Inspiration</h1>
-        <p>Tell us what you need, and AI will pick the perfect outfit from your closet!</p>
-      </div>
-
-      <div className="generate-section">
-        {/* Main text input for user preferences */}
-        <div className="preference-input-container">
-          <label htmlFor="preference">What kind of outfit do you want?</label>
-          <textarea
-            id="preference"
-            value={userPreference}
-            onChange={(e) => setUserPreference(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="E.g., 'I want something comfy for working from home' or 'Give me a professional look for a meeting' or 'Casual outfit for coffee with friends'"
-            className="preference-input"
-            rows="3"
-          />
-        </div>
-
+    <div className="outfit-inspo-chat">
+      <div className="chat-header">
+        <h1>✨ AI Style Chat</h1>
+        <p>Chat with your AI stylist about your outfit needs</p>
+        
         {/* Weather toggle */}
         <div className="weather-toggle-container">
           <label className="toggle-label">
@@ -113,101 +163,117 @@ function OutfitInspo() {
               className="toggle-checkbox"
             />
             <span className="toggle-slider"></span>
-            <span className="toggle-text">Consider current weather</span>
+            <span className="toggle-text">Include weather</span>
           </label>
-        </div>
-
-        {/* City input - only show if weather is enabled */}
-        {includeWeather && (
-          <div className="city-input-container">
+          
+          {includeWeather && (
             <input
               type="text"
               value={city}
               onChange={(e) => setCity(e.target.value)}
-              placeholder="Enter your city"
-              className="city-input"
+              placeholder="City"
+              className="city-input-inline"
             />
-          </div>
-        )}
-
-        {/* Generate button */}
-        <button 
-          className="btn-generate" 
-          onClick={generateOutfit}
-          disabled={loading || !userPreference.trim()}
-        >
-          {loading ? (
-            <>
-              <span className="spinner"></span>
-              Generating your perfect outfit...
-            </>
-          ) : (
-            <>
-              🎨 Get My Outfit Recommendation
-            </>
           )}
-        </button>
+        </div>
       </div>
 
-      {error && (
-        <div className="error-message">
-          ❌ {error}
-        </div>
-      )}
-
-      {/* Weather card */}
-      {weather && (
-        <div className="weather-card">
-          <span className="weather-icon">{weather.icon}</span>
-          <div className="weather-info">
-            <h3>{weather.condition}</h3>
-            <p>{weather.temp}°F in {city}</p>
-          </div>
-        </div>
-      )}
-
-      {/* AI Advice */}
-      {aiAdvice && (
-        <div className="ai-advice-card">
-          <h3>💡 AI Styling Tip</h3>
-          <p>{aiAdvice}</p>
-        </div>
-      )}
-
-      {/* Outfit display */}
-      {outfit && (
-        <div className="outfit-display">
-          <h2>Your Perfect Outfit:</h2>
-          <p className="outfit-subtitle">Based on: "{userPreference}"</p>
-          <div className="outfit-items">
-            {outfit.map((item, index) => (
-              <div key={item._id || item.id || index} className="outfit-item">
-                <div className="outfit-item-image">
-                  <img 
-                    src={'http://localhost:3003' + item.imageUrl || item.image || 'https://via.placeholder.com/300'} 
-                    alt={item.name} 
-                  />
-                </div>
-                <div className="outfit-item-info">
-                  <p className="item-category">{item.category}</p>
-                  <p className="item-name">{item.name}</p>
-                  {item.color && <p className="item-color">Color: {item.color.primary}</p>}
-                </div>
+      <div className="chat-messages">
+        {messages.map((message, index) => (
+          <div key={index} className={`message ${message.role}`}>
+            <div className="message-bubble">
+              <div className="message-content">
+                {message.content.split('\n').map((line, i) => (
+                  <p key={i}>{line}</p>
+                ))}
               </div>
+              
+              {/* Display outfit if present */}
+              {message.outfit && (
+                <div className="message-outfit">
+                  <div className="outfit-grid">
+                    {message.outfit.map((item, idx) => (
+                      <div key={item._id || item.id || idx} className="outfit-item-mini">
+                        <img 
+                          src={'http://localhost:3003' + item.imageUrl || item.image || 'https://via.placeholder.com/150'} 
+                          alt={item.name}
+                          className="outfit-item-image-mini"
+                        />
+                        <div className="outfit-item-name-mini">{item.name}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* Display weather if present */}
+              {message.weather && (
+                <div className="message-weather">
+                  <span className="weather-icon">{message.weather.icon}</span>
+                  <span>{message.weather.temp}°F - {message.weather.description}</span>
+                </div>
+              )}
+              
+              <div className="message-timestamp">
+                {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </div>
+            </div>
+          </div>
+        ))}
+        
+        {loading && (
+          <div className="message assistant">
+            <div className="message-bubble">
+              <div className="typing-indicator">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Suggested prompts - only show when chat is empty */}
+      {messages.length === 1 && !loading && (
+        <div className="suggested-prompts">
+          <p className="prompts-label">Try asking:</p>
+          <div className="prompt-buttons">
+            {suggestedPrompts.map((prompt, idx) => (
+              <button
+                key={idx}
+                className="prompt-button"
+                onClick={() => handleSuggestedPrompt(prompt)}
+              >
+                {prompt}
+              </button>
             ))}
           </div>
-          <button className="btn-regenerate" onClick={generateOutfit}>
-            🔄 Try Another Outfit
-          </button>
         </div>
       )}
 
-      {/* Empty state */}
-      {!outfit && !loading && !error && (
-        <div className="empty-inspo">
-          <p>👆 Tell us what you're looking for and we'll find the perfect outfit from your wardrobe!</p>
-        </div>
-      )}
+      {/* Input area */}
+      <div className="chat-input-container">
+        <textarea
+          ref={inputRef}
+          value={currentInput}
+          onChange={(e) => setCurrentInput(e.target.value)}
+          onKeyPress={handleKeyPress}
+          placeholder="Tell me what you're looking for..."
+          className="chat-input"
+          rows="2"
+          disabled={loading}
+        />
+        <button 
+          className="send-button" 
+          onClick={handleSendMessage}
+          disabled={loading || !currentInput.trim()}
+        >
+          {loading ? '⏳' : '🚀'}
+        </button>
+      </div>
     </div>
   );
 }

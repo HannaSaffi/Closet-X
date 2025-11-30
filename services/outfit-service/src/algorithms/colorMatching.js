@@ -287,7 +287,43 @@ class ColorMatching {
   }
 }
 
+// Create instance
+const colorMatchingInstance = new ColorMatching();
+
+// Export both the instance and additional helper functions
 module.exports = {
-  colorMatching: new ColorMatching(),
-  ColorMatching
+  colorMatching: colorMatchingInstance,
+  ColorMatching,
+  // Expose these methods directly for backward compatibility
+  isNeutralColor: (color) => colorMatchingInstance.isNeutral(color),
+  getOutfitColorHarmony: (items) => {
+    // Handle both array of colors and array of items with color.primary
+    const colors = items.map(item => 
+      typeof item === 'string' ? item : item?.color?.primary
+    ).filter(Boolean);
+    return colorMatchingInstance.calculateColorHarmony(colors);
+  },
+  matchWithNeutral: (color1, color2) => {
+    // Special function for neutral matching
+    if (colorMatchingInstance.isNeutral(color1) || colorMatchingInstance.isNeutral(color2)) {
+      return 0.9; // High score for neutral combinations
+    }
+    return colorMatchingInstance.getColorCompatibility(color1, color2);
+  },
+  getStyleGroup: (style) => {
+    // Simple style grouping for compatibility
+    const styleGroups = {
+      casual: ['casual', 'sporty', 'athletic'],
+      formal: ['formal', 'business', 'elegant'],
+      trendy: ['trendy', 'modern', 'fashionable'],
+      classic: ['classic', 'timeless', 'traditional']
+    };
+    
+    for (const [group, styles] of Object.entries(styleGroups)) {
+      if (styles.includes(style?.toLowerCase())) {
+        return group;
+      }
+    }
+    return 'casual'; // default
+  }
 };

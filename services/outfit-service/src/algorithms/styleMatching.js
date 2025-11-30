@@ -335,7 +335,28 @@ class StyleMatching {
   }
 }
 
+// Create instance
+const styleMatchingInstance = new StyleMatching();
+
 module.exports = {
-  styleMatching: new StyleMatching(),
-  StyleMatching
+  styleMatching: styleMatchingInstance,
+  StyleMatching,
+  // Export helper function for backward compatibility
+  getStyleGroup: (style) => {
+    // Simple style grouping for compatibility
+    const styleGroups = {
+      casual: ['casual', 'sporty', 'bohemian'],
+      formal: ['formal', 'classic', 'minimalist'],
+      trendy: ['trendy', 'vintage'],
+      athletic: ['sporty', 'casual']
+    };
+    
+    style = style?.toLowerCase();
+    for (const [group, styles] of Object.entries(styleGroups)) {
+      if (styles.includes(style)) {
+        return group;
+      }
+    }
+    return 'casual'; // default
+  }
 };

@@ -5,7 +5,7 @@
 services:
   # MongoDB
   mongodb:
-    image: mongo:7.0
+    image: mongo:4.4
     container_name: closetx-mongodb
     restart: unless-stopped
     ports:
@@ -108,10 +108,10 @@ services:
       JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-minimum-32-characters-long}
       USER_SERVICE_URL: ${USER_SERVICE_URL:-http://user-service:3001}
       WARDROBE_SERVICE_URL: ${WARDROBE_SERVICE_URL:-http://wardrobe-service:3003}
+      REMOVEBG_API_KEY: ${REMOVEBG_API_KEY:-47xDFqrQNEqUqetxtPLi7JL2}
       OLLAMA_HOST: ${OLLAMA_HOST:-}
       OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY}
       GOOGLE_VISION_API_KEY: ${GOOGLE_VISION_API_KEY:-}
-      REMOVEBG_API_KEY: ${REMOVEBG_API_KEY:-}
     depends_on:
       mongodb:
         condition: service_healthy
@@ -169,6 +169,7 @@ services:
       MONGO_URI: mongodb://${MONGO_INITDB_ROOT_USERNAME:-closetxuser}:${MONGO_INITDB_ROOT_PASSWORD:-supersecurepassword}@mongodb:27017/closetx_wardrobe?authSource=admin
       RABBITMQ_URL: ${RABBITMQ_URL:-amqp://guest:guest@rabbitmq:5672}
       WARDROBE_SERVICE_URL: ${WARDROBE_SERVICE_URL:-http://wardrobe-service:3003}
+      REMOVEBG_API_KEY: ${REMOVEBG_API_KEY:-47xDFqrQNEqUqetxtPLi7JL2}      
       OLLAMA_HOST: ${OLLAMA_HOST:-}
       GOOGLE_VISION_API_KEY: ${GOOGLE_VISION_API_KEY:-}
       CLARIFAI_PAT: ${CLARIFAI_PAT:-}

@@ -9,10 +9,9 @@ on:
 env:
   HOMELAB_HARBOR: harbor.javajon.duckdns.org
   GKE_HARBOR: harbor.javajon-gke.duckdns.org
-  HARBOR_PROJECT: library
+  HARBOR_PROJECT: library  # Changed from "kates"
   NODE_VERSION: '18'
   PYTHON_VERSION: '3.11'
-  # Choose cluster: homelab or gke
   TARGET_CLUSTER: homelab
 
 jobs:
@@ -174,24 +173,31 @@ jobs:
           - service: user-service
             path: services/user-service
             dockerfile: Dockerfile
+            context_is_root: false
           - service: wardrobe-service
             path: services/wardrobe-service
             dockerfile: Dockerfile
+            context_is_root: false
           - service: outfit-service
             path: services/outfit-service
             dockerfile: Dockerfile
+            context_is_root: false
           - service: ai-advice-service
             path: services/ai-advice-service
             dockerfile: Dockerfile
+            context_is_root: false
           - service: image-processor
             path: workers/image-processor
             dockerfile: Dockerfile
+            context_is_root: false
           - service: outfit-generator
             path: workers/outfit-generator
             dockerfile: Dockerfile
+            context_is_root: true  # Needs project root for shared/
           - service: fashion-advice
             path: workers/fashion-advice
             dockerfile: Dockerfile
+            context_is_root: true  # Needs project root for shared/
     
     steps:
       - uses: actions/checkout@v3
@@ -238,7 +244,8 @@ jobs:
       - name: Build and push to Homelab Harbor
         uses: docker/build-push-action@v4
         with:
-          context: ${{ matrix.path }}
+          # Use project root as context for workers that need shared/
+          context: ${{ matrix.context_is_root == true && '.' || matrix.path }}
           file: ${{ matrix.path }}/${{ matrix.dockerfile }}
           push: true
           tags: ${{ steps.meta-homelab.outputs.tags }}
@@ -249,7 +256,8 @@ jobs:
       - name: Build and push to GKE Harbor
         uses: docker/build-push-action@v4
         with:
-          context: ${{ matrix.path }}
+          # Use project root as context for workers that need shared/
+          context: ${{ matrix.context_is_root == true && '.' || matrix.path }}
           file: ${{ matrix.path }}/${{ matrix.dockerfile }}
           push: true
           tags: ${{ steps.meta-gke.outputs.tags }}
@@ -319,7 +327,7 @@ jobs:
           kubectl apply -f $MANIFESTS_DIR/04-user-service.yaml
           kubectl apply -f $MANIFESTS_DIR/05-wardrobe-service.yaml
           kubectl apply -f $MANIFESTS_DIR/06-outfit-service.yaml
-          kubectl apply -f $MANIFESTS_DIR/07-advice-service.yaml
+          kubectl apply -f $MANIFESTS_DIR/07-ai-advice-service.yaml
           
           # Deploy workers
           kubectl apply -f $MANIFESTS_DIR/08-image-processor.yaml

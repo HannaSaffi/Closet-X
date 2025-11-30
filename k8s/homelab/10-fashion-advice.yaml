@@ -15,7 +15,8 @@ spec:
     spec:
       containers:
       - name: fashion-advice
-        image: harbor.javajon.duckdns.org/kates/fashion-advice:v1.0.0
+        image: harbor.javajon.duckdns.org/library/fashion-advice:v1.0.0
+        imagePullPolicy: Always
         env:
         - name: NODE_ENV
           value: "production"

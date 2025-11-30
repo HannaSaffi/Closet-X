@@ -4,14 +4,17 @@ FROM node:18-alpine
 # Set working directory
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Copy package files from worker
+COPY workers/outfit-generator/package*.json ./
 
 # Install dependencies
 RUN npm ci --only=production
 
-# Copy application code
-COPY . .
+# Copy shared models
+COPY --chown=nodejs:nodejs shared /app/shared
+
+# Copy worker source code (but not package.json again)
+COPY --chown=nodejs:nodejs workers/outfit-generator/src ./src
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \

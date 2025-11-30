@@ -1,0 +1,44 @@
+# Dependencies
+**/node_modules
+**/venv
+**/.venv
+
+# Build outputs
+**/dist
+**/build
+**/coverage
+
+# Git
+.git
+.github
+
+# IDE
+.vscode
+.idea
+**/.DS_Store
+
+# Logs
+**/*.log
+**/logs
+
+# Test files
+**/tests
+**/__tests__
+**/*.test.js
+**/*.spec.js
+
+# Documentation
+*.md
+!README.md
+
+# CI/CD
+.github
+
+# Database
+**/mongodb-data
+**/rabbitmq-data
+
+# Misc
+**/.env.local
+**/.env.*.local
+test*.png

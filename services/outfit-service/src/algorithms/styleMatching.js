@@ -338,25 +338,73 @@ class StyleMatching {
 // Create instance
 const styleMatchingInstance = new StyleMatching();
 
+// Export instance and individual methods for testing and backward compatibility
 module.exports = {
   styleMatching: styleMatchingInstance,
   StyleMatching,
-  // Export helper function for backward compatibility
+  // Export individual methods for testing and backward compatibility
   getStyleGroup: (style) => {
-    // Simple style grouping for compatibility
-    const styleGroups = {
-      casual: ['casual', 'sporty', 'bohemian'],
-      formal: ['formal', 'classic', 'minimalist'],
-      trendy: ['trendy', 'vintage'],
-      athletic: ['sporty', 'casual']
+    if (!style) return 'casual';
+    const lower = style.toLowerCase();
+    
+    if (['casual', 'relaxed', 'comfortable', 'everyday', 'sporty', 'bohemian'].includes(lower)) return 'casual';
+    if (['formal', 'business', 'elegant', 'professional', 'classic', 'minimalist'].includes(lower)) return 'formal';
+    if (['athletic', 'sporty', 'active', 'sport'].includes(lower)) return 'athletic';
+    if (['trendy', 'modern', 'fashionable', 'vintage'].includes(lower)) return 'trendy';
+    
+    return 'casual';
+  },
+  getOutfitStyleScore: (items) => {
+    if (!items || items.length === 0) return 1;
+    if (items.length === 1) return 1;
+    
+    const styles = items.map(i => typeof i === 'string' ? i : (i.style || 'casual'));
+    return styleMatchingInstance.calculateStyleCoherence(styles);
+  },
+  matchStyleToOccasion: (style, occasion) => {
+    const occasionFormality = {
+      'wedding': 1.0,
+      'formal': 0.9,
+      'business': 0.9,
+      'work': 0.7,
+      'date': 0.6,
+      'casual': 0.3,
+      'athletic': 0.1
     };
     
-    style = style?.toLowerCase();
-    for (const [group, styles] of Object.entries(styleGroups)) {
-      if (styles.includes(style)) {
-        return group;
-      }
+    const styleFormality = {
+      'formal': 1.0,
+      'business': 0.9,
+      'smart casual': 0.7,
+      'casual': 0.3,
+      'athletic': 0.1
+    };
+    
+    const occLevel = occasionFormality[occasion?.toLowerCase()] || 0.5;
+    const styleLevel = styleFormality[style?.toLowerCase()] || 0.5;
+    
+    const diff = Math.abs(occLevel - styleLevel);
+    return Math.max(0, 1 - diff);
+  },
+  getStyleDistribution: (items) => {
+    if (!items || items.length === 0) return {};
+    
+    const counts = {};
+    items.forEach(item => {
+      const style = (typeof item === 'string' ? item : item.style) || 'casual';
+      counts[style] = (counts[style] || 0) + 1;
+    });
+    
+    const total = items.length;
+    const distribution = {};
+    for (const [style, count] of Object.entries(counts)) {
+      distribution[style] = Math.round((count / total) * 100);
     }
-    return 'casual'; // default
+    
+    return distribution;
+  },
+  validateOutfitStyles: (items) => {
+    const styles = items.map(i => typeof i === 'string' ? i : (i.style || 'casual'));
+    return styleMatchingInstance.validateOutfitStyles(styles);
   }
 };

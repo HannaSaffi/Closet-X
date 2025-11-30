@@ -290,17 +290,18 @@ class ColorMatching {
 // Create instance
 const colorMatchingInstance = new ColorMatching();
 
-// Export both the instance and additional helper functions
+// Export instance and individual methods for testing and backward compatibility
 module.exports = {
   colorMatching: colorMatchingInstance,
   ColorMatching,
-  // Expose these methods directly for backward compatibility
+  // Export individual methods for testing and backward compatibility
   isNeutralColor: (color) => colorMatchingInstance.isNeutral(color),
   getOutfitColorHarmony: (items) => {
     // Handle both array of colors and array of items with color.primary
-    const colors = items.map(item => 
-      typeof item === 'string' ? item : item?.color?.primary
-    ).filter(Boolean);
+    const colors = items.map(item => {
+      if (typeof item === 'string') return item;
+      return item?.color?.primary || item?.color || 'gray';
+    });
     return colorMatchingInstance.calculateColorHarmony(colors);
   },
   matchWithNeutral: (color1, color2) => {
@@ -309,6 +310,13 @@ module.exports = {
       return 0.9; // High score for neutral combinations
     }
     return colorMatchingInstance.getColorCompatibility(color1, color2);
+  },
+  validateOutfitColors: (items) => {
+    const colors = items.map(item => {
+      if (typeof item === 'string') return item;
+      return item?.color?.primary || item?.color || 'gray';
+    });
+    return colorMatchingInstance.validateOutfitColors(colors);
   },
   getStyleGroup: (style) => {
     // Simple style grouping for compatibility

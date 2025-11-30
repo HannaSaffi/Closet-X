@@ -67,23 +67,30 @@ function OutfitInspo() {
       }
       
       const data = await getDailyOutfit(params);
-      
+
+      // Check if it's a conversational response
+      if (data.conversational) {
+        addMessage('assistant', data.message);
+        setLoading(false);
+        return;
+      }
+
       // Extract weather data if available
       let weatherData = null;
-      if (data.weather && includeWeather) {
+      if (data.data?.weather && includeWeather) {
         weatherData = {
-          temp: data.weather.temp,
-          feelsLike: data.weather.feelsLike,
-          condition: data.weather.condition || data.weather.description,
-          description: data.weather.description,
-          icon: getWeatherIcon(data.weather.description || data.weather.condition)
+          temp: data.data.weather.temp,
+          feelsLike: data.data.weather.feelsLike,
+          condition: data.data.weather.condition || data.data.weather.description,
+          description: data.data.weather.description,
+          icon: getWeatherIcon(data.data.weather.description || data.data.weather.condition)
         };
       }
       
       // Extract outfit
       let outfit = null;
-      if (data.outfits && data.outfits[0]) {
-        outfit = data.outfits[0].items;
+      if (data.data?.outfits && data.data.outfits[0]) {
+        outfit = data.data.outfits[0].items;
       }
       
       // Create assistant response message
@@ -99,15 +106,15 @@ function OutfitInspo() {
         responseText += `I couldn't find any matching outfits in your wardrobe. `;
       }
       
-      if (data.aiAdvice) {
-        responseText += `\n\n💡 ${data.aiAdvice}`;
+      if (data.data?.aiAdvice) {
+        responseText += `\n\n💡 ${data.data.aiAdvice}`;
       }
       
       if (!outfit) {
         responseText += '\n\nWould you like to try a different style, or add more items to your wardrobe?';
       }
       
-      addMessage('assistant', responseText, outfit, weatherData, data.aiAdvice);
+      addMessage('assistant', responseText, outfit, weatherData, data.data?.aiAdvice);
       
     } catch (err) {
       console.error('Error generating outfit:', err);
@@ -196,6 +203,7 @@ function OutfitInspo() {
                       <div key={item._id || item.id || idx} className="outfit-item-mini">
                         <img 
                           src={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'}${item.imageUrl}` || item.image || 'https://via.placeholder.com/150'}
+                          alt={item.name}
                           className="outfit-item-image-mini"
                         />
                         <div className="outfit-item-name-mini">{item.name}</div>

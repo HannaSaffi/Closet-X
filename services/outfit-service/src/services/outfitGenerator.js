@@ -31,10 +31,14 @@ class OutfitGeneratorService {
       // Get weather data if needed
       let weatherData = null;
       let weatherRecommendations = null;
-      
-      if (includeWeather) {
-        weatherData = weather || await weatherService.getCurrentWeather();
-        weatherRecommendations = weatherService.getClothingRecommendations(weatherData);
+
+      if (includeWeather && weather) {
+        try {
+          weatherRecommendations = weatherService.getClothingRecommendations(weather);
+        } catch (error) {
+          console.error('Weather recommendations failed:', error.message);
+          weatherRecommendations = null;
+        }
       }
 
       // Generate outfit combinations
@@ -253,9 +257,10 @@ class OutfitGeneratorService {
    * Check if outfit needs outerwear based on weather
    */
   needsOuterwear(weatherRecommendations) {
-    return weatherRecommendations.required.includes('outerwear') ||
-           weatherRecommendations.temperature === 'cold' ||
-           weatherRecommendations.temperature === 'freezing';
+  if (!weatherRecommendations) return false;
+  return weatherRecommendations.required?.includes('outerwear') ||
+         weatherRecommendations.temperature === 'cold' ||
+         weatherRecommendations.temperature === 'freezing';
   }
 
   /**
@@ -269,8 +274,10 @@ class OutfitGeneratorService {
    * Check if item is weather appropriate
    */
   isWeatherAppropriate(item, weatherRecommendations) {
+    if (!weatherRecommendations) return true;
+    
     // Check if item category is in avoid list
-    if (weatherRecommendations.avoid.some(a => 
+    if (weatherRecommendations.avoid?.some(a => 
       item.subcategory?.includes(a) || item.category.includes(a)
     )) {
       return false;

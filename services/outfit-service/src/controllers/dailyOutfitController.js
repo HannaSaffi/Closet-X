@@ -1,11 +1,77 @@
 // services/outfit-service/src/controllers/dailyOutfitController.js
-// services/outfit-service/src/controllers/dailyOutfitController.js
 
 const weatherService = require('../services/weatherService');
 const aiAdviceService = require('../services/aiAdviceService');
 const outfitGenerator = require('../services/outfitGenerator');
 const { colorMatching } = require('../algorithms/colorMatching');
 const { styleMatching } = require('../algorithms/styleMatching');
+
+/**
+ * Detect if user input is conversational vs outfit request
+ */
+function isConversationalQuery(text) {
+  if (!text || text.trim().length === 0) {
+    return { isConversational: false };
+  }
+  
+  const lowerText = text.toLowerCase().trim();
+  
+  // Greetings
+  const greetings = ['hello', 'hi', 'hey', 'how are you', 'whats up', "what's up", 'good morning', 'good afternoon', 'good evening'];
+  if (greetings.some(g => lowerText === g || lowerText.startsWith(g))) {
+    return { isConversational: true, type: 'greeting' };
+  }
+  
+  // Color/style questions without outfit context
+  const colorQuestions = ['what color', 'which color', 'color goes with', 'color match', 'best color'];
+  const hasColorQuestion = colorQuestions.some(q => lowerText.includes(q));
+  const hasOutfitContext = lowerText.includes('outfit') || lowerText.includes('wear') || lowerText.includes('dress');
+  
+  if (hasColorQuestion && !hasOutfitContext) {
+    return { isConversational: true, type: 'color-advice' };
+  }
+  
+  // General questions without style context
+  const questionStarters = ['how do', 'what is', 'tell me', 'explain', 'why', 'when', 'where'];
+  if (questionStarters.some(q => lowerText.startsWith(q)) && !hasOutfitContext) {
+    return { isConversational: true, type: 'general' };
+  }
+  
+  // Very short responses
+  if (lowerText.length < 10 && !hasOutfitContext) {
+    return { isConversational: true, type: 'general' };
+  }
+  
+  return { isConversational: false };
+}
+
+/**
+ * Generate conversational response
+ */
+function generateConversationalResponse(queryType, originalText) {
+  const lowerText = originalText.toLowerCase();
+  
+  switch (queryType) {
+    case 'greeting':
+      return "👋 Hi there! I'm your AI stylist. I can help you pick the perfect outfit from your wardrobe. Just tell me what occasion you're dressing for, like 'casual office meeting' or 'weekend brunch'!";
+    
+    case 'color-advice':
+      // Extract color if mentioned
+      const colors = ['red', 'blue', 'green', 'yellow', 'black', 'white', 'pink', 'purple', 'orange', 'brown', 'gray', 'beige'];
+      const mentionedColor = colors.find(c => lowerText.includes(c));
+      
+      if (mentionedColor) {
+        return `🎨 Great question! ${mentionedColor.charAt(0).toUpperCase() + mentionedColor.slice(1)} is a versatile color. To help you create an actual outfit with ${mentionedColor}, try asking something like: "Show me a casual outfit with ${mentionedColor}" or "What should I wear with my ${mentionedColor} top?" I'll pick items from your wardrobe!`;
+      }
+      return "🎨 I'd love to help with color combinations! Try asking me for a specific outfit, like 'something casual for work' or 'date night outfit', and I'll create combinations with great colors from your wardrobe!";
+    
+    case 'general':
+      return "💡 I'm here to help you choose outfits! Try asking me things like:\n• 'What should I wear for a date?'\n• 'Something comfy for working from home'\n• 'Professional outfit for a meeting'\n• 'Casual look for coffee with friends'\n\nI'll create outfits from your wardrobe!";
+    
+    default:
+      return "I'm your outfit stylist! Tell me what you'd like to wear and I'll help you create the perfect look from your wardrobe.";
+  }
+}
 
 /**
  * MAIN ENDPOINT: "What Should I Wear Today"
@@ -37,6 +103,22 @@ exports.getDailyOutfit = async (req, res) => {
     const targetCity = city || 'New York';
 
     console.log('📋 Parsed preferences:', parsedPreferences);
+
+    // ========================================================================
+    // STEP 1.5: Check if this is a conversational query vs outfit request
+    // ========================================================================
+    const conversationCheck = isConversationalQuery(preference);
+    if (conversationCheck.isConversational) {
+      console.log(`💬 Detected conversational query: ${conversationCheck.type}`);
+      return res.status(200).json({
+        success: true,
+        conversational: true,
+        message: generateConversationalResponse(conversationCheck.type, preference),
+        data: {
+          outfits: []
+        }
+      });
+    }
 
     // ========================================================================
     // STEP 2: Get Current Weather (if requested)

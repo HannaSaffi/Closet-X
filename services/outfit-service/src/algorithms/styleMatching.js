@@ -1,4 +1,5 @@
 // services/outfit-service/src/algorithms/styleMatching.js
+// services/outfit-service/src/algorithms/styleMatching.js
 
 /**
  * Style matching algorithm for outfit coherence
@@ -335,7 +336,74 @@ class StyleMatching {
   }
 }
 
+// Create instance
+const styleMatchingInstance = new StyleMatching();
+
+// Export instance and individual methods for testing
 module.exports = {
-  styleMatching: new StyleMatching(),
-  StyleMatching
+  styleMatching: styleMatchingInstance,
+  StyleMatching,
+  // Export individual methods for testing
+  getStyleGroup: (style) => {
+    if (!style) return 'casual';
+    const lower = style.toLowerCase();
+    
+    if (['casual', 'relaxed', 'comfortable', 'everyday'].includes(lower)) return 'casual';
+    if (['formal', 'business', 'elegant', 'professional'].includes(lower)) return 'formal';
+    if (['athletic', 'sporty', 'active', 'sport'].includes(lower)) return 'athletic';
+    
+    return 'casual';
+  },
+  getOutfitStyleScore: (items) => {
+    if (!items || items.length === 0) return 1;
+    if (items.length === 1) return 1;
+    
+    return styleMatchingInstance.calculateStyleCoherence(items);
+  },
+  matchStyleToOccasion: (style, occasion) => {
+    const occasionFormality = {
+      'wedding': 1.0,
+      'formal': 0.9,
+      'business': 0.9,
+      'work': 0.7,
+      'date': 0.6,
+      'casual': 0.3,
+      'athletic': 0.1
+    };
+    
+    const styleFormality = {
+      'formal': 1.0,
+      'business': 0.9,
+      'smart casual': 0.7,
+      'casual': 0.3,
+      'athletic': 0.1
+    };
+    
+    const occLevel = occasionFormality[occasion?.toLowerCase()] || 0.5;
+    const styleLevel = styleFormality[style?.toLowerCase()] || 0.5;
+    
+    const diff = Math.abs(occLevel - styleLevel);
+    return Math.max(0, 1 - diff);
+  },
+  getStyleDistribution: (items) => {
+    if (!items || items.length === 0) return {};
+    
+    const counts = {};
+    items.forEach(item => {
+      const style = item.style || 'casual';
+      counts[style] = (counts[style] || 0) + 1;
+    });
+    
+    const total = items.length;
+    const distribution = {};
+    for (const [style, count] of Object.entries(counts)) {
+      distribution[style] = Math.round((count / total) * 100);
+    }
+    
+    return distribution;
+  },
+  validateOutfitStyles: (items) => {
+    const styles = items.map(i => typeof i === 'string' ? i : (i.style || 'casual'));
+    return styleMatchingInstance.validateOutfitStyles(styles);
+  }
 };

@@ -1,4 +1,5 @@
 // services/outfit-service/src/algorithms/colorMatching.js
+// services/outfit-service/src/algorithms/colorMatching.js
 
 /**
  * Color theory-based matching algorithm for outfit generation
@@ -287,7 +288,27 @@ class ColorMatching {
   }
 }
 
+// Create instance
+const colorMatchingInstance = new ColorMatching();
+
+// Export instance and individual methods for testing
 module.exports = {
-  colorMatching: new ColorMatching(),
-  ColorMatching
+  colorMatching: colorMatchingInstance,
+  ColorMatching,
+  // Export individual methods for testing
+  isNeutralColor: (color) => colorMatchingInstance.isNeutral(color),
+  getOutfitColorHarmony: (items) => {
+    const colors = items.map(i => typeof i === 'string' ? i : (i.color?.primary || i.color || 'gray'));
+    return colorMatchingInstance.calculateColorHarmony(colors);
+  },
+  matchWithNeutral: (color1, color2) => {
+    if (colorMatchingInstance.isNeutral(color1) || colorMatchingInstance.isNeutral(color2)) {
+      return 0.9;
+    }
+    return 0.5;
+  },
+  validateOutfitColors: (items) => {
+    const colors = items.map(i => typeof i === 'string' ? i : (i.color?.primary || i.color || 'gray'));
+    return colorMatchingInstance.validateOutfitColors(colors);
+  }
 };

@@ -4,32 +4,34 @@ import './Home.css';
 import axios from 'axios';
 
 function Home() {
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
+  
   const [stats, setStats] = useState({
-  totalItems: 0,
-  outfitsCreated: 0,
-  categories: 0
-});
+    totalItems: 0,
+    outfitsCreated: 0,
+    categories: 0
+  });
 
-useEffect(() => {
-  const fetchStats = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:3003/api/wardrobe/stats', {
-       headers: { Authorization: `Bearer ${token}` }
-      });
-      console.log("Stats response:", JSON.stringify(response.data, null, 2));      
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await axios.get(`${API_BASE_URL}/api/wardrobe/stats`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        console.log("Stats response:", JSON.stringify(response.data, null, 2));      
 
-      setStats({
-       totalItems: response.data.data.overall?.totalItems || 0,
-       outfitsCreated: 0,
-       categories: response.data.data.byCategory?.length || 0
-      });
-    } catch (error) {
-      console.error('Failed to fetch stats:', error);
-    }
-  };
-  fetchStats();
-}, []);
+        setStats({
+          totalItems: response.data.data.overall?.totalItems || 0,
+          outfitsCreated: 0,
+          categories: response.data.data.byCategory?.length || 0
+        });
+      } catch (error) {
+        console.error('Failed to fetch stats:', error);
+      }
+    };
+    fetchStats();
+  }, []);
 
   return (
     <div className="home">

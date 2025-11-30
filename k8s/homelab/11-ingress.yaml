@@ -4,10 +4,10 @@ metadata:
   name: closetx-ingress
   namespace: kates-closetx
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
     nginx.ingress.kubernetes.io/cors-allow-origin: "*"
     nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
     nginx.ingress.kubernetes.io/cors-allow-headers: "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
 spec:
   ingressClassName: nginx
   rules:
@@ -32,6 +32,15 @@ spec:
             port:
               number: 3003
       
+      # Outfit Service - Daily outfit (MUST BE BEFORE /api/outfits)
+      - path: /api/daily-outfit
+        pathType: Prefix
+        backend:
+          service:
+            name: outfit-service
+            port:
+              number: 3002
+      
       # Outfit Service - Outfit generation
       - path: /api/outfits
         pathType: Prefix
@@ -50,35 +59,20 @@ spec:
             port:
               number: 3004
       
-      # Health checks 
-      - path: /health/user
-        pathType: Exact
+      # Health checks
+      - path: /health
+        pathType: Prefix
         backend:
           service:
             name: user-service
             port:
               number: 3001
       
-      - path: /health/wardrobe
-        pathType: Exact
+      # Frontend - MUST BE LAST (catch-all)
+      - path: /
+        pathType: Prefix
         backend:
           service:
-            name: wardrobe-service
+            name: frontend
             port:
-              number: 3003
-      
-      - path: /health/outfit
-        pathType: Exact
-        backend:
-          service:
-            name: outfit-service
-            port:
-              number: 3002
-      
-      - path: /health/ai
-        pathType: Exact
-        backend:
-          service:
-            name: ai-advice-service
-            port:
-              number: 3004
+              number: 80

@@ -4,15 +4,15 @@
 const mongoose = require('mongoose');
 require('dotenv').config();
 
-const { RabbitMQConnection, QUEUES, consumeQueue, setupRabbitMQ } = require('../../../shared/config/rabbitmq');
-const ollamaService = require('../../../../shared/services/ollamaService');
-const Clothing = require('../../../../shared/models/Clothing');
-const User = require('../../../../services/user-service/src/models/User');
+const { RabbitMQConnection, QUEUES, consumeQueue, setupRabbitMQ } = require('../shared/config/rabbitmq');
+const ollamaService = require('../shared/services/ollamaService');
+const Clothing = require('../shared/models/Clothing');
+const User = require('../shared/models/User');
 
 // Connect to MongoDB
 async function connectDB() {
   try {
-    await mongoose.connect(process.env.MONGODB_URI);
+    await mongoose.connect(process.env.MONGO_URI);
     console.log('✅ Connected to MongoDB');
   } catch (error) {
     console.error('MongoDB connection error:', error);
@@ -78,19 +78,20 @@ async function startWorker() {
     
     // Connect to RabbitMQ
     global.rabbitMQ = new RabbitMQConnection();
-    const channel = await rabbitMQ.connect();
+    const channel = await rabbitMQ.connect(process.env.RABBITMQ_URL);
     
     // Setup queues
-    const { setupRabbitMQ } = require('../../../shared/config/rabbitmq');
+    const { setupRabbitMQ } = require('../shared/config/rabbitmq');
     await setupRabbitMQ(channel);
     
     // Check Ollama availability
-    const ollamaHealth = await ollamaService.healthCheck();
-    console.log('🤖 Ollama status:', ollamaHealth.status);
-    
-    if (ollamaHealth.status !== 'healthy') {
-      console.warn('⚠️  Ollama not available! Worker will fail.');
+    const ollamaAvailable = await ollamaService.isAvailable();
+    console.log('🤖 Ollama status:', ollamaAvailable ? 'available' : 'unavailable');
+
+    if (!ollamaAvailable) {
+      console.warn('⚠️  Ollama not available! Will use fallback advice.');
     }
+
     
     // Start consuming messages
     await consumeQueue(channel, QUEUES.FASHION_ADVICE, processFashionAdvice);

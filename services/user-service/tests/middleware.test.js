@@ -40,9 +40,11 @@ describe('Auth Middleware Tests', () => {
       const mockUser = {
         _id: 'user123',
         email: 'test@example.com',
-        name: 'Test User'
+        name: 'Test User',
+        isActive: true,
+        authTokens: [{ token: 'valid.jwt.token' }]
       };
-      User.findById.mockResolvedValue(mockUser);
+      User.findOne.mockResolvedValue(mockUser);
 
       // Execute
       await authMiddleware.authenticate(mockReq, mockRes, mockNext);
@@ -123,7 +125,7 @@ describe('Auth Middleware Tests', () => {
       // Setup
       mockReq.header.mockReturnValue('Bearer valid.jwt.token');
       jwt.verify.mockReturnValue({ userId: 'nonexistent' });
-      User.findById.mockResolvedValue(null);
+      User.findOne.mockResolvedValue(null);
 
       // Execute
       await authMiddleware.authenticate(mockReq, mockRes, mockNext);
@@ -132,7 +134,7 @@ describe('Auth Middleware Tests', () => {
       expect(mockRes.status).toHaveBeenCalledWith(401);
       expect(mockRes.json).toHaveBeenCalledWith({
         success: false,
-        error: 'Authentication failed'
+        error: 'Invalid or expired token. Please login again.'
       });
     });
 
@@ -171,9 +173,11 @@ describe('Auth Middleware Tests', () => {
       const mockUser = {
         _id: 'user123',
         email: 'test@example.com',
-        name: 'Test User'
+        name: 'Test User',
+        isActive: true,
+        authTokens: [{ token: 'my.jwt.token' }]
       };
-      User.findById.mockResolvedValue(mockUser);
+      User.findOne.mockResolvedValue(mockUser);
 
       // Execute
       await authMiddleware.authenticate(mockReq, mockRes, mockNext);
@@ -187,7 +191,11 @@ describe('Auth Middleware Tests', () => {
       // Setup
       mockReq.header.mockReturnValue('Bearer my.jwt.token');
       jwt.verify.mockReturnValue({ userId: 'user123' });
-      User.findById.mockResolvedValue({ _id: 'user123' });
+      User.findOne.mockResolvedValue({ 
+        _id: 'user123', 
+        isActive: true,
+        authTokens: [{ token: 'my.jwt.token' }]
+      });
 
       // Execute
       await authMiddleware.authenticate(mockReq, mockRes, mockNext);
@@ -249,7 +257,11 @@ describe('Auth Middleware Tests', () => {
       // Setup
       mockReq.header.mockReturnValue('Bearer standard.token');
       jwt.verify.mockReturnValue({ userId: 'user123' });
-      User.findById.mockResolvedValue({ _id: 'user123' });
+      User.findOne.mockResolvedValue({ 
+        _id: 'user123', 
+        isActive: true,
+        authTokens: [{ token: 'standard.token' }]
+      });
 
       // Execute
       await authMiddleware.authenticate(mockReq, mockRes, mockNext);

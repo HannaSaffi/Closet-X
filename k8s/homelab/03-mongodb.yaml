@@ -1,4 +1,5 @@
 #k8s/03-mongodb.yaml
+#k8s/03-mongodb.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -51,7 +52,7 @@ spec:
     spec:
       containers:
       - name: mongodb
-        image: mongo:7.0
+        image: mongo:4.4
         ports:
         - containerPort: 27017
         env:
@@ -80,11 +81,23 @@ spec:
         livenessProbe:
           exec:
             command:
-            - mongosh
+            - mongo
             - --eval
             - "db.adminCommand('ping')"
           initialDelaySeconds: 30
           periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+            - mongo
+            - --eval
+            - "db.adminCommand('ping')"
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 5
+          failureThreshold: 3
       volumes:
       - name: mongodb-init-script
         configMap:
@@ -93,7 +106,7 @@ spec:
   - metadata:
       name: mongodb-data
     spec:
-      accessModes: ["ReadWriteOnce"]
+      accessModes: [ "ReadWriteOnce" ]
       resources:
         requests:
           storage: 5Gi
@@ -105,9 +118,9 @@ metadata:
   name: mongodb-service
   namespace: kates-closetx
 spec:
-  clusterIP: None
+  selector:
+    app: mongodb
   ports:
   - port: 27017
     targetPort: 27017
-  selector:
-    app: mongodb
+  clusterIP: None

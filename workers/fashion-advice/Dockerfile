@@ -4,14 +4,17 @@ FROM node:18-alpine
 # Set working directory
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Copy package files from worker
+COPY workers/fashion-advice/package*.json ./
 
 # Install dependencies
 RUN npm ci --only=production
 
-# Copy application code
-COPY . .
+# Copy shared models
+COPY --chown=nodejs:nodejs shared /app/shared
+
+# Copy worker source code (but not package.json again)
+COPY --chown=nodejs:nodejs workers/fashion-advice/src ./src
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \
@@ -29,4 +32,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
   CMD node -e "console.log('healthy')" || exit 1
 
 # Start the worker
-CMD ["node", "src/index.js"]
+CMD ["node", "src/worker.js"]

@@ -5,7 +5,7 @@
 services:
   # MongoDB
   mongodb:
-    image: mongo:7.0
+    image: mongo:4.4
     container_name: closetx-mongodb
     restart: unless-stopped
     ports:

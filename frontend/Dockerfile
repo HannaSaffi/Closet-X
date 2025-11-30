@@ -1,5 +1,5 @@
-# Frontend Dockerfile for Closet-X
-FROM node:20-alpine
+# Build stage
+FROM node:18-alpine AS builder
 
 WORKDIR /app
 
@@ -7,14 +7,31 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm install
+RUN npm ci
 
 # Copy source code
 COPY . .
 
-# Expose Vite dev server port
-EXPOSE 5173
+# Set environment variables for build
+ENV VITE_API_BASE_URL=https://kates-closetx.javajon.duckdns.org
+ENV VITE_USER_SERVICE_URL=https://kates-closetx.javajon.duckdns.org/api/auth
+ENV VITE_WARDROBE_SERVICE_URL=https://kates-closetx.javajon.duckdns.org/api/wardrobe
+ENV VITE_OUTFIT_SERVICE_URL=https://kates-closetx.javajon.duckdns.org/api/outfits
 
-# Start development server
-# Vite needs --host to accept connections from outside container
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+# Build the app
+RUN npm run build
+
+# Production stage
+FROM nginx:alpine
+
+# Copy built files to nginx
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Copy nginx config
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Expose port
+EXPOSE 80
+
+# Start nginx
+CMD ["nginx", "-g", "daemon off;"]

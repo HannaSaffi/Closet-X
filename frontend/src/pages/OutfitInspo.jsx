@@ -83,7 +83,7 @@ function OutfitInspo() {
           feelsLike: data.data.weather.feelsLike,
           condition: data.data.weather.condition || data.data.weather.description,
           description: data.data.weather.description,
-          icon: getWeatherIcon(data.data.weather.description || data.data.weather.condition)
+          icon: getWeatherIcon(data.data.weather.condition, data.data.weather.description)
         };
       }
       
@@ -131,15 +131,62 @@ function OutfitInspo() {
     }
   };
 
-  const getWeatherIcon = (condition) => {
-    const lower = (condition || '').toLowerCase();
-    if (lower.includes('sun') || lower.includes('clear')) return '☀️';
-    if (lower.includes('rain')) return '🌧️';
-    if (lower.includes('cloud')) return '☁️';
-    if (lower.includes('snow')) return '❄️';
-    if (lower.includes('storm')) return '⛈️';
-    return '🌤️';
-  };
+  const getWeatherIcon = (condition, description) => {
+  const lower = (condition || description || '').toLowerCase();
+  
+  // Check time of day for sun/moon
+  const hour = new Date().getHours();
+  const isNight = hour < 6 || hour > 18; // Night between 6 PM and 6 AM
+  
+  // Clear/Sunny
+  if (lower.includes('clear') || lower.includes('sun')) {
+    return isNight ? '🌙' : '☀️';
+  }
+  
+  // Rain
+  if (lower.includes('rain') || lower.includes('drizzle')) {
+    if (lower.includes('heavy')) return '🌧️';
+    if (lower.includes('light')) return '🌦️';
+    return '🌧️';
+  }
+  
+  // Thunderstorm
+  if (lower.includes('thunder') || lower.includes('storm')) {
+    return '⛈️';
+  }
+  
+  // Snow
+  if (lower.includes('snow')) {
+    if (lower.includes('heavy')) return '❄️';
+    return '🌨️';
+  }
+  
+  // Clouds/Overcast
+  if (lower.includes('cloud') || lower.includes('overcast')) {
+    if (lower.includes('few') || lower.includes('scattered')) {
+      return isNight ? '☁️' : '⛅';
+    }
+    return '☁️';
+  }
+  
+  // Fog/Mist/Haze
+  if (lower.includes('fog') || lower.includes('mist') || lower.includes('haze')) {
+    return '🌫️';
+  }
+  
+  // Wind
+  if (lower.includes('wind')) {
+    return '💨';
+  }
+  
+  // Tornado/Severe
+  if (lower.includes('tornado')) {
+    return '🌪️';
+  }
+  
+  // Default based on time
+  return isNight ? '🌙' : '🌤️';
+};
 
   const suggestedPrompts = [
     "Something comfy for working from home",

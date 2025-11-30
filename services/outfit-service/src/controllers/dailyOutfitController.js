@@ -54,43 +54,27 @@ function isConversationalQuery(text) {
 /**
  * Generate conversational response using Ollama
  */
+/**
+ * Generate conversational response using Ollama for ALL queries
+ */
 async function generateConversationalResponse(queryType, originalText) {
-  const lowerText = originalText.toLowerCase();
-  
-  // Build context-aware prompt for Ollama
-  let systemPrompt = "You are a friendly, knowledgeable AI fashion stylist assistant. Keep responses concise (2-3 sentences), warm, and helpful. ";
-  let userPrompt = originalText;
-  
-  switch (queryType) {
-    case 'greeting':
-      systemPrompt += "Respond warmly to greetings and let them know you can help them choose outfits.";
-      break;
-    
-    case 'weather-info':
-      systemPrompt += "Explain that you can help them dress appropriately for the weather if they ask for outfit suggestions with weather enabled.";
-      break;
-    
-    case 'color-advice':
-      systemPrompt += "Provide helpful color combination advice. If they ask about a specific color, give 2-3 colors that pair well with it and briefly explain why.";
-      
-      // Extract mentioned color
-      const colors = ['red', 'blue', 'green', 'yellow', 'black', 'white', 'pink', 'purple', 'orange', 'brown', 'gray', 'beige', 'navy', 'burgundy', 'teal'];
-      const mentionedColor = colors.find(c => lowerText.includes(c));
-      
-      if (mentionedColor) {
-        userPrompt = `What colors go well with ${mentionedColor}? Give me 2-3 specific color combinations and briefly explain why they work together.`;
-      }
-      break;
-    
-    case 'general':
-      systemPrompt += "Encourage them to ask for outfit suggestions by giving 2-3 example requests they could make.";
-      break;
-  }
-  
   try {
-    // Call Ollama service with correct endpoint and model
     const ollamaUrl = 'http://ollama.ollama.svc.cluster.local:11434/api/chat';
     const axios = require('axios');
+    
+    const systemPrompt = `You are a friendly, enthusiastic AI fashion stylist named Claude. You help users choose outfits from their digital wardrobe.
+
+Your personality: Warm, knowledgeable, and encouraging. Keep responses concise (2-3 sentences max).
+
+Your capabilities:
+- Help users pick outfits for any occasion
+- Consider weather when making suggestions
+- Provide color combination advice
+- Answer fashion-related questions
+
+Important: If users ask general questions (weather, greetings, small talk), respond naturally but gently guide them back to asking for outfit help. Give them specific examples like "What should I wear for a date?" or "Something comfy for working from home".`;
+
+    console.log(`🤖 Calling Ollama for ${queryType} query: "${originalText}"`);
     
     const response = await axios.post(ollamaUrl, {
       model: 'gpt-oss:20b',
@@ -101,40 +85,56 @@ async function generateConversationalResponse(queryType, originalText) {
         },
         {
           role: 'user',
-          content: userPrompt
+          content: originalText
         }
       ],
       stream: false,
       options: {
-        temperature: 0.7,
-        num_predict: 150
+        temperature: 0.8,
+        num_predict: 100,
+        top_p: 0.9
       }
     }, {
-      timeout: 10000  // Increased timeout for larger model
+      timeout: 15000
     });
     
-    if (response.data && response.data.message && response.data.message.content) {
-      return response.data.message.content.trim();
+    // Debug: log full response structure
+    console.log('📦 Ollama response structure:', JSON.stringify(response.data, null, 2));
+    
+    // Try multiple paths to get the content
+    let content = null;
+    
+    if (response.data) {
+      // Path 1: response.data.message.content
+      if (response.data.message && response.data.message.content) {
+        content = response.data.message.content;
+      }
+      // Path 2: response.data.content
+      else if (response.data.content) {
+        content = response.data.content;
+      }
+      // Path 3: response.data.response
+      else if (response.data.response) {
+        content = response.data.response;
+      }
     }
+    
+    if (content && content.trim()) {
+      console.log(`✅ Ollama responded: "${content.substring(0, 50)}..."`);
+      return content.trim();
+    }
+    
+    console.error('❌ No content found in response. Full response:', JSON.stringify(response.data));
+    throw new Error('No content in Ollama response');
+    
   } catch (error) {
-    console.error('Ollama conversational response failed:', error.message);
-    console.error('Ollama error details:', error.response?.data || 'No details');
-    // Fallback to simple response
-  }
-  
-  // Fallback responses if Ollama fails
-  switch (queryType) {
-    case 'greeting':
-      return "👋 Hi there! I'm your AI stylist. I can help you pick the perfect outfit from your wardrobe. Just tell me what occasion you're dressing for!";
+    console.error('❌ Ollama failed:', error.message);
+    if (error.response) {
+      console.error('Response status:', error.response.status);
+      console.error('Response data:', JSON.stringify(error.response.data));
+    }
     
-    case 'weather-info':
-      return "🌤️ I can help you dress for the weather! Try asking 'What should I wear today?' with the weather toggle on.";
-    
-    case 'color-advice':
-      return "🎨 I'd love to help with colors! Try asking me for a specific outfit like 'Show me a casual outfit with red' and I'll create great color combinations!";
-    
-    default:
-      return "💡 I'm here to help you choose outfits! Try asking 'What should I wear for a date?' or 'Something comfy for working from home'.";
+    return "👋 Hi! I'm your AI fashion stylist. Ask me things like 'What should I wear for a date?' or 'Help me pick a casual outfit' and I'll create the perfect look from your wardrobe!";
   }
 }
 /**

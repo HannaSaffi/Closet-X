@@ -113,7 +113,7 @@ export const getDailyOutfit = async (params = {}) => {
     }
     
     const data = await response.json();
-    return data.data || data;
+    return data;
   } catch (error) {
     console.error("Error getting daily outfit:", error);
     throw error;

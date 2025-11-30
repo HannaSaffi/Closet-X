@@ -48,31 +48,95 @@ function isConversationalQuery(text) {
 /**
  * Generate conversational response
  */
-function generateConversationalResponse(queryType, originalText) {
+/**
+ * Generate conversational response using Ollama
+ */
+/**
+ * Generate conversational response using Ollama
+ */
+async function generateConversationalResponse(queryType, originalText) {
   const lowerText = originalText.toLowerCase();
+  
+  // Build context-aware prompt for Ollama
+  let systemPrompt = "You are a friendly, knowledgeable AI fashion stylist assistant. Keep responses concise (2-3 sentences), warm, and helpful. ";
+  let userPrompt = originalText;
   
   switch (queryType) {
     case 'greeting':
-      return "👋 Hi there! I'm your AI stylist. I can help you pick the perfect outfit from your wardrobe. Just tell me what occasion you're dressing for, like 'casual office meeting' or 'weekend brunch'!";
+      systemPrompt += "Respond warmly to greetings and let them know you can help them choose outfits.";
+      break;
+    
+    case 'weather-info':
+      systemPrompt += "Explain that you can help them dress appropriately for the weather if they ask for outfit suggestions with weather enabled.";
+      break;
     
     case 'color-advice':
-      // Extract color if mentioned
-      const colors = ['red', 'blue', 'green', 'yellow', 'black', 'white', 'pink', 'purple', 'orange', 'brown', 'gray', 'beige'];
+      systemPrompt += "Provide helpful color combination advice. If they ask about a specific color, give 2-3 colors that pair well with it and briefly explain why.";
+      
+      // Extract mentioned color
+      const colors = ['red', 'blue', 'green', 'yellow', 'black', 'white', 'pink', 'purple', 'orange', 'brown', 'gray', 'beige', 'navy', 'burgundy', 'teal'];
       const mentionedColor = colors.find(c => lowerText.includes(c));
       
       if (mentionedColor) {
-        return `🎨 Great question! ${mentionedColor.charAt(0).toUpperCase() + mentionedColor.slice(1)} is a versatile color. To help you create an actual outfit with ${mentionedColor}, try asking something like: "Show me a casual outfit with ${mentionedColor}" or "What should I wear with my ${mentionedColor} top?" I'll pick items from your wardrobe!`;
+        userPrompt = `What colors go well with ${mentionedColor}? Give me 2-3 specific color combinations and briefly explain why they work together.`;
       }
-      return "🎨 I'd love to help with color combinations! Try asking me for a specific outfit, like 'something casual for work' or 'date night outfit', and I'll create combinations with great colors from your wardrobe!";
+      break;
     
     case 'general':
-      return "💡 I'm here to help you choose outfits! Try asking me things like:\n• 'What should I wear for a date?'\n• 'Something comfy for working from home'\n• 'Professional outfit for a meeting'\n• 'Casual look for coffee with friends'\n\nI'll create outfits from your wardrobe!";
+      systemPrompt += "Encourage them to ask for outfit suggestions by giving 2-3 example requests they could make.";
+      break;
+  }
+  
+  try {
+    // Call Ollama service with correct endpoint and model
+    const ollamaUrl = 'http://ollama.ollama.svc.cluster.local:11434/api/chat';
+    const axios = require('axios');
+    
+    const response = await axios.post(ollamaUrl, {
+      model: 'gpt-oss:20b',
+      messages: [
+        {
+          role: 'system',
+          content: systemPrompt
+        },
+        {
+          role: 'user',
+          content: userPrompt
+        }
+      ],
+      stream: false,
+      options: {
+        temperature: 0.7,
+        num_predict: 150
+      }
+    }, {
+      timeout: 10000  // Increased timeout for larger model
+    });
+    
+    if (response.data && response.data.message && response.data.message.content) {
+      return response.data.message.content.trim();
+    }
+  } catch (error) {
+    console.error('Ollama conversational response failed:', error.message);
+    console.error('Ollama error details:', error.response?.data || 'No details');
+    // Fallback to simple response
+  }
+  
+  // Fallback responses if Ollama fails
+  switch (queryType) {
+    case 'greeting':
+      return "👋 Hi there! I'm your AI stylist. I can help you pick the perfect outfit from your wardrobe. Just tell me what occasion you're dressing for!";
+    
+    case 'weather-info':
+      return "🌤️ I can help you dress for the weather! Try asking 'What should I wear today?' with the weather toggle on.";
+    
+    case 'color-advice':
+      return "🎨 I'd love to help with colors! Try asking me for a specific outfit like 'Show me a casual outfit with red' and I'll create great color combinations!";
     
     default:
-      return "I'm your outfit stylist! Tell me what you'd like to wear and I'll help you create the perfect look from your wardrobe.";
+      return "💡 I'm here to help you choose outfits! Try asking 'What should I wear for a date?' or 'Something comfy for working from home'.";
   }
 }
-
 /**
  * MAIN ENDPOINT: "What Should I Wear Today"
  * GET /api/daily-outfit
@@ -108,17 +172,18 @@ exports.getDailyOutfit = async (req, res) => {
     // STEP 1.5: Check if this is a conversational query vs outfit request
     // ========================================================================
     const conversationCheck = isConversationalQuery(preference);
-    if (conversationCheck.isConversational) {
-      console.log(`💬 Detected conversational query: ${conversationCheck.type}`);
-      return res.status(200).json({
-        success: true,
-        conversational: true,
-        message: generateConversationalResponse(conversationCheck.type, preference),
-        data: {
-          outfits: []
-        }
-      });
-    }
+      if (conversationCheck.isConversational) {
+    console.log(`💬 Detected conversational query: ${conversationCheck.type}`);
+    const conversationalMessage = await generateConversationalResponse(conversationCheck.type, preference);
+    return res.status(200).json({
+      success: true,
+      conversational: true,
+      message: conversationalMessage,
+      data: {
+        outfits: []
+      }
+    });
+  }
 
     // ========================================================================
     // STEP 2: Get Current Weather (if requested)

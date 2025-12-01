@@ -1,5 +1,4 @@
 // services/outfit-service/src/algorithms/styleMatching.js
-// services/outfit-service/src/algorithms/styleMatching.js
 
 /**
  * Style matching algorithm for outfit coherence
@@ -339,18 +338,19 @@ class StyleMatching {
 // Create instance
 const styleMatchingInstance = new StyleMatching();
 
-// Export instance and individual methods for testing
+// Export instance and individual methods for testing and backward compatibility
 module.exports = {
   styleMatching: styleMatchingInstance,
   StyleMatching,
-  // Export individual methods for testing
+  // Export individual methods for testing and backward compatibility
   getStyleGroup: (style) => {
     if (!style) return 'casual';
     const lower = style.toLowerCase();
     
-    if (['casual', 'relaxed', 'comfortable', 'everyday'].includes(lower)) return 'casual';
-    if (['formal', 'business', 'elegant', 'professional'].includes(lower)) return 'formal';
+    if (['casual', 'relaxed', 'comfortable', 'everyday', 'sporty', 'bohemian'].includes(lower)) return 'casual';
+    if (['formal', 'business', 'elegant', 'professional', 'classic', 'minimalist'].includes(lower)) return 'formal';
     if (['athletic', 'sporty', 'active', 'sport'].includes(lower)) return 'athletic';
+    if (['trendy', 'modern', 'fashionable', 'vintage'].includes(lower)) return 'trendy';
     
     return 'casual';
   },
@@ -358,7 +358,8 @@ module.exports = {
     if (!items || items.length === 0) return 1;
     if (items.length === 1) return 1;
     
-    return styleMatchingInstance.calculateStyleCoherence(items);
+    const styles = items.map(i => typeof i === 'string' ? i : (i.style || 'casual'));
+    return styleMatchingInstance.calculateStyleCoherence(styles);
   },
   matchStyleToOccasion: (style, occasion) => {
     const occasionFormality = {
@@ -390,7 +391,7 @@ module.exports = {
     
     const counts = {};
     items.forEach(item => {
-      const style = item.style || 'casual';
+      const style = (typeof item === 'string' ? item : item.style) || 'casual';
       counts[style] = (counts[style] || 0) + 1;
     });
     

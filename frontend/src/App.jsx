@@ -5,6 +5,7 @@ import Home from './pages/Home';
 import Closet from './pages/Closet';
 import AddClothing from './pages/AddClothing';
 import OutfitInspo from './pages/OutfitInspo';
+import Analytics from './pages/Analytics';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import './App.css';
@@ -24,6 +25,7 @@ function Navigation() {
             <li><Link to="/">Home</Link></li>
             <li><Link to="/closet">My Closet</Link></li>
             <li><Link to="/outfit-inspo">Outfit Inspo</Link></li>
+            <li><Link to="/analytics">Analytics</Link></li>
             <li><Link to="/add">Add Item</Link></li>
           </ul>
           <div className="nav-user">
@@ -78,6 +80,14 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <OutfitInspo />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/analytics"
+            element={
+              <ProtectedRoute>
+                <Analytics />
               </ProtectedRoute>
             }
           />

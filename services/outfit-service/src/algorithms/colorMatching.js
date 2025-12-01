@@ -1,5 +1,4 @@
 // services/outfit-service/src/algorithms/colorMatching.js
-// services/outfit-service/src/algorithms/colorMatching.js
 
 /**
  * Color theory-based matching algorithm for outfit generation
@@ -291,24 +290,48 @@ class ColorMatching {
 // Create instance
 const colorMatchingInstance = new ColorMatching();
 
-// Export instance and individual methods for testing
+// Export instance and individual methods for testing and backward compatibility
 module.exports = {
   colorMatching: colorMatchingInstance,
   ColorMatching,
-  // Export individual methods for testing
+  // Export individual methods for testing and backward compatibility
   isNeutralColor: (color) => colorMatchingInstance.isNeutral(color),
   getOutfitColorHarmony: (items) => {
-    const colors = items.map(i => typeof i === 'string' ? i : (i.color?.primary || i.color || 'gray'));
+    // Handle both array of colors and array of items with color.primary
+    const colors = items.map(item => {
+      if (typeof item === 'string') return item;
+      return item?.color?.primary || item?.color || 'gray';
+    });
     return colorMatchingInstance.calculateColorHarmony(colors);
   },
   matchWithNeutral: (color1, color2) => {
+    // Special function for neutral matching
     if (colorMatchingInstance.isNeutral(color1) || colorMatchingInstance.isNeutral(color2)) {
-      return 0.9;
+      return 0.9; // High score for neutral combinations
     }
-    return 0.5;
+    return colorMatchingInstance.getColorCompatibility(color1, color2);
   },
   validateOutfitColors: (items) => {
-    const colors = items.map(i => typeof i === 'string' ? i : (i.color?.primary || i.color || 'gray'));
+    const colors = items.map(item => {
+      if (typeof item === 'string') return item;
+      return item?.color?.primary || item?.color || 'gray';
+    });
     return colorMatchingInstance.validateOutfitColors(colors);
+  },
+  getStyleGroup: (style) => {
+    // Simple style grouping for compatibility
+    const styleGroups = {
+      casual: ['casual', 'sporty', 'athletic'],
+      formal: ['formal', 'business', 'elegant'],
+      trendy: ['trendy', 'modern', 'fashionable'],
+      classic: ['classic', 'timeless', 'traditional']
+    };
+    
+    for (const [group, styles] of Object.entries(styleGroups)) {
+      if (styles.includes(style?.toLowerCase())) {
+        return group;
+      }
+    }
+    return 'casual'; // default
   }
 };

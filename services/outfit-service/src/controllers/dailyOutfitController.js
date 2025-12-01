@@ -42,8 +42,27 @@ const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1/models/gemi
  */
 async function handleConversationalQuery(text, city = 'New York', userId = null) {
   try {
-    // First, check if this is a weather question
     const lowerText = text.toLowerCase();
+    
+    // ========================================================================
+    // STEP 1: Pre-classify using keywords (before calling Gemini)
+    // ========================================================================
+    const outfitKeywords = ['wear', 'outfit', 'dress', 'suggestion', 'suggest', 'recommend', 'show me', 'help me pick', 'look', 'style for', 'going to'];
+    const occasions = ['date', 'party', 'work', 'wedding', 'interview', 'brunch', 'dinner', 'meeting', 'event', 'occasion'];
+    
+    // Check if it's clearly an outfit request
+    const hasOutfitKeyword = outfitKeywords.some(k => lowerText.includes(k));
+    const hasOccasion = occasions.some(o => lowerText.includes(o));
+    
+    // If it has outfit keywords OR mentions an occasion, it's an outfit request
+    if (hasOutfitKeyword || hasOccasion) {
+      console.log(`🎯 Keyword-detected outfit request: outfit=${hasOutfitKeyword}, occasion=${hasOccasion}`);
+      return null; // Return null = outfit request
+    }
+    
+    // ========================================================================
+    // STEP 2: Only pure conversational queries reach here
+    // ========================================================================
     const isWeatherQuestion = [
       'weather', 'raining', 'snowing', 'cold', 'hot', 
       'sunny', 'cloudy', 'temperature', 'forecast'
@@ -61,6 +80,7 @@ async function handleConversationalQuery(text, city = 'New York', userId = null)
           humidity: weatherData.current.humidity
         };
         weatherContext = `\n\n**IMPORTANT - CURRENT WEATHER DATA**: I have access to live weather for ${city.toUpperCase()}: Temperature is ${weather.temp}°F, ${weather.description}, feels like ${weather.feelsLike}°F, humidity ${weather.humidity}%. When user asks about weather, tell them THIS data.`;
+        console.log(`🌤️ Fetched weather for conversational response: ${weather.temp}°F, ${weather.description}`);
       } catch (error) {
         console.error('Weather fetch failed for conversation:', error.message);
         weatherContext = '\n\nNote: Unable to fetch current weather data.';
@@ -69,7 +89,7 @@ async function handleConversationalQuery(text, city = 'New York', userId = null)
 
     if (!GEMINI_API_KEY) {
       console.warn('⚠️  No Gemini API key - using fallback');
-      return null;
+      return "👋 Hi! I'm your AI fashion stylist. Ask me things like 'What should I wear for a date?' and I'll create the perfect look!";
     }
 
     // Get conversation history for this user
@@ -79,27 +99,24 @@ async function handleConversationalQuery(text, city = 'New York', userId = null)
     const messages = [];
     
     // If first message in conversation, add system context
-if (history.length === 0) {
-  messages.push({
-    parts: [{
-      text: `You are Claude, a friendly AI fashion stylist assistant. You help users choose outfits.
-
-When users ask for outfit suggestions, respond with exactly: "OUTFIT_REQUEST"
-
-For conversational queries:
-- Greetings: Be warm and friendly
-- Jokes: CRITICAL - Tell COMPLETELY DIFFERENT jokes each time. NEVER repeat a joke you've already told in this conversation. Keep track of all jokes told and choose new ones. There are thousands of jokes - use variety!
-- Weather: CRITICAL - If weather data is provided in the context, USE IT to answer weather questions. Tell the user the actual temperature, conditions, and suggest weather-appropriate outfits.
-- Colors: Give actual color advice
-- General chat: Engage naturally
-
-Respond in 2-4 sentences.${weatherContext}`
-    }],
-    role: 'user'
-  });
+    if (history.length === 0) {
       messages.push({
         parts: [{
-          text: 'Understood! I will help with fashion and respond naturally to conversation.'
+          text: `You are Claude, a friendly AI fashion stylist assistant.
+
+Respond naturally and helpfully to conversational queries:
+- Greetings: Be warm and friendly
+- Jokes: Tell unique, creative jokes - never repeat jokes from this conversation
+- Weather questions: Use the provided weather data if available
+- General chat: Engage naturally
+
+Keep responses warm and conversational (2-4 sentences).${weatherContext}`
+        }],
+        role: 'user'
+      });
+      messages.push({
+        parts: [{
+          text: 'Understood! I will respond naturally to conversation.'
         }],
         role: 'model'
       });
@@ -112,25 +129,26 @@ Respond in 2-4 sentences.${weatherContext}`
         role: msg.role
       });
     }
+    
     // For joke requests, remind it not to repeat
-let userMessage = text;
-if (lowerText.includes('joke')) {
-  const jokesInHistory = history
-    .filter(msg => msg.role === 'model' && (msg.content.includes('Why') || msg.content.includes('?')))
-    .map(msg => msg.content.substring(0, 50));
-  
-  if (jokesInHistory.length > 0) {
-    userMessage = `${text}\n\n[REMINDER: You've already told these jokes in this conversation: ${jokesInHistory.join(', ')}... Tell a COMPLETELY DIFFERENT joke this time!]`;
-  }
-}
+    let userMessage = text;
+    if (lowerText.includes('joke')) {
+      const jokesInHistory = history
+        .filter(msg => msg.role === 'model' && (msg.content.includes('Why') || msg.content.includes('?')))
+        .map(msg => msg.content.substring(0, 50));
+      
+      if (jokesInHistory.length > 0) {
+        userMessage = `${text}\n\n[REMINDER: You've already told these jokes in this conversation: ${jokesInHistory.join(', ')}... Tell a COMPLETELY DIFFERENT joke this time!]`;
+      }
+    }
 
-// Add current user message
-messages.push({
-  parts: [{ text: userMessage }],
-  role: 'user'
-});
+    // Add current user message
+    messages.push({
+      parts: [{ text: userMessage }],
+      role: 'user'
+    });
 
-    console.log(`🤖 Calling Gemini with ${history.length} history messages for: "${text}"`);
+    console.log(`🤖 Calling Gemini for conversational query: "${text}"`);
 
     const url = `https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash-lite:generateContent?key=${GEMINI_API_KEY}`;
     
@@ -158,11 +176,7 @@ messages.push({
       throw new Error('No response from Gemini');
     }
 
-    console.log(`✅ Gemini response: "${generatedText.substring(0, 100)}..."`);
-
-    if (generatedText.includes('OUTFIT_REQUEST')) {
-      return null;
-    }
+    console.log(`✅ Gemini conversational response generated`);
 
     // Store this exchange in history
     if (userId) {
@@ -177,14 +191,6 @@ messages.push({
     if (error.response) {
       console.error('Response status:', error.response.status);
       console.error('Response data:', JSON.stringify(error.response.data));
-    }
-    
-    const lowerText = text.toLowerCase();
-    const outfitKeywords = ['wear', 'outfit', 'dress', 'suggest', 'show me', 'help me pick', 'recommend', 'look'];
-    const hasOutfitKeyword = outfitKeywords.some(k => lowerText.includes(k));
-    
-    if (hasOutfitKeyword) {
-      return null;
     }
     
     return "👋 Hi! I'm your AI fashion stylist. Ask me things like 'What should I wear for a date?' or 'Help me pick a casual outfit' and I'll create the perfect look from your wardrobe!";

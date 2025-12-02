@@ -145,7 +145,7 @@
 }
 
 .message.user .message-bubble {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #174143 0%, #427A76 100%);
   color: white;
   border-bottom-right-radius: 4px;
 }
@@ -270,15 +270,9 @@
   font-weight: 500;
 }
 
-.prompt-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
 .prompt-button {
   padding: 10px 16px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #174143 0%, #427A76 100%);
   color: white;
   border: none;
   border-radius: 20px;
@@ -315,7 +309,7 @@
 
 .chat-input:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #427A76;
 }
 
 .chat-input:disabled {
@@ -327,7 +321,7 @@
   width: 50px;
   height: 50px;
   border: none;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #174143 0%, #427A76 100%);
   color: white;
   border-radius: 50%;
   font-size: 1.5em;

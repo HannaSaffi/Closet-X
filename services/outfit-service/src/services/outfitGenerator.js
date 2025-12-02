@@ -29,18 +29,37 @@ class OutfitGeneratorService {
       }
 
       // Get weather data if needed
-      let weatherData = null;
-      let weatherRecommendations = null;
+      // Get weather data if needed
+let weatherData = null;
+let weatherRecommendations = null;
 
-      if (includeWeather && weather) {
-        try {
-          weatherRecommendations = weatherService.getClothingRecommendations(weather);
-        } catch (error) {
-          console.error('Weather recommendations failed:', error.message);
-          weatherRecommendations = null;
-        }
-      }
-
+if (includeWeather && weather) {
+  try {
+    weatherData = weather;
+    
+    // Create our own simple recommendations instead of relying on weatherService
+    const temp = weather.current.temperature.value;
+    const tempCategory = weather.current.temperature.category;
+    const precipLevel = weather.precipitation?.level || 'none';
+    const precipType = weather.precipitation?.type || 'none';
+    
+    weatherRecommendations = {
+      temperature: tempCategory,
+      weatherCondition: weather.current.condition.main,
+      precipitation: {
+        level: precipLevel,
+        type: precipType
+      },
+      required: temp < 50 ? ['outerwear', 'layers'] : [],
+      avoid: temp < 40 ? ['shorts', 'tank tops', 'sandals'] : []
+    };
+    
+    console.log('✅ Weather recommendations:', JSON.stringify(weatherRecommendations));
+  } catch (error) {
+    console.error('Weather recommendations failed:', error.message);
+    weatherRecommendations = null;
+  }
+}
       // Generate outfit combinations
       const outfits = [];
       const attempts = maxSuggestions * 10; // Try more to find good matches
@@ -90,108 +109,152 @@ class OutfitGeneratorService {
    * Create a single outfit combination
    */
   async createOutfitCombination(allClothing, occasion, weatherRecommendations) {
-    try {
-      // Separate clothing by category
-      const categories = {
-        tops: allClothing.filter(c => c.category === 'tops'),
-        bottoms: allClothing.filter(c => c.category === 'bottoms'),
-        outerwear: allClothing.filter(c => c.category === 'outerwear'),
-        shoes: allClothing.filter(c => c.category === 'shoes'),
-        dresses: allClothing.filter(c => c.category === 'dresses'),
-        accessories: allClothing.filter(c => c.category === 'accessories')
-      };
+  try {
+    // Separate clothing by category
+    const categories = {
+      tops: allClothing.filter(c => c.category === 'tops'),
+      bottoms: allClothing.filter(c => c.category === 'bottoms'),
+      outerwear: allClothing.filter(c => c.category === 'outerwear'),
+      shoes: allClothing.filter(c => c.category === 'shoes'),
+      dresses: allClothing.filter(c => c.category === 'dresses'),
+      accessories: allClothing.filter(c => c.category === 'accessories')
+    };
 
-      let outfit = {
-        items: [],
-        categories: [],
-        colors: [],
-        styles: []
-      };
+    let outfit = {
+      items: [],
+      categories: [],
+      colors: [],
+      styles: []
+    };
 
-      // Strategy 1: Dress-based outfit
-      if (categories.dresses.length > 0 && Math.random() > 0.5) {
-        const dress = this.selectRandomItem(categories.dresses, occasion, weatherRecommendations);
-        outfit.items.push(dress);
-        outfit.categories.push('dresses');
-        
-        // Add shoes
-        if (categories.shoes.length > 0) {
-          const shoes = this.selectMatchingItem(categories.shoes, dress, weatherRecommendations);
+    // Strategy 1: Dress-based outfit
+    if (categories.dresses.length > 0 && Math.random() > 0.5) {
+      const dress = this.selectRandomItem(categories.dresses, occasion, weatherRecommendations);
+      if (!dress) return null; // No suitable dress found
+      
+      outfit.items.push(dress);
+      outfit.categories.push('dresses');
+      
+      // Add shoes
+      if (categories.shoes.length > 0) {
+        const shoes = this.selectMatchingItem(categories.shoes, dress, weatherRecommendations);
+        if (shoes) {
           outfit.items.push(shoes);
           outfit.categories.push('shoes');
         }
-      } 
-      // Strategy 2: Top + Bottom outfit
-      else {
-        // Select top
-        if (categories.tops.length > 0) {
-          const top = this.selectRandomItem(categories.tops, occasion, weatherRecommendations);
-          outfit.items.push(top);
-          outfit.categories.push('tops');
-          
-          // Select matching bottom
-          if (categories.bottoms.length > 0) {
-            const bottom = this.selectMatchingItem(categories.bottoms, top, weatherRecommendations);
+      }
+    } 
+    // Strategy 2: Top + Bottom outfit
+    else {
+      // Select top
+      if (categories.tops.length > 0) {
+        const top = this.selectRandomItem(categories.tops, occasion, weatherRecommendations);
+        if (!top) return null; // No suitable top found
+        
+        outfit.items.push(top);
+        outfit.categories.push('tops');
+        
+        // Select matching bottom
+        if (categories.bottoms.length > 0) {
+          const bottom = this.selectMatchingItem(categories.bottoms, top, weatherRecommendations);
+          if (bottom) {
             outfit.items.push(bottom);
             outfit.categories.push('bottoms');
           }
-          
-          // Add shoes
-          if (categories.shoes.length > 0) {
-            const shoes = this.selectMatchingItem(categories.shoes, top, weatherRecommendations);
+        }
+        
+        // Add shoes
+        if (categories.shoes.length > 0) {
+          const shoes = this.selectMatchingItem(categories.shoes, top, weatherRecommendations);
+          if (shoes) {
             outfit.items.push(shoes);
             outfit.categories.push('shoes');
           }
         }
       }
+    }
 
-      // Add outerwear based on weather
-      if (weatherRecommendations && this.needsOuterwear(weatherRecommendations)) {
-        if (categories.outerwear.length > 0) {
-          const outerwear = this.selectMatchingItem(categories.outerwear, outfit.items[0], weatherRecommendations);
+    // Add outerwear - REQUIRED for cold weather
+    if (this.needsOuterwear(weatherRecommendations)) {
+      if (categories.outerwear.length > 0) {
+        const outerwear = this.selectMatchingItem(categories.outerwear, outfit.items[0], weatherRecommendations);
+        if (outerwear) {
           outfit.items.push(outerwear);
           outfit.categories.push('outerwear');
+        } else {
+          console.warn('⚠️  No suitable outerwear found for cold weather');
         }
+      } else {
+        console.warn('⚠️  No outerwear available - needed for cold weather!');
       }
+    }
 
-      // Add accessories (optional)
-      if (categories.accessories.length > 0 && Math.random() > 0.6) {
-        const accessory = this.selectRandomItem(categories.accessories, occasion, null);
+    // Add accessories (optional)
+    if (categories.accessories.length > 0 && Math.random() > 0.6) {
+      const accessory = this.selectRandomItem(categories.accessories, occasion, null);
+      if (accessory) {
         outfit.items.push(accessory);
         outfit.categories.push('accessories');
       }
-
-      // Extract outfit metadata
-      outfit.colors = [...new Set(outfit.items.map(i => i.color.primary))];
-      outfit.styles = [...new Set(outfit.items.flatMap(i => i.aiMetadata?.style || ['casual']))];
-
-      return outfit.items.length >= 2 ? outfit : null;
-    } catch (error) {
-      console.error('Combination creation error:', error.message);
-      return null;
     }
+
+    // Extract outfit metadata
+    outfit.colors = [...new Set(outfit.items.map(i => i.color.primary))];
+    outfit.styles = [...new Set(outfit.items.map(i => i.aiAnalysis?.style || 'casual'))];
+
+    return outfit.items.length >= 2 ? outfit : null;
+  } catch (error) {
+    console.error('Combination creation error:', error.message);
+    return null;
   }
+}
 
   /**
    * Select a random item from category
    */
-  selectRandomItem(items, occasion, weatherRecommendations) {
-    // Filter by occasion if specified
-    let filtered = items.filter(item => 
-      !item.occasion || item.occasion.length === 0 || item.occasion.includes(occasion)
-    );
-
-    // Filter by weather if available
-    if (weatherRecommendations) {
-      filtered = this.filterByWeather(filtered, weatherRecommendations);
+  /**
+ * Select a random item from category
+ */
+selectRandomItem(items, occasion, weatherRecommendations) {
+  // Filter by occasion using aiAnalysis data
+  let filtered = items.filter(item => {
+    const itemOccasions = item.aiAnalysis?.occasion || [];
+    const itemStyle = item.aiAnalysis?.style || 'casual';
+    
+    // For professional/meeting/interview - REQUIRE work/formal occasions
+    if (['professional', 'meeting', 'interview', 'formal'].includes(occasion)) {
+      const hasWorkOccasion = itemOccasions.includes('work') || itemOccasions.includes('formal');
+      const isNotTooCasual = itemStyle !== 'casual' || hasWorkOccasion;
+      return hasWorkOccasion && isNotTooCasual;
     }
+    
+    // For other occasions, be more lenient
+    const occasionMap = {
+      'casual': ['everyday', 'casual'],
+      'date': ['casual', 'formal', 'everyday'],
+      'party': ['casual', 'formal'],
+      'work': ['work', 'formal', 'everyday']
+    };
+    
+    const matchingOccasions = occasionMap[occasion] || ['everyday'];
+    return itemOccasions.length === 0 || 
+           itemOccasions.some(o => matchingOccasions.includes(o));
+  });
 
-    // If no matches, use all items
-    if (filtered.length === 0) filtered = items;
-
-    // Select random item
-    return filtered[Math.floor(Math.random() * filtered.length)];
+  // Filter by weather if available
+  if (weatherRecommendations) {
+    filtered = this.filterByWeather(filtered, weatherRecommendations);
   }
+
+  // If no matches, return null instead of using all items
+  if (filtered.length === 0) {
+    console.log(`⚠️  No items found for occasion: ${occasion}`);
+    return null;
+  }
+
+  // Select random item
+  return filtered[Math.floor(Math.random() * filtered.length)];
+}
 
   /**
    * Select item that matches with existing item
@@ -224,44 +287,55 @@ class OutfitGeneratorService {
   /**
    * Calculate compatibility score between two items
    */
-  calculateCompatibilityScore(item1, item2) {
-    let score = 0;
+  /**
+ * Calculate compatibility score between two items
+ */
+calculateCompatibilityScore(item1, item2) {
+  let score = 0;
 
-    // Color compatibility (40 points)
-    const colorScore = colorMatching.getColorCompatibility(
-      item1.color.primary,
-      item2.color.primary
-    );
-    score += colorScore * 40;
+  // Color compatibility (40 points)
+  const colorScore = colorMatching.getColorCompatibility(
+    item1.color.primary,
+    item2.color.primary
+  );
+  score += colorScore * 40;
 
-    // Style compatibility (30 points)
-    const style1 = item1.aiMetadata?.style || ['casual'];
-    const style2 = item2.aiMetadata?.style || ['casual'];
-    const styleOverlap = style1.filter(s => style2.includes(s)).length;
-    score += (styleOverlap / Math.max(style1.length, style2.length)) * 30;
+  // Style compatibility (30 points)
+  const style1 = item1.aiAnalysis?.style ? [item1.aiAnalysis.style] : ['casual'];
+  const style2 = item2.aiAnalysis?.style ? [item2.aiAnalysis.style] : ['casual'];
+  const styleMatch = style1[0] === style2[0] ? 1 : 0.5;
+  score += styleMatch * 30;
 
-    // Occasion compatibility (20 points)
-    if (item1.occasion && item2.occasion) {
-      const occasionOverlap = item1.occasion.filter(o => item2.occasion.includes(o)).length;
-      score += (occasionOverlap / Math.max(item1.occasion.length, item2.occasion.length)) * 20;
-    }
-
-    // Wear count bonus (10 points) - favor less-worn items
-    const avgWearCount = (item1.wearCount + item2.wearCount) / 2;
-    score += Math.max(0, 10 - avgWearCount);
-
-    return score;
+  // Occasion compatibility (20 points)
+  const occasions1 = item1.aiAnalysis?.occasion || [];
+  const occasions2 = item2.aiAnalysis?.occasion || [];
+  if (occasions1.length > 0 && occasions2.length > 0) {
+    const occasionOverlap = occasions1.filter(o => occasions2.includes(o)).length;
+    score += (occasionOverlap / Math.max(occasions1.length, occasions2.length)) * 20;
   }
+
+  // Wear count bonus (10 points) - favor less-worn items
+  const avgWearCount = (item1.wearCount + item2.wearCount) / 2;
+  score += Math.max(0, 10 - avgWearCount);
+
+  return score;
+}
 
   /**
    * Check if outfit needs outerwear based on weather
    */
   needsOuterwear(weatherRecommendations) {
   if (!weatherRecommendations) return false;
-  return weatherRecommendations.required?.includes('outerwear') ||
-         weatherRecommendations.temperature === 'cold' ||
-         weatherRecommendations.temperature === 'freezing';
-  }
+  
+  const temp = weatherRecommendations.temperature;
+  
+  // Require outerwear for cold, freezing, cool weather, OR any precipitation
+  return temp === 'cold' || 
+         temp === 'freezing' || 
+         temp === 'cool' ||
+         weatherRecommendations.precipitation?.level !== 'none' ||
+         weatherRecommendations.required?.includes('outerwear');
+}
 
   /**
    * Filter items by weather appropriateness
@@ -273,26 +347,57 @@ class OutfitGeneratorService {
   /**
    * Check if item is weather appropriate
    */
-  isWeatherAppropriate(item, weatherRecommendations) {
-    if (!weatherRecommendations) return true;
-    
-    // Check if item category is in avoid list
-    if (weatherRecommendations.avoid?.some(a => 
-      item.subcategory?.includes(a) || item.category.includes(a)
-    )) {
-      return false;
-    }
-
-    // Check season match
-    if (item.season && item.season.length > 0) {
-      const currentSeason = this.getCurrentSeason();
-      if (!item.season.includes(currentSeason) && !item.season.includes('all-season')) {
-        return false;
-      }
-    }
-
-    return true;
+/**
+ * Check if item is weather appropriate
+ */
+isWeatherAppropriate(item, weatherRecommendations) {
+  if (!weatherRecommendations) return true;
+  
+  const temp = weatherRecommendations.temperature;
+  const season = item.season || [];
+  const subcategory = (item.subcategory || '').toLowerCase();
+  const category = (item.category || '').toLowerCase();
+  
+  // CRITICAL: Block summer items in freezing/cold weather (like shorts!)
+  if ((temp === 'freezing' || temp === 'cold') && 
+      season.includes('summer') && 
+      !season.includes('all-season')) {
+    console.log(`❄️ Blocking summer item in ${temp} weather`);
+    return false;
   }
+  
+  // Block winter items in hot weather
+  if (temp === 'hot' && 
+      season.includes('winter') && 
+      !season.includes('all-season')) {
+    return false;
+  }
+  
+  // CRITICAL: Shorts/skirts not allowed in cold/freezing weather
+  if ((temp === 'cold' || temp === 'freezing') && 
+      (subcategory.includes('shorts') || 
+       subcategory.includes('skirt') ||
+       subcategory.includes('short'))) {
+    return false;
+  }
+  
+  // CRITICAL: Tank tops/sleeveless not allowed in cold weather
+  if ((temp === 'cold' || temp === 'freezing') &&
+      (subcategory.includes('tank') ||
+       subcategory.includes('sleeveless') ||
+       subcategory.includes('cami'))) {
+    return false;
+  }
+  
+  // Check if item category is in avoid list
+  if (weatherRecommendations.avoid?.some(a => 
+    subcategory?.includes(a) || category.includes(a)
+  )) {
+    return false;
+  }
+
+  return true;
+}
 
   /**
    * Get current season

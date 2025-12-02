@@ -134,57 +134,59 @@ function OutfitInspo() {
   const getWeatherIcon = (condition, description) => {
   const lower = (condition || description || '').toLowerCase();
   
-  // Check time of day for sun/moon
-  const hour = new Date().getHours();
-  const isNight = hour < 6 || hour > 18; // Night between 6 PM and 6 AM
-  
-  // Clear/Sunny
-  if (lower.includes('clear') || lower.includes('sun')) {
-    return isNight ? '🌙' : '☀️';
-  }
-  
-  // Rain
-  if (lower.includes('rain') || lower.includes('drizzle')) {
-    if (lower.includes('heavy')) return '🌧️';
-    if (lower.includes('light')) return '🌦️';
-    return '🌧️';
-  }
-  
-  // Thunderstorm
+  // PRIORITY 1: Severe weather (always show these first)
   if (lower.includes('thunder') || lower.includes('storm')) {
     return '⛈️';
   }
   
-  // Snow
-  if (lower.includes('snow')) {
-    if (lower.includes('heavy')) return '❄️';
-    return '🌨️';
-  }
-  
-  // Clouds/Overcast
-  if (lower.includes('cloud') || lower.includes('overcast')) {
-    if (lower.includes('few') || lower.includes('scattered')) {
-      return isNight ? '☁️' : '⛅';
-    }
-    return '☁️';
-  }
-  
-  // Fog/Mist/Haze
-  if (lower.includes('fog') || lower.includes('mist') || lower.includes('haze')) {
-    return '🌫️';
-  }
-  
-  // Wind
-  if (lower.includes('wind')) {
-    return '💨';
-  }
-  
-  // Tornado/Severe
   if (lower.includes('tornado')) {
     return '🌪️';
   }
   
-  // Default based on time
+  // PRIORITY 2: Precipitation (rain/snow)
+  if (lower.includes('rain') || lower.includes('drizzle')) {
+    if (lower.includes('heavy')) return '🌧️';
+    if (lower.includes('light')) return '🌦️';
+    return '🌧️'; // Default rain
+  }
+  
+  if (lower.includes('snow') || lower.includes('sleet')) {
+    if (lower.includes('heavy')) return '❄️';
+    if (lower.includes('light')) return '🌨️';
+    return '❄️'; // Default snow
+  }
+  
+  // PRIORITY 3: Fog/Mist/Haze
+  if (lower.includes('fog') || lower.includes('mist') || lower.includes('haze')) {
+    return '🌫️';
+  }
+  
+  // PRIORITY 4: Clouds
+  if (lower.includes('cloud') || lower.includes('overcast')) {
+    if (lower.includes('few') || lower.includes('scattered')) {
+      // Check time for partly cloudy
+      const hour = new Date().getHours();
+      const isNight = hour < 6 || hour > 18;
+      return isNight ? '☁️' : '⛅';
+    }
+    return '☁️'; // Overcast/cloudy
+  }
+  
+  // PRIORITY 5: Wind
+  if (lower.includes('wind') && !lower.includes('rain') && !lower.includes('snow')) {
+    return '💨';
+  }
+  
+  // PRIORITY 6: Clear/Sunny (check time of day)
+  if (lower.includes('clear') || lower.includes('sun')) {
+    const hour = new Date().getHours();
+    const isNight = hour < 6 || hour > 18;
+    return isNight ? '🌙' : '☀️';
+  }
+  
+  // DEFAULT: Based on time of day
+  const hour = new Date().getHours();
+  const isNight = hour < 6 || hour > 18;
   return isNight ? '🌙' : '🌤️';
 };
 

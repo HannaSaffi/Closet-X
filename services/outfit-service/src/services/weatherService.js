@@ -109,46 +109,70 @@ class WeatherService {
   }
 
   /**
-   * Parse OpenWeatherMap API response
-   */
-  parseOpenWeatherResponse(data) {
-    const temp = data.main.temp;
-    const condition = data.weather[0].main;
-    
-    return {
-      location: {
-        city: data.name,
-        country: data.sys.country,
-        coordinates: {
-          lat: data.coord.lat,
-          lon: data.coord.lon
-        }
-      },
-      current: {
-        temperature: {
-          value: Math.round(temp),
-          unit: 'fahrenheit',
-          feelsLike: Math.round(data.main.feels_like),
-          category: categorizeTemperature(temp)
-        },
-        condition: {
-          main: condition,
-          description: data.weather[0].description,
-          icon: data.weather[0].icon,
-          mapped: mapWeatherCondition(condition)
-        },
-        humidity: data.main.humidity,
-        pressure: data.main.pressure,
-        windSpeed: data.wind.speed,
-        cloudiness: data.clouds.all,
-        visibility: data.visibility
-      },
-      precipitation: this.calculatePrecipitation(data),
-      timestamp: new Date(data.dt * 1000),
-      sunrise: new Date(data.sys.sunrise * 1000),
-      sunset: new Date(data.sys.sunset * 1000)
-    };
+ * Parse OpenWeatherMap API response
+ */
+parseOpenWeatherResponse(data) {
+  const temp = data.main.temp;
+  
+  // Handle multiple weather conditions - prioritize severity
+  const weatherPriority = ['Thunderstorm', 'Snow', 'Rain', 'Drizzle', 'Mist', 'Fog', 'Clouds', 'Clear'];
+  let selectedWeather = data.weather[0]; // Default to first
+  
+  // If multiple conditions, pick the most severe
+  if (data.weather.length > 1) {
+    for (const priority of weatherPriority) {
+      const found = data.weather.find(w => w.main === priority);
+      if (found) {
+        selectedWeather = found;
+        break;
+      }
+    }
   }
+  
+  const condition = selectedWeather.main;
+  let description = selectedWeather.description;
+  
+  // Check for freezing conditions (temp at or below freezing with precipitation)
+  const precipitation = this.calculatePrecipitation(data);
+  if (temp <= 32 && precipitation.type === 'rain') {
+    description = 'freezing rain/snow mix';
+    precipitation.type = 'mixed'; // Could be ice, snow, or freezing rain
+  }
+  
+  return {
+    location: {
+      city: data.name,
+      country: data.sys.country,
+      coordinates: {
+        lat: data.coord.lat,
+        lon: data.coord.lon
+      }
+    },
+    current: {
+      temperature: {
+        value: Math.round(temp),
+        unit: 'fahrenheit',
+        feelsLike: Math.round(data.main.feels_like),
+        category: categorizeTemperature(temp)
+      },
+      condition: {
+        main: condition,
+        description: description,
+        icon: selectedWeather.icon,
+        mapped: mapWeatherCondition(condition)
+      },
+      humidity: data.main.humidity,
+      pressure: data.main.pressure,
+      windSpeed: data.wind.speed,
+      cloudiness: data.clouds.all,
+      visibility: data.visibility
+    },
+    precipitation: precipitation,
+    timestamp: new Date(data.dt * 1000),
+    sunrise: new Date(data.sys.sunrise * 1000),
+    sunset: new Date(data.sys.sunset * 1000)
+  };
+}
 
   /**
    * Get weather data from WeatherStack (backup provider)

@@ -6,6 +6,9 @@ import Closet from './pages/Closet';
 import AddClothing from './pages/AddClothing';
 import OutfitInspo from './pages/OutfitInspo';
 import Analytics from './pages/Analytics';
+import EventOutfitPlanner from './pages/EventOutfitPlanner';
+import TravelPackingAssistant from './pages/TravelPackingAssistant';
+import OutfitCalendar from './pages/OutfitCalendar';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import './App.css';
@@ -25,6 +28,7 @@ function Navigation() {
             <li><Link to="/">Home</Link></li>
             <li><Link to="/closet">My Closet</Link></li>
             <li><Link to="/outfit-inspo">Outfit Inspo</Link></li>
+            <li><Link to="/outfit-calendar">Calendar</Link></li>
             <li><Link to="/analytics">Analytics</Link></li>
             <li><Link to="/add">Add Item</Link></li>
           </ul>
@@ -96,6 +100,30 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <AddClothing />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/event-outfit"
+            element={
+              <ProtectedRoute>
+                <EventOutfitPlanner />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/travel-packing"
+            element={
+              <ProtectedRoute>
+                <TravelPackingAssistant />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/outfit-calendar"
+            element={
+              <ProtectedRoute>
+                <OutfitCalendar />
               </ProtectedRoute>
             }
           />

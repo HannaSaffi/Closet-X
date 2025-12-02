@@ -1,35 +1,21 @@
-#workers/outfit-generator/Dockerfile
-FROM node:18-alpine
+# workers/outfit-generator/Dockerfile
 
-# Set working directory
+FROM node:18-alpine AS builder
+
 WORKDIR /app
 
-# Copy package files from worker
-COPY workers/outfit-generator/package*.json ./
-
-# Install dependencies
+# 1) Package files (they live in this folder)
+COPY package*.json ./
 RUN npm ci --only=production
 
-# Copy shared models
-COPY --chown=nodejs:nodejs shared /app/shared
+# 2) Worker source (also in this folder)
+COPY src ./src
 
-# Copy worker source code (but not package.json again)
-COPY --chown=nodejs:nodejs workers/outfit-generator/src ./src
+# 3) Shared code: we DON’T have shared/ in this context,
+# so either:
+# - remove this line for now, OR
+# - vendor the shared code into this folder
+# For now, safest is: comment it out if not strictly needed yet
+# COPY shared /app/shared
 
-# Create non-root user
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001 && \
-    chown -R nodejs:nodejs /app
-
-# Switch to non-root user
-USER nodejs
-
-# Expose health check port (if applicable)
-EXPOSE 3000
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
-  CMD node -e "console.log('healthy')" || exit 1
-
-# Start the worker
-CMD ["node", "src/index.js"]
+# then the rest of your Dockerfile...

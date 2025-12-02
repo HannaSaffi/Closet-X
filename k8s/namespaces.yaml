@@ -1,0 +1,24 @@
+# Team Kates Namespaces
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kates-services
+  labels:
+    team: kates
+    purpose: services
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kates-workers
+  labels:
+    team: kates
+    purpose: workers
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kates-infrastructure
+  labels:
+    team: kates
+    purpose: infrastructure

@@ -288,10 +288,202 @@
 }
 
 .success-message {
+  color: #4caf50;
   text-align: center;
   padding: 2rem;
-  color: #27ae60;
-  font-weight: 500;
+  font-style: italic;
+}
+
+/* Style Insights Section */
+.style-insights-section {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-top: 2rem;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.section-header h2 {
+  margin: 0;
+}
+
+.beta-badge {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.section-description {
+  color: #666;
+  margin-bottom: 2rem;
+  font-size: 1.05rem;
+}
+
+.insights-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+.insight-detailed-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  transition: transform 0.3s;
+}
+
+.insight-detailed-card:hover {
+  transform: translateY(-5px);
+}
+
+.insight-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.insight-detailed-card h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.3rem;
+}
+
+.insight-detailed-card p {
+  margin: 0;
+  line-height: 1.6;
+  opacity: 0.95;
+}
+
+.color-analysis {
+  margin: 2rem 0;
+  padding: 2rem;
+  background: #f9f9f9;
+  border-radius: 12px;
+}
+
+.color-analysis h3 {
+  margin: 0 0 1.5rem 0;
+  color: #333;
+}
+
+.color-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.color-bar-item {
+  background: white;
+  padding: 1rem;
+  border-radius: 8px;
+}
+
+.color-bar-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.color-dot-large {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid #ddd;
+}
+
+.color-name {
+  font-weight: 600;
+  color: #333;
+  text-transform: capitalize;
+}
+
+.color-count {
+  color: #666;
+  margin-left: auto;
+  font-size: 0.9rem;
+}
+
+.color-bar-visual {
+  width: 100%;
+  height: 24px;
+  background: #f0f0f0;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.color-bar-fill {
+  height: 100%;
+  transition: width 0.5s ease;
+  border-radius: 12px;
+}
+
+.season-analysis {
+  margin: 2rem 0;
+  padding: 2rem;
+  background: #f9f9f9;
+  border-radius: 12px;
+}
+
+.season-analysis h3 {
+  margin: 0 0 1.5rem 0;
+  color: #333;
+}
+
+.season-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+}
+
+.season-card {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  transition: transform 0.3s;
+}
+
+.season-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.season-icon {
+  font-size: 3rem;
+  margin-bottom: 0.75rem;
+}
+
+.season-card h4 {
+  margin: 0 0 0.5rem 0;
+  color: #333;
+  font-size: 1.1rem;
+}
+
+.season-count {
+  margin: 0.25rem 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #4CAF50;
+}
+
+.season-percentage {
+  margin: 0;
+  color: #666;
+  font-size: 0.9rem;
 }
 
 /* Responsive */

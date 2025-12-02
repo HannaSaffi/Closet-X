@@ -58,6 +58,30 @@ function Home() {
           <h3>What should I wear?</h3>
           <p>Create and save outfit combinations</p>
         </Link>
+
+        <Link to="/event-outfit" className="action-card">
+          <div className="card-icon">🎉</div>
+          <h3>Event Outfit Planner</h3>
+          <p>Plan perfect outfits for special occasions</p>
+        </Link>
+
+        <Link to="/travel-packing" className="action-card">
+          <div className="card-icon">✈️</div>
+          <h3>Travel Packing Assistant</h3>
+          <p>Smart packing for your next trip</p>
+        </Link>
+
+        <Link to="/outfit-calendar" className="action-card">
+          <div className="card-icon">📅</div>
+          <h3>Outfit Calendar</h3>
+          <p>Plan and schedule your weekly outfits</p>
+        </Link>
+
+        <Link to="/analytics" className="action-card">
+          <div className="card-icon">📊</div>
+          <h3>Wardrobe Analytics</h3>
+          <p>Insights about your wardrobe usage</p>
+        </Link>
       </div>
 
       <div className="stats-cards">

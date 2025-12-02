@@ -43,6 +43,58 @@ const Analytics = () => {
     return <div className="analytics-container"><div className="no-data">No data available</div></div>;
   }
 
+  // Generate style insights from analytics data
+  const generateStyleInsights = () => {
+    const insights = [];
+
+    // Dominant colors insight
+    if (analytics.byColor && analytics.byColor.length > 0) {
+      const topColors = analytics.byColor.slice(0, 3).map(c => c.color);
+      insights.push({
+        title: 'Color Palette',
+        text: `Your wardrobe leans heavily towards ${topColors.join(', ')}. This creates a cohesive look and makes mixing and matching easier.`,
+        icon: '🎨'
+      });
+    }
+
+    // Category balance insight
+    if (analytics.byCategory && analytics.byCategory.length > 0) {
+      const sortedCategories = [...analytics.byCategory].sort((a, b) => b.count - a.count);
+      const mostCommon = sortedCategories[0];
+      const leastCommon = sortedCategories[sortedCategories.length - 1];
+      
+      insights.push({
+        title: 'Wardrobe Balance',
+        text: `You have ${mostCommon.count} ${mostCommon.category} but only ${leastCommon.count} ${leastCommon.category}. Consider balancing your collection for more outfit versatility.`,
+        icon: '⚖️'
+      });
+    }
+
+    // Wear pattern insight
+    if (analytics.summary) {
+      const wearRate = (analytics.summary.totalItems - analytics.summary.neverWornCount) / analytics.summary.totalItems * 100;
+      insights.push({
+        title: 'Utilization Rate',
+        text: `You actively wear ${wearRate.toFixed(0)}% of your wardrobe. ${wearRate > 80 ? 'Excellent! You make great use of what you own.' : 'Try incorporating more pieces into your regular rotation.'}`,
+        icon: '📈'
+      });
+    }
+
+    // Sustainability insight
+    if (analytics.costPerWear && analytics.costPerWear.length > 0) {
+      const avgCostPerWear = analytics.costPerWear.reduce((sum, item) => sum + parseFloat(item.costPerWear), 0) / analytics.costPerWear.length;
+      insights.push({
+        title: 'Sustainability Score',
+        text: `Your average cost-per-wear is $${avgCostPerWear.toFixed(2)}. The more you wear each piece, the better value and less environmental impact per use!`,
+        icon: '🌱'
+      });
+    }
+
+    return insights;
+  };
+
+  const styleInsights = generateStyleInsights();
+
   return (
     <div className="analytics-container">
       <h1>📊 Wardrobe Analytics</h1>
@@ -184,6 +236,77 @@ const Analytics = () => {
           </div>
         </div>
       )}
+
+      {/* NEW: Style Insights Section */}
+      <div className="style-insights-section">
+        <div className="section-header">
+          <h2>✨ Style Insights & Analysis</h2>
+          <span className="beta-badge">BETA</span>
+        </div>
+        <p className="section-description">
+          Deep dive into your wardrobe patterns and personal style preferences
+        </p>
+
+        <div className="insights-cards-grid">
+          {styleInsights.map((insight, index) => (
+            <div key={index} className="insight-detailed-card">
+              <div className="insight-icon">{insight.icon}</div>
+              <h3>{insight.title}</h3>
+              <p>{insight.text}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Color Distribution Visualization */}
+        {analytics.byColor && analytics.byColor.length > 0 && (
+          <div className="color-analysis">
+            <h3>Color Distribution</h3>
+            <div className="color-bars">
+              {analytics.byColor.map((color) => (
+                <div key={color.color} className="color-bar-item">
+                  <div className="color-bar-header">
+                    <span className="color-dot-large" style={{ backgroundColor: color.color }}></span>
+                    <span className="color-name">{color.color}</span>
+                    <span className="color-count">{color.count} items ({color.percentage}%)</span>
+                  </div>
+                  <div className="color-bar-visual">
+                    <div 
+                      className="color-bar-fill" 
+                      style={{ 
+                        width: `${color.percentage}%`,
+                        backgroundColor: color.color
+                      }}
+                    ></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Season Distribution */}
+        {analytics.bySeason && analytics.bySeason.length > 0 && (
+          <div className="season-analysis">
+            <h3>Seasonal Readiness</h3>
+            <div className="season-grid">
+              {analytics.bySeason.map((season) => (
+                <div key={season.season} className="season-card">
+                  <div className="season-icon">
+                    {season.season === 'summer' && '☀️'}
+                    {season.season === 'winter' && '❄️'}
+                    {season.season === 'spring' && '🌸'}
+                    {season.season === 'fall' && '🍂'}
+                    {season.season === 'all-season' && '🔄'}
+                  </div>
+                  <h4>{season.season.charAt(0).toUpperCase() + season.season.slice(1)}</h4>
+                  <p className="season-count">{season.count} items</p>
+                  <p className="season-percentage">{season.percentage}%</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

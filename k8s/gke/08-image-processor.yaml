@@ -1,4 +1,5 @@
 #k8s/08-image-processor.yaml
+#k8s/08-image-processor.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -14,10 +15,14 @@ spec:
       labels:
         app: image-processor
     spec:
-      containers:
+      imagePullSecrets:  # ✅ Fixed indentation
+      - name: harbor-secret
+      containers:  # ✅ Fixed indentation
       - name: image-processor
         image: harbor.javajon.duckdns.org/library/image-processor:v1.0.0
         env:
+        - name: NODE_ENV
+          value: "production"
         - name: MONGO_URI
           value: "mongodb://wardrobe_service:service_password_123@mongodb-service.kates-closetx.svc.cluster.local:27017/closetx_wardrobe?authSource=admin"
         - name: RABBITMQ_URL
@@ -27,6 +32,16 @@ spec:
             configMapKeyRef:
               name: closetx-config
               key: WARDROBE_SERVICE_URL
+        - name: REMOVEBG_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: closetx-secrets
+              key: REMOVEBG_API_KEY
+        - name: GOOGLE_VISION_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: closetx-secrets
+              key: GOOGLE_VISION_API_KEY
         resources:
           requests:
             memory: "128Mi"

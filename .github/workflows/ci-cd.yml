@@ -198,6 +198,10 @@ jobs:
             path: workers/fashion-advice
             dockerfile: Dockerfile
             context_is_root: true  # Needs project root for shared/
+          - service: frontend
+            path: frontend
+            dockerfile: Dockerfile
+            context_is_root: false
     
     steps:
       - uses: actions/checkout@v3
@@ -333,6 +337,9 @@ jobs:
           kubectl apply -f $MANIFESTS_DIR/08-image-processor.yaml
           kubectl apply -f $MANIFESTS_DIR/09-outfit-generator.yaml
           kubectl apply -f $MANIFESTS_DIR/10-fashion-advice.yaml
+
+          # Deploy frontend  ← ADD THIS
+          kubectl apply -f $MANIFESTS_DIR/13-frontend.yaml 
           
           # Deploy ingress
           kubectl apply -f $MANIFESTS_DIR/11-ingress.yaml

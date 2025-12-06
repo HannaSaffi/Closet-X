@@ -156,7 +156,7 @@ if (includeWeather && weather) {
         
         // Select matching bottom
         if (categories.bottoms.length > 0) {
-          const bottom = this.selectMatchingItem(categories.bottoms, top, weatherRecommendations);
+          const bottom = this.selectMatchingItem(categories.bottoms, top, weatherRecommendations, outfit.items);
           if (bottom) {
             outfit.items.push(bottom);
             outfit.categories.push('bottoms');
@@ -165,7 +165,7 @@ if (includeWeather && weather) {
         
         // Add shoes
         if (categories.shoes.length > 0) {
-          const shoes = this.selectMatchingItem(categories.shoes, top, weatherRecommendations);
+          const shoes = this.selectMatchingItem(categories.shoes, top, weatherRecommendations, outfit.items);
           if (shoes) {
             outfit.items.push(shoes);
             outfit.categories.push('shoes');
@@ -177,7 +177,7 @@ if (includeWeather && weather) {
     // Add outerwear - REQUIRED for cold weather
     if (this.needsOuterwear(weatherRecommendations)) {
       if (categories.outerwear.length > 0) {
-        const outerwear = this.selectMatchingItem(categories.outerwear, outfit.items[0], weatherRecommendations);
+        const outerwear = this.selectMatchingItem(categories.outerwear, outfit.items[0], weatherRecommendations, outfit.items);
         if (outerwear) {
           outfit.items.push(outerwear);
           outfit.categories.push('outerwear');
@@ -259,9 +259,15 @@ selectRandomItem(items, occasion, weatherRecommendations) {
   /**
    * Select item that matches with existing item
    */
-  selectMatchingItem(items, existingItem, weatherRecommendations) {
+     selectMatchingItem(items, existingItem, weatherRecommendations, excludeItems = []) {
+    // Filter out already-selected items
+    const availableItems = items.filter(item => 
+      !excludeItems.some(existing => existing._id.toString() === item._id.toString())
+    );
+    
+    if (availableItems.length === 0) return null;
     // Score each item for compatibility
-    const scored = items.map(item => ({
+    const scored = availableItems.map(item => ({
       item,
       score: this.calculateCompatibilityScore(item, existingItem)
     }));

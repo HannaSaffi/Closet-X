@@ -1,20 +1,6 @@
 // services/wardrobe-service/tests/clothingController.test.js
-/**
- * Comprehensive unit tests for Clothing Controller
- * Tests all CRUD operations and edge cases
- */
 
-const {
-  mockRequest,
-  mockResponse,
-  mockNext,
-  mockFileUpload,
-  createMockClothingItem,
-  expectErrorResponse,
-  expectSuccessResponse
-} = require('../../../tests/utils/testHelpers');
-
-// Mock mongoose
+// Mock mongoose BEFORE any imports
 jest.mock('mongoose', () => {
   const mockSchema = function() {
     this.pre = jest.fn().mockReturnThis();
@@ -91,6 +77,48 @@ jest.mock('../src/services/messageQueue', () => ({
 }));
 
 const clothingController = require('../src/controllers/clothingController');
+
+// Helper functions
+const mockRequest = (overrides = {}) => ({
+  body: {},
+  params: {},
+  query: {},
+  headers: {},
+  user: { userId: 'test-user-id', email: 'test@example.com' },
+  file: null,
+  ...overrides
+});
+
+const mockResponse = () => {
+  const res = {};
+  res.status = jest.fn().mockReturnValue(res);
+  res.json = jest.fn().mockReturnValue(res);
+  res.send = jest.fn().mockReturnValue(res);
+  res.set = jest.fn().mockReturnValue(res);
+  return res;
+};
+
+const mockFileUpload = (overrides = {}) => ({
+  fieldname: 'image',
+  originalname: 'test-image.jpg',
+  encoding: '7bit',
+  mimetype: 'image/jpeg',
+  size: 1024000,
+  buffer: Buffer.from('mock-image-data'),
+  ...overrides
+});
+
+const expectErrorResponse = (res, statusCode, message) => {
+  expect(res.status).toHaveBeenCalledWith(statusCode);
+  if (message) {
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: false,
+        error: expect.stringContaining(message)
+      })
+    );
+  }
+};
 
 describe('Wardrobe Service - Clothing Controller', () => {
   

@@ -66,9 +66,10 @@ if (includeWeather && weather) {
       
       for (let i = 0; i < attempts && outfits.length < maxSuggestions; i++) {
         const outfit = await this.createOutfitCombination(
-          userClothing,
-          occasion,
-          weatherRecommendations
+         userClothing,
+         occasion,
+         weatherRecommendations,
+         options.userPreference || ''
         );
         
         if (outfit && this.isValidOutfit(outfit, outfits)) {
@@ -108,7 +109,7 @@ if (includeWeather && weather) {
   /**
    * Create a single outfit combination
    */
-  async createOutfitCombination(allClothing, occasion, weatherRecommendations) {
+  async createOutfitCombination(allClothing, occasion, weatherRecommendations, userPreference = '') {
   try {
     // Separate clothing by category
     const categories = {
@@ -175,10 +176,9 @@ if (includeWeather && weather) {
     }
 
 // Add outerwear - REQUIRED for cold weather OUTDOOR occasions only
-    const isIndoor = ['home', 'comfy', 'comfortable', 'relaxed', 'cozy'].some(word =>
-      occasion.toLowerCase().includes(word)
+    const isIndoor = ['home', 'comfy', 'comfortable', 'relaxed', 'cozy', 'working from home'].some(word =>
+     userPreference.toLowerCase().includes(word)
     );
-
     if (this.needsOuterwear(weatherRecommendations) && !isIndoor) {
       if (categories.outerwear.length > 0) {
         const outerwear = this.selectMatchingItem(categories.outerwear, outfit.items[0], weatherRecommendations, outfit.items);

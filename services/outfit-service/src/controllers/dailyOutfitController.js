@@ -47,7 +47,8 @@ async function handleConversationalQuery(text, city = 'New York', userId = null)
     // ========================================================================
     // STEP 1: Pre-classify using keywords (before calling Gemini)
     // ========================================================================
-    const outfitKeywords = ['wear', 'outfit', 'dress', 'suggestion', 'suggest', 'recommend', 'show me', 'help me pick', 'look', 'style for', 'going to'];
+    // ONLY CHANGE: Added 'rainy day', 'sunny day', 'cold day', 'hot day' to outfit keywords
+    const outfitKeywords = ['wear', 'outfit', 'dress', 'suggestion', 'suggest', 'recommend', 'show me', 'help me pick', 'look', 'style for', 'going to', 'rainy day', 'sunny day', 'cold day', 'hot day'];
     const occasions = ['date', 'party', 'work', 'wedding', 'interview', 'brunch', 'dinner', 'meeting', 'event', 'occasion'];
     
     // Check if it's clearly an outfit request
@@ -247,27 +248,21 @@ exports.getDailyOutfit = async (req, res) => {
     let weatherRecs = null;
     
     if (city) {
-      console.log(`🌤️  Fetching weather for ${targetCity}...`);
-      
-      try {
-        const weatherData = await weatherService.getCurrentWeather(targetCity);
-        weather = {
-          temp: weatherData.current.temperature.value,
-          feelsLike: weatherData.current.temperature.feelsLike,
-          main: weatherData.current.condition.main,
-          description: weatherData.current.condition.description,
-          humidity: weatherData.current.humidity,
-          windSpeed: weatherData.current.windSpeed,
-          tempCategory: weatherData.current.temperature.category
-        };
-        console.log(`✅ Weather: ${weather.temp}°F, ${weather.description}`);
-        weatherRecs = weatherService.getClothingRecommendations(weatherData);
-      } catch (error) {
-        console.error('Weather fetch failed (non-critical):', error.message);
-        weather = null;
-      }
-    }
-
+  console.log(`🌤️  Fetching weather for ${targetCity}...`);
+  
+  try {
+    const weatherData = await weatherService.getCurrentWeather(targetCity);
+    
+    // For outfit generator (full object)
+    weather = weatherData;
+    
+    console.log(`✅ Weather: ${weatherData.current.temperature.value}°F, ${weatherData.current.condition.description}`);
+    weatherRecs = weatherService.getClothingRecommendations(weatherData);
+  } catch (error) {
+    console.error('Weather fetch failed (non-critical):', error.message);
+    weather = null;
+  }
+}
     // ========================================================================
     // STEP 5: Generate Outfits from User's Wardrobe
     // ========================================================================
@@ -348,15 +343,15 @@ exports.getDailyOutfit = async (req, res) => {
     };
 
     if (weather) {
-      response.data.location = targetCity;
-      response.data.weather = {
-        temp: weather.temp,
-        feelsLike: weather.feelsLike,
-        condition: weather.main,
-        description: weather.description,
-        humidity: weather.humidity,
-        windSpeed: weather.windSpeed
-      };
+  response.data.location = targetCity;
+  response.data.weather = {
+    temp: weather.current.temperature.value,
+    feelsLike: weather.current.temperature.feelsLike,
+    condition: weather.current.condition.main,
+    description: weather.current.condition.description,
+    humidity: weather.current.humidity,
+    windSpeed: weather.current.windSpeed
+  };
       response.data.weatherRecommendations = weatherRecs;
     }
 

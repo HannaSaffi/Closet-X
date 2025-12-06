@@ -1,0 +1,315 @@
+.travel-packing-assistant {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.travel-packing-assistant h1 {
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.subtitle {
+  color: #666;
+  font-size: 1.1rem;
+  margin-bottom: 2rem;
+}
+
+.assistant-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.packing-form {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.activities-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.activity-chip {
+  padding: 0.75rem 1rem;
+  background: #f5f5f5;
+  border: 2px solid #ddd;
+  border-radius: 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-size: 0.9rem;
+}
+
+.activity-chip:hover {
+  background: #e8e8e8;
+}
+
+.activity-chip.selected {
+  background: #4CAF50;
+  color: white;
+  border-color: #4CAF50;
+}
+
+.packing-plan-section {
+  margin-top: 2rem;
+}
+
+.trip-summary {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+}
+
+.trip-summary h2 {
+  color: #333;
+  margin-bottom: 1.5rem;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.summary-item {
+  padding: 1rem;
+  background: #f9f9f9;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.summary-label {
+  color: #666;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.summary-value {
+  color: #333;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.weather-summary {
+  background: #e3f2fd;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-top: 1rem;
+}
+
+.weather-summary h3 {
+  color: #1976d2;
+  margin-bottom: 0.5rem;
+}
+
+.packing-lists {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+}
+
+.packing-lists h2 {
+  color: #333;
+  margin-bottom: 2rem;
+}
+
+.packing-category {
+  margin-bottom: 2rem;
+}
+
+.packing-category h3 {
+  color: #333;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #eee;
+}
+
+.items-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.packing-item {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 8px;
+  border-left: 4px solid;
+}
+
+.packing-item.must-pack {
+  background: #fff3e0;
+  border-left-color: #ff9800;
+}
+
+.packing-item.recommended {
+  background: #e8f5e9;
+  border-left-color: #4CAF50;
+}
+
+.packing-item.optional {
+  background: #f5f5f5;
+  border-left-color: #9e9e9e;
+}
+
+.packing-item img {
+  width: 70px;
+  height: 70px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.item-info {
+  flex: 1;
+}
+
+.item-info strong {
+  display: block;
+  color: #333;
+  margin-bottom: 0.25rem;
+}
+
+.item-info p {
+  color: #666;
+  margin: 0.25rem 0;
+  font-size: 0.9rem;
+}
+
+.item-info small {
+  color: #888;
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+.daily-outfits {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+}
+
+.daily-outfits h2 {
+  color: #333;
+  margin-bottom: 1.5rem;
+}
+
+.days-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.day-card {
+  background: #f9f9f9;
+  padding: 1.5rem;
+  border-radius: 10px;
+  border: 1px solid #eee;
+}
+
+.day-card h3 {
+  color: #333;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+
+.day-weather {
+  background: #e3f2fd;
+  padding: 0.75rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+}
+
+.day-weather p {
+  margin: 0;
+  color: #1976d2;
+  font-size: 0.9rem;
+}
+
+.day-outfit {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.day-item {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: white;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.item-category {
+  color: #666;
+  font-weight: 600;
+}
+
+.item-desc {
+  color: #333;
+}
+
+.packing-tips {
+  background: #fff3cd;
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.packing-tips h3 {
+  color: #856404;
+  margin-bottom: 1rem;
+}
+
+.packing-tips ul {
+  margin: 0;
+  padding-left: 1.5rem;
+}
+
+.packing-tips li {
+  color: #856404;
+  margin-bottom: 0.5rem;
+  line-height: 1.6;
+}
+
+@media (max-width: 768px) {
+  .travel-packing-assistant {
+    padding: 1rem;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .activities-grid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  }
+
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .days-grid {
+    grid-template-columns: 1fr;
+  }
+}

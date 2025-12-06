@@ -174,21 +174,27 @@ if (includeWeather && weather) {
       }
     }
 
-    // Add outerwear - REQUIRED for cold weather
-    if (this.needsOuterwear(weatherRecommendations)) {
+// Add outerwear - REQUIRED for cold weather OUTDOOR occasions only
+    const isIndoor = ['home', 'comfy', 'comfortable', 'relaxed', 'cozy'].some(word =>
+      occasion.toLowerCase().includes(word)
+    );
+
+    if (this.needsOuterwear(weatherRecommendations) && !isIndoor) {
       if (categories.outerwear.length > 0) {
         const outerwear = this.selectMatchingItem(categories.outerwear, outfit.items[0], weatherRecommendations, outfit.items);
         if (outerwear) {
           outfit.items.push(outerwear);
           outfit.categories.push('outerwear');
+          console.log('🧥 Added outerwear for outdoor occasion in cold weather');
         } else {
           console.warn('⚠️  No suitable outerwear found for cold weather');
         }
       } else {
-        console.warn('⚠️  No outerwear available - needed for cold weather!');
+        console.log('⚠️  No outerwear available for outdoor cold weather');
       }
+    } else if (isIndoor) {
+      console.log('🏠 Indoor occasion - skipping outerwear');
     }
-
     // Add accessories (optional)
     if (categories.accessories.length > 0 && Math.random() > 0.6) {
       const accessory = this.selectRandomItem(categories.accessories, occasion, null);
@@ -363,6 +369,13 @@ isWeatherAppropriate(item, weatherRecommendations) {
   const season = item.season || [];
   const subcategory = (item.subcategory || '').toLowerCase();
   const category = (item.category || '').toLowerCase();
+  
+  // SPECIAL RULE: Outerwear should ALWAYS be allowed in cold weather regardless of season
+  // A fall jacket is still useful in freezing temps!
+  if (category === 'outerwear' && (temp === 'freezing' || temp === 'cold' || temp === 'cool')) {
+    console.log(`🧥 Allowing outerwear in ${temp} weather regardless of season`);
+    return true;
+  }
   
   // CRITICAL: Block summer items in freezing/cold weather (like shorts!)
   if ((temp === 'freezing' || temp === 'cold') && 

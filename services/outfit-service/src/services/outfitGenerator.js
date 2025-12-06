@@ -175,11 +175,14 @@ if (includeWeather && weather) {
       }
     }
 
-// Add outerwear - REQUIRED for cold weather OUTDOOR occasions only
+// Add outerwear - Check indoor first, then weather
     const isIndoor = ['home', 'comfy', 'comfortable', 'relaxed', 'cozy', 'working from home'].some(word =>
-     userPreference.toLowerCase().includes(word)
+      userPreference.toLowerCase().includes(word)
     );
-    if (this.needsOuterwear(weatherRecommendations) && !isIndoor) {
+    
+    if (isIndoor) {
+      console.log('🏠 Indoor occasion - skipping outerwear entirely');
+    } else if (this.needsOuterwear(weatherRecommendations)) {
       if (categories.outerwear.length > 0) {
         const outerwear = this.selectMatchingItem(categories.outerwear, outfit.items[0], weatherRecommendations, outfit.items);
         if (outerwear) {
@@ -192,8 +195,6 @@ if (includeWeather && weather) {
       } else {
         console.log('⚠️  No outerwear available for outdoor cold weather');
       }
-    } else if (isIndoor) {
-      console.log('🏠 Indoor occasion - skipping outerwear');
     }
     // Add accessories (optional)
     if (categories.accessories.length > 0 && Math.random() > 0.6) {

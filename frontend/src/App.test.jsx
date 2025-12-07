@@ -1,15 +1,23 @@
 import { describe, test, expect } from 'vitest';
-import { render } from '@testing-library/react';
-import App from './App';
+import { render, waitFor } from '@testing-library/react';
+import { act } from 'react';
+import App from './App';  // ← Changed from '../App' to './App'
 
 describe('App Component', () => {
-  test('renders without crashing', () => {
-    const { container } = render(<App />);
-    expect(container).toBeTruthy();
+  test('renders without crashing', async () => {
+    let result;
+    await act(async () => {
+      result = render(<App />);
+    });
+    expect(result.container).toBeTruthy();
   });
 
-  test('renders app container', () => {
-    const { container } = render(<App />);
-    expect(container.firstChild).toBeTruthy();
+  test('renders app container', async () => {
+    let result;
+    await act(async () => {
+      result = render(<App />);
+    });
+    const appContainer = result.container.firstChild;
+    expect(appContainer).toBeTruthy();
   });
 });

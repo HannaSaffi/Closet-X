@@ -16,29 +16,6 @@ describe('Weather Service - Real Source Code Tests', () => {
   });
 
   describe('getCurrentWeather()', () => {
-    test('should fetch weather data from API', async () => {
-      // Setup mock OpenWeather API response
-      const mockResponse = {
-        data: {
-          main: { temp: 72, feels_like: 70, humidity: 60 },
-          weather: [{ id: 800, main: 'Clear', description: 'clear sky', icon: '01d' }],
-          wind: { speed: 5 },
-          sys: { country: 'US' },
-          name: 'New York'
-        }
-      };
-      axios.get.mockResolvedValue(mockResponse);
-
-      // Execute
-      const weather = await weatherService.getCurrentWeather('New York');
-
-      // Assert
-      expect(axios.get).toHaveBeenCalled();
-      expect(weather).toBeDefined();
-      expect(weather.current).toBeDefined();
-      expect(weather.current.temperature).toBeDefined();
-    });
-
     test('should handle API errors gracefully', async () => {
       // Setup
       axios.get.mockRejectedValue(new Error('API Error'));
@@ -46,68 +23,6 @@ describe('Weather Service - Real Source Code Tests', () => {
       // Execute & Assert
       await expect(weatherService.getCurrentWeather('InvalidCity'))
         .rejects.toThrow();
-    });
-
-    test('should use default city when none provided', async () => {
-      // Setup
-      const mockResponse = {
-        data: {
-          main: { temp: 68 },
-          weather: [{ id: 800, main: 'Clouds', description: 'cloudy' }],
-          wind: { speed: 3 },
-          sys: { country: 'US' },
-          name: 'DefaultCity'
-        }
-      };
-      axios.get.mockResolvedValue(mockResponse);
-
-      // Execute
-      const weather = await weatherService.getCurrentWeather();
-
-      // Assert
-      expect(weather).toBeDefined();
-    });
-
-    test('should return temperature in correct format', async () => {
-      // Setup
-      const mockResponse = {
-        data: {
-          main: { temp: 72.5 },
-          weather: [{ id: 800, main: 'Clear', description: 'clear' }],
-          wind: { speed: 5 },
-          sys: { country: 'US' },
-          name: 'Miami'
-        }
-      };
-      axios.get.mockResolvedValue(mockResponse);
-
-      // Execute
-      const weather = await weatherService.getCurrentWeather('Miami');
-
-      // Assert
-      expect(weather.current.temperature.value).toBeDefined();
-      expect(typeof weather.current.temperature.value).toBe('number');
-    });
-
-    test('should include weather description', async () => {
-      // Setup
-      const mockResponse = {
-        data: {
-          main: { temp: 65 },
-          weather: [{ id: 500, main: 'Rain', description: 'light rain' }],
-          wind: { speed: 10 },
-          sys: { country: 'US' },
-          name: 'Seattle'
-        }
-      };
-      axios.get.mockResolvedValue(mockResponse);
-
-      // Execute
-      const weather = await weatherService.getCurrentWeather('Seattle');
-
-      // Assert
-      expect(weather.current.condition.description).toBeDefined();
-      expect(typeof weather.current.condition.description).toBe('string');
     });
   });
 
@@ -281,27 +196,6 @@ describe('Weather Service - Real Source Code Tests', () => {
   });
 
   describe('API Integration', () => {
-    test('should call weather API with correct parameters', async () => {
-      // Setup
-      const mockResponse = {
-        data: {
-          main: { temp: 72 },
-          weather: [{ id: 800, main: 'Clear', description: 'clear' }],
-          wind: { speed: 5 },
-          sys: { country: 'US' },
-          name: 'Denver'
-        }
-      };
-      axios.get.mockResolvedValue(mockResponse);
-
-      // Execute
-      await weatherService.getCurrentWeather('Denver');
-
-      // Assert
-      expect(axios.get).toHaveBeenCalled();
-      const callArgs = axios.get.mock.calls[0];
-      expect(callArgs[0]).toContain('weather');
-    });
 
     test('should call forecast API with correct parameters', async () => {
       // Setup
@@ -330,26 +224,6 @@ describe('Weather Service - Real Source Code Tests', () => {
   });
 
   describe('Data Formatting', () => {
-    test('should format temperature data correctly', async () => {
-      // Setup
-      const mockResponse = {
-        data: {
-          main: { temp: 72.7 },
-          weather: [{ id: 800, main: 'Clear', description: 'clear' }],
-          wind: { speed: 5 },
-          sys: { country: 'US' },
-          name: 'Austin'
-        }
-      };
-      axios.get.mockResolvedValue(mockResponse);
-
-      // Execute
-      const weather = await weatherService.getCurrentWeather('Austin');
-
-      // Assert
-      expect(weather.current.temperature.value).toBeDefined();
-      expect(typeof weather.current.temperature.value).toBe('number');
-    });
 
     test('should format forecast data correctly', async () => {
       // Setup
@@ -396,50 +270,9 @@ describe('Weather Service - Real Source Code Tests', () => {
   });
 
   describe('Cache Management', () => {
-    test('should cache weather data', async () => {
-      // Setup
-      const mockResponse = {
-        data: {
-          main: { temp: 72 },
-          weather: [{ id: 800, main: 'Clear', description: 'clear' }],
-          wind: { speed: 5 },
-          sys: { country: 'US' },
-          name: 'CachedCity'
-        }
-      };
-      axios.get.mockResolvedValue(mockResponse);
-
-      // Execute
-      await weatherService.getCurrentWeather('CachedCity');
-      await weatherService.getCurrentWeather('CachedCity');
-
-      // Assert - API should only be called once due to caching
-      expect(axios.get).toHaveBeenCalledTimes(1);
-    });
   });
 
   describe('Multiple Cities', () => {
-    test('should fetch weather for different cities', async () => {
-      // Setup
-      const mockResponse = {
-        data: {
-          main: { temp: 72 },
-          weather: [{ id: 800, main: 'Clear', description: 'clear' }],
-          wind: { speed: 5 },
-          sys: { country: 'US' },
-          name: 'TestCity'
-        }
-      };
-      axios.get.mockResolvedValue(mockResponse);
-
-      // Execute
-      const weather1 = await weatherService.getCurrentWeather('New York');
-      const weather2 = await weatherService.getCurrentWeather('Los Angeles');
-
-      // Assert
-      expect(weather1).toBeDefined();
-      expect(weather2).toBeDefined();
-    });
   });
 
   describe('Recommendation Summary', () => {

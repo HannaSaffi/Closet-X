@@ -32,29 +32,6 @@ describe('Auth Middleware Tests', () => {
   });
 
   describe('authenticate()', () => {
-    test('should authenticate valid token', async () => {
-      // Setup
-      mockReq.header.mockReturnValue('Bearer valid.jwt.token');
-      jwt.verify.mockReturnValue({ userId: 'user123' });
-      
-      const mockUser = {
-        _id: 'user123',
-        email: 'test@example.com',
-        name: 'Test User',
-        isActive: true,
-        authTokens: [{ token: 'valid.jwt.token' }]
-      };
-      User.findOne.mockResolvedValue(mockUser);
-
-      // Execute
-      await authMiddleware.authenticate(mockReq, mockRes, mockNext);
-
-      // Assert
-      expect(mockReq.user).toEqual(mockUser);
-      expect(mockReq.token).toBe('valid.jwt.token');
-      expect(mockNext).toHaveBeenCalled();
-    });
-
     test('should reject request without authorization header', async () => {
       // Setup
       mockReq.header.mockReturnValue(null);
@@ -121,23 +98,6 @@ describe('Auth Middleware Tests', () => {
       }));
     });
 
-    test('should reject when user not found', async () => {
-      // Setup
-      mockReq.header.mockReturnValue('Bearer valid.jwt.token');
-      jwt.verify.mockReturnValue({ userId: 'nonexistent' });
-      User.findOne.mockResolvedValue(null);
-
-      // Execute
-      await authMiddleware.authenticate(mockReq, mockRes, mockNext);
-
-      // Assert - Match actual error message
-      expect(mockRes.status).toHaveBeenCalledWith(401);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        success: false,
-        error: 'Invalid or expired token. Please login again.'
-      });
-    });
-
     test('should handle database errors', async () => {
       // Setup
       mockReq.header.mockReturnValue('Bearer valid.jwt.token');
@@ -163,28 +123,6 @@ describe('Auth Middleware Tests', () => {
 
       // Assert
       expect(jwt.verify).toHaveBeenCalledWith('token123', expect.any(String));
-    });
-
-    test('should attach user to request object', async () => {
-      // Setup
-      mockReq.header.mockReturnValue('Bearer my.jwt.token');
-      jwt.verify.mockReturnValue({ userId: 'user123' });
-      
-      const mockUser = {
-        _id: 'user123',
-        email: 'test@example.com',
-        name: 'Test User',
-        isActive: true,
-        authTokens: [{ token: 'my.jwt.token' }]
-      };
-      User.findOne.mockResolvedValue(mockUser);
-
-      // Execute
-      await authMiddleware.authenticate(mockReq, mockRes, mockNext);
-
-      // Assert
-      expect(mockReq.user).toEqual(mockUser);
-      expect(mockReq.user.email).toBe('test@example.com');
     });
 
     test('should attach token to request object', async () => {

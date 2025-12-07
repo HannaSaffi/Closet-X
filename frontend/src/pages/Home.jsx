@@ -4,7 +4,7 @@ import './Home.css';
 import axios from 'axios';
 
 function Home() {
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
   
   const [stats, setStats] = useState({
     totalItems: 0,

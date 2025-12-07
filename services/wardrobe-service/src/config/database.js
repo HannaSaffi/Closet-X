@@ -9,7 +9,7 @@ const connectDatabase = async () => {
     return;
   }
 
-  const mongoUri = process.env.MONGO_URI || 'mongodb://localhost:27017/closetx_wardrobe';
+  const mongoUri = process.env.MONGODB_URI || 'mongodb://wardrobe_service:service_password_123@mongodb-service.kates-closetx.svc.cluster.local:27017/closetx_wardrobe?authSource=admin';
 
   try {
     await mongoose.connect(mongoUri, {

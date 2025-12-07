@@ -24,7 +24,7 @@ spec:
           value: "3001"
         - name: NODE_ENV
           value: "production"
-        - name: MONGO_URI
+        - name: MONGODB_URI
           value: "mongodb://user_service:service_password_123@mongodb-service.kates-closetx.svc.cluster.local:27017/closetx_users?authSource=admin"
         - name: JWT_SECRET
           valueFrom:

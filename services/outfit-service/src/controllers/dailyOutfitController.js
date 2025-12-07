@@ -313,7 +313,7 @@ exports.getDailyOutfit = async (req, res) => {
         console.log('🤖 Getting AI fashion advice...');
         const adviceResult = await aiAdviceService.getFashionAdvice({
           occasion: parsedPreferences.occasion,
-          weather: weather ? `${weather.temp}°F, ${weather.description}` : "comfortable",
+          weather: weather ? `${weather.current.temperature.value}°F, ${weather.current.condition.description}` : "comfortable",
           preferences: preference || parsedPreferences.style,
           colors: outfits.length > 0 ? outfits[0].colors : [],
           style: parsedPreferences.style

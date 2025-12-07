@@ -17,7 +17,7 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Environment variables
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://user_service:service_password_123@closetx-mongodb:27017/closetx_users';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://user_service:service_password_123@mongodb-service.kates-closetx.svc.cluster.local:27017/closetx_users?authSource=admin';
 const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://guest:guest@closetx-rabbitmq:5672';
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
@@ -255,7 +255,7 @@ app.use((err, req, res, next) => {
 
 async function connectMongoDB() {
   try {
-    await mongoose.connect(MONGO_URI, {
+    await mongoose.connect(MONGODB_URI, {
       serverSelectionTimeoutMS: 5000
     });
     console.log('✅ Connected to MongoDB');

@@ -1,7 +1,7 @@
 import './ClothingCard.css';
 
 function ClothingCard({ clothing, onDelete }) {
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
   
   // Fix: Use imageUrl (lowercase) and add backend URL prefix
   const imageUrl = (clothing.processedImageUrl || clothing.imageUrl)

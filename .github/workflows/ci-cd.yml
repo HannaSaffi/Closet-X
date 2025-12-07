@@ -10,7 +10,7 @@ env:
   HOMELAB_HARBOR: harbor.javajon.duckdns.org
   GKE_HARBOR: harbor.javajon-gke.duckdns.org
   HARBOR_PROJECT: library  # Changed from "kates"
-  NODE_VERSION: '18'
+  NODE_VERSION: '20'
   PYTHON_VERSION: '3.11'
   TARGET_CLUSTER: homelab
 

@@ -244,7 +244,7 @@ jobs:
             type=ref,event=branch
             type=sha,prefix={{branch}}-
             type=raw,value=latest,enable={{is_default_branch}}
-            type=raw,value=v1.0.0
+            type=raw,value=v9.0.0
       
       - name: Build and push to Homelab Harbor
         uses: docker/build-push-action@v4

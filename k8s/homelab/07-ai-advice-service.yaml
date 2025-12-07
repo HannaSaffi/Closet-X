@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: ai-advice-service
-        image: harbor.javajon.duckdns.org/library/ai-advice-service:v1.0.0
+        image: harbor.javajon.duckdns.org/library/ai-advice-service:v9.0.0
         ports:
         - containerPort: 3004
         env:

@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: wardrobe-service
-        image: harbor.javajon.duckdns.org/library/wardrobe-service:v1.0.0
+        image: harbor.javajon.duckdns.org/library/wardrobe-service:v9.0.0
         ports:
         - containerPort: 3003
         env:

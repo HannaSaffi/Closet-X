@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: outfit-service
-        image: harbor.javajon.duckdns.org/library/outfit-service:v1.0.0
+        image: harbor.javajon.duckdns.org/library/outfit-service:v9.0.0
         ports:
         - containerPort: 3002
         env:

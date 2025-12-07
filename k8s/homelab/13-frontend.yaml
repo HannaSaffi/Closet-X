@@ -36,7 +36,7 @@ spec:
       - name: harbor-secret
       containers:
       - name: frontend
-        image: harbor.javajon.duckdns.org/library/frontend:v1.0.7
+        image: harbor.javajon.duckdns.org/library/frontend:v9.0.0
         ports:
         - containerPort: 80
           name: http

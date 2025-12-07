@@ -1,21 +1,21 @@
 # workers/outfit-generator/Dockerfile
 
-FROM node:18-alpine AS builder
+FROM node:20-alpine
 
 WORKDIR /app
 
-# 1) Package files (they live in this folder)
-COPY package*.json ./
+# Copy package files
+COPY workers/outfit-generator/package*.json ./
+
+# Install dependencies
 RUN npm ci --only=production
 
-# 2) Worker source (also in this folder)
-COPY src ./src
+# Copy worker source - FIX THIS LINE
+COPY workers/outfit-generator/src ./src
 
-# 3) Shared code: we DON’T have shared/ in this context,
-# so either:
-# - remove this line for now, OR
-# - vendor the shared code into this folder
-# For now, safest is: comment it out if not strictly needed yet
-# COPY shared /app/shared
+# Copy shared code from project root
+COPY shared ./shared
 
-# then the rest of your Dockerfile...
+EXPOSE 3000
+
+CMD ["node", "src/index.js"]

@@ -4,7 +4,7 @@ import './Home.css';
 import axios from 'axios';
 
 function Home() {
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
   
   const [stats, setStats] = useState({
     totalItems: 0,
@@ -57,12 +57,6 @@ function Home() {
           <div className="card-icon">✨</div>
           <h3>What should I wear?</h3>
           <p>Create and save outfit combinations</p>
-        </Link>
-
-        <Link to="/event-outfit" className="action-card">
-          <div className="card-icon">🎉</div>
-          <h3>Event Outfit Planner</h3>
-          <p>Plan perfect outfits for special occasions</p>
         </Link>
 
         <Link to="/travel-packing" className="action-card">

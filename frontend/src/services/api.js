@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
 const USER_API_URL = `${API_BASE_URL}/api`;
 const OUTFIT_API_URL = `${API_BASE_URL}/api/outfits`;
 const WARDROBE_API_URL = `${API_BASE_URL}/api/wardrobe`;
@@ -96,7 +96,7 @@ export const getDailyOutfit = async (params = {}) => {
     const queryString = queryParams.toString();
     
     // Use full path from API_BASE_URL instead of outfitApi
-    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
     const url = queryString 
       ? `${API_BASE_URL}/api/daily-outfit?${queryString}` 
       : `${API_BASE_URL}/api/daily-outfit`;

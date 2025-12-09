@@ -27,7 +27,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Environment variables
-MONGO_URI = os.getenv('MONGO_URI', 'mongodb://closetx-mongodb:27017/closetx_ai')
+MONGODB_URI = os.getenv('MONGODB_URI', 'mongodb://ai_service:service_password_123@mongodb-service.kates-closetx.svc.cluster.local:27017/closetx_ai?authSource=admin')
 RABBITMQ_URL = os.getenv('RABBITMQ_URL', 'amqp://guest:guest@closetx-rabbitmq:5672')
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', '')
 PORT = int(os.getenv('PORT', 3004))
@@ -143,7 +143,7 @@ async def startup_event():
     
     # Connect to MongoDB
     try:
-        db_client = AsyncIOMotorClient(MONGO_URI)
+        db_client = AsyncIOMotorClient(MONGODB_URI)
         await db_client.admin.command('ping')
         logger.info("✅ Connected to MongoDB")
     except Exception as e:

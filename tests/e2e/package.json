@@ -1,0 +1,18 @@
+{
+  "name": "closetx-e2e-tests",
+  "version": "1.0.0",
+  "description": "End-to-end tests for Closet-X",
+  "scripts": {
+    "test": "jest --detectOpenHandles --forceExit",
+    "test:verbose": "jest --verbose --detectOpenHandles --forceExit"
+  },
+  "dependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^6.3.4"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testTimeout": 60000,
+    "verbose": true
+  }
+}

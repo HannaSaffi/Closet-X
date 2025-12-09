@@ -9,8 +9,8 @@ on:
 env:
   HOMELAB_HARBOR: harbor.javajon.duckdns.org
   GKE_HARBOR: harbor.javajon-gke.duckdns.org
-  HARBOR_PROJECT: library  # Changed from "kates"
-  NODE_VERSION: '18'
+  HARBOR_PROJECT: library
+  NODE_VERSION: '20'
   PYTHON_VERSION: '3.11'
   TARGET_CLUSTER: homelab
 
@@ -154,6 +154,25 @@ jobs:
         working-directory: workers/fashion-advice
         run: npm test
 
+  test-frontend:
+    name: Test Frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+      
+      - name: Run tests
+        working-directory: frontend
+        run: npm test
+
   # ============================================================================
   # BUILD AND PUSH DOCKER IMAGES
   # ============================================================================
@@ -161,7 +180,7 @@ jobs:
   build-and-push:
     name: Build & Push Docker Images
     runs-on: ubuntu-latest
-    needs: [test-user-service, test-wardrobe-service, test-outfit-service, test-ai-service, test-image-processor, test-outfit-generator, test-fashion-advice]
+    needs: [test-user-service, test-wardrobe-service, test-outfit-service, test-ai-service, test-image-processor, test-outfit-generator, test-fashion-advice, test-frontend]
     if: |
       always() && 
       github.event_name == 'push' && 
@@ -193,11 +212,11 @@ jobs:
           - service: outfit-generator
             path: workers/outfit-generator
             dockerfile: Dockerfile
-            context_is_root: true  # Needs project root for shared/
+            context_is_root: true
           - service: fashion-advice
             path: workers/fashion-advice
             dockerfile: Dockerfile
-            context_is_root: true  # Needs project root for shared/
+            context_is_root: true
           - service: frontend
             path: frontend
             dockerfile: Dockerfile
@@ -216,13 +235,6 @@ jobs:
           username: ${{ secrets.HOMELAB_HARBOR_USERNAME }}
           password: ${{ secrets.HOMELAB_HARBOR_PASSWORD }}
       
-      - name: Log in to GKE Harbor Registry
-        uses: docker/login-action@v2
-        with:
-          registry: ${{ env.GKE_HARBOR }}
-          username: ${{ secrets.GKE_HARBOR_USERNAME }}
-          password: ${{ secrets.GKE_HARBOR_PASSWORD }}
-      
       - name: Extract metadata for Homelab
         id: meta-homelab
         uses: docker/metadata-action@v4
@@ -232,40 +244,16 @@ jobs:
             type=ref,event=branch
             type=sha,prefix={{branch}}-
             type=raw,value=latest,enable={{is_default_branch}}
-            type=raw,value=v1.0.0
-      
-      - name: Extract metadata for GKE
-        id: meta-gke
-        uses: docker/metadata-action@v4
-        with:
-          images: ${{ env.GKE_HARBOR }}/${{ env.HARBOR_PROJECT }}/${{ matrix.service }}
-          tags: |
-            type=ref,event=branch
-            type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=raw,value=v1.0.0
+            type=raw,value=v9.0.0
       
       - name: Build and push to Homelab Harbor
         uses: docker/build-push-action@v4
         with:
-          # Use project root as context for workers that need shared/
           context: ${{ matrix.context_is_root == true && '.' || matrix.path }}
           file: ${{ matrix.path }}/${{ matrix.dockerfile }}
           push: true
           tags: ${{ steps.meta-homelab.outputs.tags }}
           labels: ${{ steps.meta-homelab.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-      
-      - name: Build and push to GKE Harbor
-        uses: docker/build-push-action@v4
-        with:
-          # Use project root as context for workers that need shared/
-          context: ${{ matrix.context_is_root == true && '.' || matrix.path }}
-          file: ${{ matrix.path }}/${{ matrix.dockerfile }}
-          push: true
-          tags: ${{ steps.meta-gke.outputs.tags }}
-          labels: ${{ steps.meta-gke.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -295,14 +283,6 @@ jobs:
           chmod 600 $HOME/.kube/config
           kubectl config use-context admin@homelab-k8s-1
       
-      - name: Configure kubectl for GKE
-        if: env.TARGET_CLUSTER == 'gke'
-        run: |
-          mkdir -p $HOME/.kube
-          echo "${{ secrets.GKE_KUBE_CONFIG }}" | base64 -d > $HOME/.kube/config
-          chmod 600 $HOME/.kube/config
-          kubectl config use-context gke_horizontal-ray-375222_us-central1_autopilot-cluster-2
-      
       - name: Verify cluster connection
         run: |
           kubectl cluster-info
@@ -314,12 +294,19 @@ jobs:
           
           MANIFESTS_DIR="k8s/${{ env.TARGET_CLUSTER }}"
           
-          # Apply namespace and configs
+          # Apply namespace
+          echo "📦 Applying namespace..."
           kubectl apply -f $MANIFESTS_DIR/00-namespace.yaml
-          kubectl apply -f $MANIFESTS_DIR/01-imagepullsecret.yaml
+          
+          # Skip imagepullsecret - already exists in cluster
+          echo "🔐 Using existing harbor-pull-secret"
+          
+          # Apply configs and secrets
+          echo "⚙️  Applying configs and secrets..."
           kubectl apply -f $MANIFESTS_DIR/02-config-secrets.yaml
           
           # Deploy MongoDB
+          echo "🗄️  Deploying MongoDB..."
           kubectl apply -f $MANIFESTS_DIR/03-mongodb.yaml
           
           # Wait for MongoDB
@@ -328,23 +315,28 @@ jobs:
           sleep 10
           
           # Deploy services
+          echo "🚀 Deploying services..."
           kubectl apply -f $MANIFESTS_DIR/04-user-service.yaml
           kubectl apply -f $MANIFESTS_DIR/05-wardrobe-service.yaml
           kubectl apply -f $MANIFESTS_DIR/06-outfit-service.yaml
           kubectl apply -f $MANIFESTS_DIR/07-ai-advice-service.yaml
           
           # Deploy workers
+          echo "⚙️  Deploying workers..."
           kubectl apply -f $MANIFESTS_DIR/08-image-processor.yaml
           kubectl apply -f $MANIFESTS_DIR/09-outfit-generator.yaml
           kubectl apply -f $MANIFESTS_DIR/10-fashion-advice.yaml
 
-          # Deploy frontend  ← ADD THIS
+          # Deploy frontend
+          echo "🌐 Deploying frontend..."
           kubectl apply -f $MANIFESTS_DIR/13-frontend.yaml 
           
           # Deploy ingress
+          echo "🔀 Deploying ingress..."
           kubectl apply -f $MANIFESTS_DIR/11-ingress.yaml
           
-          # Deploy HPA (auto-scaling)
+          # Deploy HPA
+          echo "📊 Deploying HPA..."
           kubectl apply -f $MANIFESTS_DIR/12-hpa.yaml
           
           echo "✅ Deployment complete!"
@@ -357,6 +349,7 @@ jobs:
             deployment/wardrobe-service \
             deployment/outfit-service \
             deployment/ai-advice-service \
+            deployment/frontend \
             -n kates-closetx || true
       
       - name: Verify deployment
@@ -394,7 +387,7 @@ jobs:
         run: |
           echo "🧪 Running smoke tests..."
           
-          # Wait a bit for services to fully start
+          # Wait for services to be ready
           sleep 30
           
           # Test user service health
@@ -412,19 +405,14 @@ jobs:
           echo "🎉 Deployment Summary"
           echo "===================="
           echo "✅ All services deployed to ${{ env.TARGET_CLUSTER }}"
-          
-          if [ "${{ env.TARGET_CLUSTER }}" == "homelab" ]; then
-            echo "🌐 Access at: http://kates-closetx.javajon.duckdns.org"
-          else
-            echo "🌐 Access at: http://kates-closetx.javajon-gke.duckdns.org"
-          fi
-          
+          echo "🌐 Access at: http://kates-closetx.javajon.duckdns.org"
           echo ""
           echo "Services:"
           echo "  - User Service (Auth)"
           echo "  - Wardrobe Service (Clothing)"
           echo "  - Outfit Service (Outfit Generation)"
           echo "  - AI Advice Service (Fashion AI)"
+          echo "  - Frontend (React)"
           echo ""
           echo "Workers:"
           echo "  - Image Processor"
@@ -455,7 +443,7 @@ jobs:
   notify-failure:
     name: Notify Failure
     runs-on: ubuntu-latest
-    needs: [test-user-service, test-wardrobe-service, test-outfit-service, test-ai-service, test-image-processor, test-outfit-generator, test-fashion-advice, build-and-push, deploy-to-kubernetes]
+    needs: [test-user-service, test-wardrobe-service, test-outfit-service, test-ai-service, test-image-processor, test-outfit-generator, test-fashion-advice, test-frontend, build-and-push, deploy-to-kubernetes]
     if: failure()
     steps:
       - name: Failure message

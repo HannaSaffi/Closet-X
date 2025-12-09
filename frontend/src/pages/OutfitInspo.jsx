@@ -251,7 +251,7 @@ function OutfitInspo() {
                     {message.outfit.map((item, idx) => (
                       <div key={item._id || item.id || idx} className="outfit-item-mini">
                         <img 
-                          src={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'}${item.imageUrl}` || item.image || 'https://via.placeholder.com/150'}
+                          src={`${import.meta.env.VITE_API_BASE_URL || ''}${item.imageUrl}`}
                           alt={item.name}
                           className="outfit-item-image-mini"
                         />

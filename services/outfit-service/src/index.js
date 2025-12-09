@@ -61,7 +61,7 @@ app.use('/api/daily-outfit', dailyOutfitRoutes);
 // Connect to MongoDB and start server
 async function start() {
   try {
-    const mongoUri = process.env.MONGO_URI || 'mongodb://localhost:27017/closetx_outfits';
+    const mongoUri = process.env.MONGODB_URI || 'mongodb://outfit_service:service_password_123@mongodb-service.kates-closetx.svc.cluster.local:27017/closetx_outfits?authSource=admin';
     await mongoose.connect(mongoUri);
     console.log('✅ MongoDB connected');
     console.log('🔐 Authentication: Using User Service tokens (no local users)');

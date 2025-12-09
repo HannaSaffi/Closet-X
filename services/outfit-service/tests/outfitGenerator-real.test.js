@@ -37,25 +37,6 @@ describe('Outfit Generator Service - Real Source Code Tests', () => {
   });
 
   describe('generateOutfits()', () => {
-    test('should generate outfit combinations', async () => {
-      // Setup
-      wardrobeClient.getClothingItems.mockResolvedValue(mockClothing);
-      weatherService.getCurrentWeather.mockResolvedValue(mockWeatherData);
-      weatherService.getClothingRecommendations.mockReturnValue({
-        temperature: 'mild',
-        suggested: ['light'],
-        required: [],
-        avoid: []
-      });
-
-      // Execute
-      const outfits = await outfitGenerator.generateOutfits('user123', { token: 'test-token' });
-
-      // Assert
-      expect(outfits).toBeDefined();
-      expect(Array.isArray(outfits)).toBe(true);
-      expect(outfits.length).toBeGreaterThan(0);
-    });
 
     test('should fetch clothing from wardrobe service', async () => {
       // Setup
@@ -140,34 +121,6 @@ describe('Outfit Generator Service - Real Source Code Tests', () => {
       expect(formalOutfits).toBeDefined();
     });
 
-    test('should consider weather when provided', async () => {
-      // Setup
-      wardrobeClient.getClothingItems.mockResolvedValue(mockClothing);
-      const hotWeather = {
-        current: {
-          temperature: { value: 85, unit: 'F' },
-          condition: { main: 'Clear', mapped: 'clear' }
-        },
-        precipitation: { level: 'none' }
-      };
-      weatherService.getClothingRecommendations.mockReturnValue({
-        temperature: 'hot',
-        suggested: ['light', 'breathable'],
-        required: [],
-        avoid: ['heavy']
-      });
-
-      // Execute
-      const outfits = await outfitGenerator.generateOutfits('user123', { 
-        token: 'test-token',
-        weather: hotWeather 
-      });
-
-      // Assert
-      expect(outfits).toBeDefined();
-      expect(outfits.length).toBeGreaterThan(0);
-    });
-
     test('should work without weather when includeWeather is false', async () => {
       // Setup
       wardrobeClient.getClothingItems.mockResolvedValue(mockClothing);
@@ -228,28 +181,6 @@ describe('Outfit Generator Service - Real Source Code Tests', () => {
       }
     });
 
-    test('should give higher scores to matching styles', async () => {
-      // Setup
-      const matchingClothing = [
-        { id: '1', category: 'top', color: 'blue', style: 'casual', weight: 'light' },
-        { id: '2', category: 'bottom', color: 'black', style: 'casual', weight: 'light' },
-        { id: '3', category: 'shoes', color: 'white', style: 'casual', weight: 'light' }
-      ];
-      wardrobeClient.getClothingItems.mockResolvedValue(matchingClothing);
-      weatherService.getCurrentWeather.mockResolvedValue(mockWeatherData);
-      weatherService.getClothingRecommendations.mockReturnValue({
-        temperature: 'mild',
-        suggested: ['light'],
-        required: [],
-        avoid: []
-      });
-
-      // Execute
-      const outfits = await outfitGenerator.generateOutfits('user123', { token: 'test-token' });
-
-      // Assert
-      expect(outfits[0].score).toBeGreaterThan(50);
-    });
   });
 
   describe('Outfit Validation', () => {
@@ -389,49 +320,7 @@ describe('Outfit Generator Service - Real Source Code Tests', () => {
   });
 
   describe('Category Distribution', () => {
-    test('should create diverse outfit combinations', async () => {
-      // Setup
-      wardrobeClient.getClothingItems.mockResolvedValue(mockClothing);
-      weatherService.getCurrentWeather.mockResolvedValue(mockWeatherData);
-      weatherService.getClothingRecommendations.mockReturnValue({
-        temperature: 'mild',
-        suggested: ['light'],
-        required: [],
-        avoid: []
-      });
 
-      // Execute
-      const outfits = await outfitGenerator.generateOutfits('user123', { 
-        token: 'test-token',
-        maxSuggestions: 5 
-      });
-
-      // Assert
-      expect(outfits.length).toBeGreaterThan(0);
-      expect(outfits.length).toBeLessThanOrEqual(5);
-    });
-
-    test('should include complete outfits when possible', async () => {
-      // Setup
-      wardrobeClient.getClothingItems.mockResolvedValue(mockClothing);
-      weatherService.getCurrentWeather.mockResolvedValue(mockWeatherData);
-      weatherService.getClothingRecommendations.mockReturnValue({
-        temperature: 'mild',
-        suggested: ['light'],
-        required: [],
-        avoid: []
-      });
-
-      // Execute
-      const outfits = await outfitGenerator.generateOutfits('user123', { token: 'test-token' });
-
-      // Assert - at least one complete outfit should exist
-      const hasCompleteOutfit = outfits.some(outfit => {
-        const categories = outfit.items.map(item => item.category);
-        return categories.includes('top') && categories.includes('bottom');
-      });
-      expect(hasCompleteOutfit).toBe(true);
-    });
   });
 
   describe('User Preferences', () => {

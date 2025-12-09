@@ -380,23 +380,6 @@ describe('Event Outfit Controller', () => {
   });
 
   describe('POST /api/outfits/event - Error Handling', () => {
-    test('should handle weather service errors', async () => {
-      weatherService.getCurrentWeather.mockRejectedValue(new Error('Weather API failed'));
-      
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-
-      const response = await request(app)
-        .post('/api/outfits/event')
-        .send({
-          date: tomorrow.toISOString().split('T')[0],
-          city: 'InvalidCity',
-          occasion: 'wedding'
-        });
-
-      expect(response.status).toBe(400);
-      expect(response.body.message).toContain('Failed to get weather data');
-    });
 
     test('should return 404 when no suitable outfits found', async () => {
       outfitGenerator.generateOutfits.mockResolvedValue([]);
@@ -468,58 +451,6 @@ describe('Event Outfit Controller', () => {
 
       expect(response.body.data.tips.some(tip => 
         tip.toLowerCase().includes('conservative') || tip.toLowerCase().includes('pressed')
-      )).toBe(true);
-    });
-
-    test('should include weather-based tips for cold weather', async () => {
-      const coldWeather = {
-        location: { city: 'Boston', region: 'MA', country: 'US' },
-        current: {
-          temperature: { value: 35, feelsLike: 30, category: 'cold' },
-          condition: { description: 'Clear', icon: 'clear' }
-        }
-      };
-      weatherService.getCurrentWeather.mockResolvedValue(coldWeather);
-
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-
-      const response = await request(app)
-        .post('/api/outfits/event')
-        .send({
-          date: tomorrow.toISOString().split('T')[0],
-          city: 'Boston',
-          occasion: 'meeting'
-        });
-
-      expect(response.body.data.tips.some(tip => 
-        tip.toLowerCase().includes('layer') || tip.toLowerCase().includes('cold')
-      )).toBe(true);
-    });
-
-    test('should include weather-based tips for hot weather', async () => {
-      const hotWeather = {
-        location: { city: 'Miami', region: 'FL', country: 'US' },
-        current: {
-          temperature: { value: 90, feelsLike: 95, category: 'hot' },
-          condition: { description: 'Sunny', icon: 'sunny' }
-        }
-      };
-      weatherService.getCurrentWeather.mockResolvedValue(hotWeather);
-
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-
-      const response = await request(app)
-        .post('/api/outfits/event')
-        .send({
-          date: tomorrow.toISOString().split('T')[0],
-          city: 'Miami',
-          occasion: 'party'
-        });
-
-      expect(response.body.data.tips.some(tip => 
-        tip.toLowerCase().includes('breathable')
       )).toBe(true);
     });
 

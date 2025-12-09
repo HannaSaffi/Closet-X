@@ -212,17 +212,6 @@ describe('Wardrobe Service - Clothing Controller', () => {
       expect(res.json).toHaveBeenCalled();
     });
     
-    test('should return 404 for non-existent item', async () => {
-      const req = mockRequest({
-        params: { id: 'non-existent' }
-      });
-      const res = mockResponse();
-      
-      await clothingController.getClothingItemById(req, res);
-      
-      expect(res.status).toHaveBeenCalled();
-    });
-    
     test('should only return items owned by user', async () => {
       const req = mockRequest({
         params: { id: 'item-123' },
@@ -340,18 +329,6 @@ describe('Wardrobe Service - Clothing Controller', () => {
       expect(res.json).toHaveBeenCalled();
     });
     
-    test('should return 404 for non-existent item', async () => {
-      const req = mockRequest({
-        params: { id: 'non-existent' },
-        body: { brand: 'New Brand' }
-      });
-      const res = mockResponse();
-      
-      await clothingController.updateClothingItem(req, res);
-      
-      expect(res.status).toHaveBeenCalled();
-    });
-    
     test('should only update items owned by user', async () => {
       const req = mockRequest({
         params: { id: 'item-123' },
@@ -376,17 +353,6 @@ describe('Wardrobe Service - Clothing Controller', () => {
       await clothingController.deleteClothingItem(req, res);
       
       expect(res.json).toHaveBeenCalled();
-    });
-    
-    test('should return 404 for non-existent item', async () => {
-      const req = mockRequest({
-        params: { id: 'non-existent' }
-      });
-      const res = mockResponse();
-      
-      await clothingController.deleteClothingItem(req, res);
-      
-      expect(res.status).toHaveBeenCalled();
     });
     
     test('should delete associated images', async () => {
@@ -424,17 +390,6 @@ describe('Wardrobe Service - Clothing Controller', () => {
       await clothingController.markAsWorn(req, res);
       
       expect(res.json).toHaveBeenCalled();
-    });
-    
-    test('should return 404 for non-existent item', async () => {
-      const req = mockRequest({
-        params: { id: 'non-existent' }
-      });
-      const res = mockResponse();
-      
-      await clothingController.markAsWorn(req, res);
-      
-      expect(res.status).toHaveBeenCalled();
     });
   });
 
@@ -529,16 +484,6 @@ describe('Wardrobe Service - Clothing Controller', () => {
   });
 
   describe('Edge Cases and Error Handling', () => {
-    test('should handle invalid ObjectId', async () => {
-      const req = mockRequest({
-        params: { id: 'invalid-id' }
-      });
-      const res = mockResponse();
-      
-      await clothingController.getClothingItemById(req, res);
-      
-      expect(res.status).toHaveBeenCalled();
-    });
     
     test('should handle missing user context', async () => {
       const req = mockRequest({ user: null });

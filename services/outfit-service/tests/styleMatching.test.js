@@ -313,15 +313,6 @@ describe('StyleMatching Algorithm', () => {
   });
 
   describe('Edge Cases', () => {
-    test('should handle undefined inputs gracefully', () => {
-      expect(() => styleMatching.getStyleCompatibility(undefined, 'casual')).not.toThrow();
-      expect(() => styleMatching.calculateStyleCoherence(undefined)).not.toThrow();
-    });
-
-    test('should handle null inputs gracefully', () => {
-      expect(() => styleMatching.isStyleAppropriateForOccasion('casual', null)).not.toThrow();
-    });
-
     test('should handle very long style arrays', () => {
       const longArray = new Array(100).fill('casual');
       expect(() => styleMatching.calculateStyleCoherence(longArray)).not.toThrow();

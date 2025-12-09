@@ -59,12 +59,6 @@ function Home() {
           <p>Create and save outfit combinations</p>
         </Link>
 
-        <Link to="/event-outfit" className="action-card">
-          <div className="card-icon">🎉</div>
-          <h3>Event Outfit Planner</h3>
-          <p>Plan perfect outfits for special occasions</p>
-        </Link>
-
         <Link to="/travel-packing" className="action-card">
           <div className="card-icon">✈️</div>
           <h3>Travel Packing Assistant</h3>

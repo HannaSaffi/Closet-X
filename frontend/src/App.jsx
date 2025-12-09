@@ -6,7 +6,6 @@ import Closet from './pages/Closet';
 import AddClothing from './pages/AddClothing';
 import OutfitInspo from './pages/OutfitInspo';
 import Analytics from './pages/Analytics';
-import EventOutfitPlanner from './pages/EventOutfitPlanner';
 import TravelPackingAssistant from './pages/TravelPackingAssistant';
 import OutfitCalendar from './pages/OutfitCalendar';
 import Login from './pages/Login';
@@ -100,14 +99,6 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <AddClothing />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/event-outfit"
-            element={
-              <ProtectedRoute>
-                <EventOutfitPlanner />
               </ProtectedRoute>
             }
           />

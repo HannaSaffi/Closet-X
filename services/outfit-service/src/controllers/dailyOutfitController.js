@@ -35,7 +35,7 @@ function getConversationHistory(userId) {
 }
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || '';
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash-lite:generateContent';
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
 
 /**
  * Use Google Gemini to classify query and generate response
@@ -151,7 +151,7 @@ Keep responses warm and conversational (2-4 sentences).${weatherContext}`
 
     console.log(`🤖 Calling Gemini for conversational query: "${text}"`);
 
-    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash-lite:generateContent?key=${GEMINI_API_KEY}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
     
     const response = await axios.post(
       url,

@@ -18,7 +18,7 @@ spec:
       - name: harbor-secret
       containers:
       - name: image-processor
-        image: harbor.javajon.duckdns.org/library/image-processor:v9.0.0
+        image: harbor.javajon.duckdns.org/library/image-processor:v8.0.8
         env:
         - name: NODE_ENV
           value: "production"

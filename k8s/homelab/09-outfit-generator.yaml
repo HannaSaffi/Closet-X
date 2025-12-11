@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: outfit-generator
-        image: harbor.javajon.duckdns.org/library/outfit-generator:v9.0.0
+        image: harbor.javajon.duckdns.org/library/outfit-generator:v8.0.8
         imagePullPolicy: Always
         env:
         - name: NODE_ENV

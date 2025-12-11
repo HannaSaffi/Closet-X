@@ -83,6 +83,15 @@ Password: 12345678
   - Primary color
   - Quick action buttons (Edit, Delete)
 
+<<<<<<< HEAD
+=======
+**Filter Options:**
+- **By Category:** View only tops, bottoms, shoes, etc.
+- **By Color:** Filter by primary color
+- **By Season:** See summer, winter, spring, or fall items
+- **By Tags:** Search using custom tags you've added
+
+>>>>>>> 053162f8a7dd651baaed137954e756706d395418
 #### Editing Items
 1. Click the **"Edit"** button on any item card
 2. Modify any information
@@ -405,3 +414,8 @@ Closet-X is mobile-responsive:
 ---
 
 **Happy styling! 👔👗👟**
+<<<<<<< HEAD
+=======
+
+Built with ❤️ by Team Kates
+>>>>>>> 053162f8a7dd651baaed137954e756706d395418

@@ -291,7 +291,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - **OpenWeather API** for weather data
 - **Google Vision AI** for image recognition
-- **Ollama** for local LLM capabilities
+- **Gemini** for local LLM capabilities
 - **Harbor** for private container registry
 - **Kubernetes** community for excellent documentation
 - **Professor Jonathan Johnson** for guidance and support
@@ -302,6 +302,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 For questions or support:
 - **GitHub Issues**: [https://github.com/HannaSaffi/Closet-X/issues](https://github.com/HannaSaffi/Closet-X/issues)
+<<<<<<< HEAD
 - **Team Email**: Contact through Trinity College
 
 ---
@@ -323,4 +324,9 @@ For questions or support:
 
 ---
 
+=======
+  
+---
+
+>>>>>>> 053162f8a7dd651baaed137954e756706d395418
 **Built with ❤️ by Team Kates | Trinity College | Fall 2024**

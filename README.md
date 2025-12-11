@@ -306,27 +306,4 @@ For questions or support:
 - **Team Email**: Contact through Trinity College
 
 ---
-
-## 🗺️ Roadmap
-
-### Future Enhancements
-
-- [ ] Mobile app (React Native)
-- [ ] Social features (share outfits, follow users)
-- [ ] Virtual try-on using AR
-- [ ] Outfit calendar and planning
-- [ ] Shopping recommendations
-- [ ] Sustainability tracking (cost per wear)
-- [ ] Style analytics and insights
-- [ ] Integration with clothing brands
-- [ ] Machine learning for better recommendations
-- [ ] Multi-language support
-
----
-
-=======
-  
----
-
->>>>>>> 053162f8a7dd651baaed137954e756706d395418
 **Built with ❤️ by Team Kates | Trinity College | Fall 2024**

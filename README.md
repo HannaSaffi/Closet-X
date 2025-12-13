@@ -303,7 +303,14 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 For questions or support:
 - **GitHub Issues**: [https://github.com/HannaSaffi/Closet-X/issues](https://github.com/HannaSaffi/Closet-X/issues)
 <<<<<<< HEAD
+<<<<<<< HEAD
 - **Team Email**: Contact through Trinity College
 
 ---
+=======
+- **Team Email**: Contact through Trinity College
+
+---
+
+>>>>>>> ae8edd44f8fe9a47f0c3cccec00fef50caa813cf
 **Built with ❤️ by Team Kates | Trinity College | Fall 2024**

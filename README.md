@@ -308,16 +308,11 @@ Team Email: Contact through Trinity College
 ## 🗺️ Roadmap
 Future Enhancements
 
- Mobile app (React Native)
- Social features (share outfits, follow users)
- Virtual try-on using AR
- Outfit calendar and planning
- Shopping recommendations
- Sustainability tracking (cost per wear)
- Style analytics and insights
- Integration with clothing brands
- Machine learning for better recommendations
- Multi-language support
+- Mobile app (React Native)
+- Outfit calendar and planning
+- Style analytics and insights
+- Machine learning for better recommendations
+- Multi-language support
  
 ---
 

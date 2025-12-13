@@ -295,7 +295,30 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Harbor** for private container registry
 - **Kubernetes** community for excellent documentation
 - **Professor Jonathan Johnson** for guidance and support
-
+  
 ---
 
-**Built with ❤️ by Team Kates | Trinity College | Fall 2024**
+## 📞 Contact
+For questions or support:
+
+GitHub Issues: https://github.com/HannaSaffi/Closet-X/issues
+Team Email: Contact through Trinity College
+
+---
+## 🗺️ Roadmap
+Future Enhancements
+
+ Mobile app (React Native)
+ Social features (share outfits, follow users)
+ Virtual try-on using AR
+ Outfit calendar and planning
+ Shopping recommendations
+ Sustainability tracking (cost per wear)
+ Style analytics and insights
+ Integration with clothing brands
+ Machine learning for better recommendations
+ Multi-language support
+ 
+---
+
+Built with ❤️ by Team Kates | Trinity College | Fall 2024

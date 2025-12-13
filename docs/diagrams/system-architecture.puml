@@ -1,0 +1,110 @@
+@startuml system-architecture
+!define ICONURL https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/v2.4.0
+!include ICONURL/common.puml
+!include ICONURL/font-awesome-5/react.puml
+!include ICONURL/font-awesome-5/docker.puml
+!include ICONURL/devicons/mongodb.puml
+!include ICONURL/font-awesome-5/node_js.puml
+
+title Closet-X System Architecture
+
+skinparam {
+  backgroundColor #FFFFFF
+  componentStyle rectangle
+  defaultFontName Arial
+  defaultFontSize 12
+}
+
+package "Client Layer" {
+  [React Frontend\n<$react>] as Frontend
+}
+
+package "Kubernetes Cluster" {
+  
+  package "Ingress Layer" {
+    [Nginx Ingress\nController] as Ingress
+  }
+  
+  package "Microservices" {
+    [User Service\n<$node_js>\n:3001] as UserService
+    [Wardrobe Service\n<$node_js>\n:3003] as WardrobeService
+    [Outfit Service\n<$node_js>\n:3002] as OutfitService
+    [AI Advice Service\n<$node_js>\n:3004] as AIService
+  }
+  
+  package "Message Queue" {
+    [RabbitMQ\n:5672] as RabbitMQ
+  }
+  
+  package "Background Workers" {
+    [Image Processor\nWorker] as ImageWorker
+    [Outfit Generator\nWorker] as OutfitWorker
+    [Fashion Advice\nWorker] as FashionWorker
+  }
+  
+  package "Data Layer" {
+    database "MongoDB\n<$mongodb>\n:27017" as MongoDB {
+      [closetx_users]
+      [closetx_wardrobe]
+      [closetx_outfits]
+      [GridFS]
+    }
+  }
+}
+
+cloud "External APIs" {
+  [OpenWeather API] as WeatherAPI
+  [Google Vision AI] as VisionAPI
+  [Remove.bg API] as RemoveBG
+}
+
+' Client connections
+Frontend -down-> Ingress : HTTPS
+
+' Ingress routing
+Ingress -down-> UserService : /api/users
+Ingress -down-> WardrobeService : /api/wardrobe
+Ingress -down-> OutfitService : /api/outfits
+Ingress -down-> AIService : /api/ai
+
+' Service to database
+UserService -down-> closetx_users : Read/Write
+WardrobeService -down-> closetx_wardrobe : Read/Write
+WardrobeService -down-> GridFS : Store Images
+OutfitService -down-> closetx_outfits : Read/Write
+
+' Service to RabbitMQ
+WardrobeService -right-> RabbitMQ : Publish:\nimage.analyze
+OutfitService -down-> RabbitMQ : Publish:\noutfit.generate\nfashion.advice
+
+' RabbitMQ to Workers
+RabbitMQ -down-> ImageWorker : Consume:\nimage_processing_queue
+RabbitMQ -down-> OutfitWorker : Consume:\noutfit_generation_queue
+RabbitMQ -down-> FashionWorker : Consume:\nfashion_advice_queue
+
+' Workers to database
+ImageWorker -up-> closetx_wardrobe : Update metadata
+OutfitWorker -up-> closetx_outfits : Store outfits
+FashionWorker -up-> closetx_outfits : Store advice
+
+' External API calls
+OutfitService --> WeatherAPI : Get weather
+ImageWorker --> VisionAPI : Analyze images
+WardrobeService --> RemoveBG : Remove background
+
+note right of MongoDB
+  StatefulSet with
+  Persistent Volumes
+end note
+
+note right of RabbitMQ
+  Message broker for
+  async processing
+end note
+
+note bottom of "Background Workers"
+  Scale independently
+  based on queue depth
+end note
+
+@enduml

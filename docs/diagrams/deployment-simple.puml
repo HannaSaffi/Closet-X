@@ -1,0 +1,60 @@
+@startuml deployment-simple
+!theme vibrant
+
+title Closet-X Kubernetes Deployment
+
+skinparam componentStyle rectangle
+
+cloud "Harbor Registry" {
+  artifact "Container Images\n(7 services)" as Images
+}
+
+node "Kubernetes Cluster" {
+  
+  package "Namespace: kates-closetx" {
+    
+    [Ingress] as Ingress
+    
+    package "Deployments" {
+      [Frontend\n(2 replicas)]
+      [User Service\n(2 replicas)]
+      [Wardrobe Service\n(2 replicas)]
+      [Outfit Service\n(3 replicas)]
+      [Image Processor\n(2 replicas)]
+      [Outfit Generator\n(2 replicas)]
+      [Fashion Advice\n(1 replica)]
+      [RabbitMQ\n(1 replica)]
+    }
+    
+    [StatefulSet:\nMongoDB] as MongoDB
+    
+    database "PersistentVolume\n10Gi" as PV
+    
+    database "ConfigMap:\nAPI Keys" as Config
+    
+    database "Secret:\nRegistry Creds" as Secret
+  }
+}
+
+Images ..> "Deployments" : pull images
+
+Ingress --> [User Service]
+Ingress --> [Wardrobe Service]
+Ingress --> [Outfit Service]
+
+MongoDB --> PV : mount
+
+Config ..> "Deployments" : env vars
+Secret ..> "Deployments" : imagePullSecret
+
+note right of Ingress
+  kates-closetx.javajon.duckdns.org
+end note
+
+note bottom of MongoDB
+  StatefulSet ensures stable
+  network identity and
+  persistent storage
+end note
+
+@enduml

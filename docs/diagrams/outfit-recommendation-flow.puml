@@ -1,0 +1,79 @@
+@startuml outfit-recommendation-flow
+!theme vibrant
+
+title Outfit Recommendation Flow - AI Style Chat
+
+actor User
+participant "React\nFrontend" as Frontend
+participant "Outfit\nService" as OutfitSvc
+participant "Wardrobe\nService" as WardrobeSvc
+participant "OpenWeather\nAPI" as WeatherAPI
+participant "RabbitMQ" as Queue
+participant "Outfit\nGenerator\nWorker" as Worker
+database "MongoDB" as DB
+
+User -> Frontend: "What should I wear\nfor business meeting?"
+activate Frontend
+
+Frontend -> OutfitSvc: POST /api/outfits/daily\n{occasion: "business", city: "Hartford"}
+activate OutfitSvc
+
+OutfitSvc -> WeatherAPI: GET /weather/current\n?city=Hartford
+activate WeatherAPI
+WeatherAPI --> OutfitSvc: {temp: 65°F, condition: "Cloudy"}
+deactivate WeatherAPI
+
+OutfitSvc -> WardrobeSvc: GET /api/wardrobe/clothing\n?userId={id}
+activate WardrobeSvc
+WardrobeSvc -> DB: Find user's clothing items
+activate DB
+DB --> WardrobeSvc: [clothing items]
+deactivate DB
+WardrobeSvc --> OutfitSvc: [clothing items array]
+deactivate WardrobeSvc
+
+OutfitSvc -> Queue: Publish to outfit_generation_queue\n{userId, occasion, weather, items}
+activate Queue
+
+Queue -> Worker: Consume message
+activate Worker
+
+Worker -> Worker: Apply algorithms:\n- Color harmony\n- Style compatibility\n- Weather scoring
+
+Worker -> DB: Save generated outfits
+activate DB
+DB --> Worker: Outfit IDs
+deactivate DB
+
+Worker --> Queue: ACK message
+deactivate Worker
+deactivate Queue
+
+OutfitSvc -> DB: Poll for generated outfits
+activate DB
+DB --> OutfitSvc: [outfit combinations]
+deactivate DB
+
+OutfitSvc --> Frontend: {outfits: [...], weather: {...}}
+deactivate OutfitSvc
+
+Frontend --> User: Display 3-5 outfit\nsuggestions with images
+deactivate Frontend
+
+note right of Worker
+  Algorithms:
+  - Color Harmony (30%)
+  - Style Match (40%)
+  - Weather Score (30%)
+  
+  Composite score ranks
+  outfit combinations
+end note
+
+note right of Queue
+  Async processing allows
+  frontend to remain responsive
+  while complex algorithms run
+end note
+
+@enduml

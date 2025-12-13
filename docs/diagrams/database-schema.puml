@@ -1,0 +1,180 @@
+@startuml database-schema
+!theme vibrant
+
+title Closet-X Database Schema
+
+entity "users" {
+  * _id : ObjectId <<PK>>
+  --
+  * email : String <<unique>>
+  * username : String
+  * password : String (hashed)
+  createdAt : Date
+  updatedAt : Date
+  --
+  preferences : Object
+    - favoriteColors : [String]
+    - styles : [String]
+    - sizes : Object
+  location : Object
+    - city : String
+    - country : String
+}
+
+entity "clothing" {
+  * _id : ObjectId <<PK>>
+  --
+  * userId : ObjectId <<FK>>
+  * category : String
+  * color : Object
+    - primary : String
+    - secondary : [String]
+  brand : String
+  season : [String]
+  tags : [String]
+  --
+  images : Object
+    - originalImageId : ObjectId
+    - processedImageId : ObjectId
+    - thumbnailId : ObjectId
+  --
+  aiAnalysis : Object
+    - category : String
+    - colors : [String]
+    - style : String
+    - fabric : String
+    - confidence : Number
+  --
+  metadata : Object
+    - purchaseDate : Date
+    - price : Number
+    - wearCount : Number
+  --
+  createdAt : Date
+  updatedAt : Date
+}
+
+entity "outfits" {
+  * _id : ObjectId <<PK>>
+  --
+  * userId : ObjectId <<FK>>
+  * items : [ObjectId] <<FK>>
+  occasion : String
+  --
+  scores : Object
+    - colorHarmony : Number
+    - styleMatch : Number
+    - weatherScore : Number
+    - composite : Number
+  --
+  weather : Object
+    - temp : Number
+    - condition : String
+    - date : Date
+  --
+  isFavorite : Boolean
+  notes : String
+  --
+  createdAt : Date
+  updatedAt : Date
+}
+
+entity "fashion_advice" {
+  * _id : ObjectId <<PK>>
+  --
+  * userId : ObjectId <<FK>>
+  * outfitId : ObjectId <<FK>>
+  --
+  prompt : String
+  advice : String
+  --
+  metadata : Object
+    - model : String
+    - tokens : Number
+    - processingTime : Number
+  --
+  createdAt : Date
+}
+
+entity "GridFS.files" {
+  * _id : ObjectId <<PK>>
+  --
+  * filename : String
+  * length : Number
+  * chunkSize : Number
+  * uploadDate : Date
+  metadata : Object
+    - userId : ObjectId
+    - clothingId : ObjectId
+    - type : String
+}
+
+entity "GridFS.chunks" {
+  * _id : ObjectId <<PK>>
+  --
+  * files_id : ObjectId <<FK>>
+  * n : Number
+  * data : Binary
+}
+
+' Relationships
+users ||--o{ clothing : "owns"
+users ||--o{ outfits : "creates"
+users ||--o{ fashion_advice : "requests"
+
+clothing ||--o{ outfits : "included in"
+outfits ||--o| fashion_advice : "has"
+
+clothing }o--|| "GridFS.files" : "originalImage"
+clothing }o--|| "GridFS.files" : "processedImage"
+clothing }o--|| "GridFS.files" : "thumbnail"
+
+"GridFS.files" ||--o{ "GridFS.chunks" : "split into"
+
+note right of users
+  Indexes:
+  - email (unique)
+  - username (unique)
+  
+  Authentication:
+  - bcrypt hashed passwords
+  - JWT tokens (7d expiry)
+end note
+
+note right of clothing
+  Indexes:
+  - userId
+  - category
+  - color.primary
+  - season
+  - tags
+  - createdAt
+  
+  Compound index:
+  - {userId, category}
+end note
+
+note right of outfits
+  Indexes:
+  - userId
+  - items (array)
+  - createdAt
+  - isFavorite
+  
+  Compound index:
+  - {userId, isFavorite}
+end note
+
+note bottom of "GridFS.files"
+  GridFS for files >16MB
+  
+  Automatic chunking
+  into 255KB pieces
+  
+  Metadata tracks:
+  - Owner
+  - Associated item
+  - Image type
+end note
+
+@enduml

@@ -1,0 +1,104 @@
+@startuml image-upload-flow
+!theme vibrant
+
+title Clothing Image Upload & AI Processing Flow
+
+actor User
+participant "React\nFrontend" as Frontend
+participant "Wardrobe\nService" as WardrobeSvc
+participant "MongoDB\nGridFS" as GridFS
+participant "Remove.bg\nAPI" as RemoveBG
+participant "RabbitMQ" as Queue
+participant "Image\nProcessor\nWorker" as Worker
+participant "Google\nVision AI" as VisionAPI
+database "MongoDB" as DB
+
+User -> Frontend: Upload clothing photo\n(JPG/PNG, <5MB)
+activate Frontend
+
+Frontend -> Frontend: Validate image:\n- File size\n- Format\n- Dimensions
+
+Frontend -> WardrobeSvc: POST /api/wardrobe/clothing\nmultipart/form-data
+activate WardrobeSvc
+
+WardrobeSvc -> GridFS: Store original image
+activate GridFS
+GridFS --> WardrobeSvc: originalImageId
+deactivate GridFS
+
+WardrobeSvc -> RemoveBG: POST /removebg\n{image_file}
+activate RemoveBG
+RemoveBG --> WardrobeSvc: Image with background removed
+deactivate RemoveBG
+
+WardrobeSvc -> GridFS: Store processed image
+activate GridFS
+GridFS --> WardrobeSvc: processedImageId
+deactivate GridFS
+
+WardrobeSvc -> DB: Create clothing item\n{userId, imageIds, category}
+activate DB
+DB --> WardrobeSvc: clothingItemId
+deactivate DB
+
+WardrobeSvc -> Queue: Publish to image_processing_queue\n{itemId, imageId}
+activate Queue
+
+WardrobeSvc --> Frontend: 201 Created\n{itemId, imageUrls}
+deactivate WardrobeSvc
+
+Frontend --> User: Show uploaded item\n(AI processing...)
+deactivate Frontend
+
+Queue -> Worker: Consume message
+activate Worker
+
+Worker -> GridFS: Fetch image
+activate GridFS
+GridFS --> Worker: Image buffer
+deactivate GridFS
+
+Worker -> VisionAPI: POST /v1/images:annotate\n{image_content}
+activate VisionAPI
+VisionAPI --> Worker: AI Analysis:\n- Labels\n- Colors\n- Object detection
+deactivate VisionAPI
+
+Worker -> Worker: Parse AI response:\n- Extract category\n- Identify colors\n- Determine style\n- Calculate confidence
+
+Worker -> DB: Update clothing item\n{aiAnalysis: {...}}
+activate DB
+DB --> Worker: Updated item
+deactivate DB
+
+Worker --> Queue: ACK message
+deactivate Worker
+deactivate Queue
+
+note right of VisionAPI
+  AI identifies:
+  - Category (92% accuracy)
+  - Primary & secondary colors
+  - Style (casual/formal/athletic)
+  - Fabric type
+  - Suitable occasions
+end note
+
+note right of RemoveBG
+  Background removal
+  creates clean product
+  images for outfit display
+  
+  Credits tracked:
+  49 remaining
+end note
+
+note left of Worker
+  Asynchronous processing
+  prevents blocking user
+  during AI analysis
+  
+  Typical processing:
+  2-5 seconds
+end note
+
+@enduml

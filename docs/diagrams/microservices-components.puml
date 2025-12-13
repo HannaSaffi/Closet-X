@@ -1,0 +1,171 @@
+@startuml microservices-components
+!theme vibrant
+
+title Closet-X Microservices Component Diagram
+
+skinparam componentStyle rectangle
+
+package "Frontend Layer" {
+  [React SPA] as Frontend
+  
+  package "Pages" {
+    [Login/Register]
+    [My Closet]
+    [AI Style Chat]
+    [Analytics]
+  }
+  
+  package "Services" {
+    [Auth Service]
+    [API Client]
+    [WebSocket Client]
+  }
+}
+
+package "API Layer" {
+  [Nginx Ingress] as Ingress
+}
+
+package "User Service\n(Port 3001)" {
+  component "Controllers" {
+    [Auth Controller]
+    [User Controller]
+  }
+  
+  component "Middleware" {
+    [JWT Verify]
+    [Input Validation]
+  }
+  
+  component "Models" {
+    [User Model]
+    [Preferences Model]
+  }
+  
+  database "closetx_users\nMongoDB" as UserDB
+}
+
+package "Wardrobe Service\n(Port 3003)" {
+  component "Controllers" {
+    [Clothing Controller]
+    [Upload Controller]
+  }
+  
+  component "Services" {
+    [GridFS Handler]
+    [Image Processor]
+  }
+  
+  component "Models" {
+    [Clothing Model]
+  }
+  
+  database "closetx_wardrobe\nMongoDB + GridFS" as WardrobeDB
+}
+
+package "Outfit Service\n(Port 3002)" {
+  component "Controllers" {
+    [Outfit Controller]
+    [AI Chat Controller]
+  }
+  
+  component "Services" {
+    [Weather Service]
+    [Outfit Generator]
+  }
+  
+  component "Algorithms" {
+    [Color Harmony]
+    [Style Matcher]
+  }
+  
+  component "Models" {
+    [Outfit Model]
+    [Advice Model]
+  }
+  
+  database "closetx_outfits\nMongoDB" as OutfitDB
+}
+
+package "Message Queue" {
+  queue "image_processing_queue" as ImageQueue
+  queue "outfit_generation_queue" as OutfitQueue
+  queue "fashion_advice_queue" as AdviceQueue
+}
+
+package "Background Workers" {
+  component "Image Processor\nWorker" {
+    [Vision AI Client]
+    [Remove.bg Client]
+  }
+  
+  component "Outfit Generator\nWorker" {
+    [Algorithm Engine]
+  }
+  
+  component "Fashion Advice\nWorker" {
+    [Ollama Client]
+  }
+}
+
+' Frontend connections
+Frontend --> Ingress : HTTPS/REST
+
+' Ingress routing
+Ingress --> [Auth Controller] : /api/users
+Ingress --> [Clothing Controller] : /api/wardrobe
+Ingress --> [Outfit Controller] : /api/outfits
+
+' Internal connections
+[Auth Controller] --> [JWT Verify] : use
+[Clothing Controller] --> [GridFS Handler] : use
+[Outfit Controller] --> [Weather Service] : use
+[Outfit Controller] --> [Color Harmony] : use
+
+' Database connections
+[User Model] --> UserDB
+[Clothing Model] --> WardrobeDB
+[Outfit Model] --> OutfitDB
+
+' Message queue publishing
+[Image Processor] --> ImageQueue : publish
+[Outfit Generator] --> OutfitQueue : publish
+[AI Chat Controller] --> AdviceQueue : publish
+
+' Worker consumption
+ImageQueue --> [Image Processor\nWorker] : consume
+OutfitQueue --> [Outfit Generator\nWorker] : consume
+AdviceQueue --> [Fashion Advice\nWorker] : consume
+
+' Worker to DB
+[Image Processor\nWorker] --> WardrobeDB : update
+[Outfit Generator\nWorker] --> OutfitDB : create
+[Fashion Advice\nWorker] --> OutfitDB : create
+
+note right of [JWT Verify]
+  Validates JWT tokens
+  from User Service
+  
+  Shared secret key
+  across all services
+end note
+
+note bottom of "Message Queue"
+  RabbitMQ broker
+  enables async processing
+  and service decoupling
+  
+  Dead letter queues
+  handle failures
+end note
+
+note right of [Color Harmony]
+  Algorithms:
+  - Complementary colors
+  - Analogous colors
+  - Neutral matching
+  
+  30% of outfit score
+end note
+
+@enduml

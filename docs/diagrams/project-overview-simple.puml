@@ -1,0 +1,126 @@
+@startuml project-overview-simple
+!theme vibrant
+
+title Closet-X Project Overview - Simplified Architecture
+
+skinparam {
+  backgroundColor #F5F5F5
+  defaultFontSize 14
+  shadowing false
+}
+
+actor "User" as User
+
+rectangle "WEB INTERFACE" #61DAFB {
+  [React App\n(Vite + Tailwind)] as Frontend
+}
+
+rectangle "KUBERNETES CLUSTER" #E8F5E9 {
+  
+  rectangle "API SERVICES" #68A063 {
+    [User Service\nAuthentication] as UserSvc
+    [Wardrobe Service\nClothing Management] as WardrobeSvc
+    [Outfit Service\nRecommendations] as OutfitSvc
+  }
+  
+  rectangle "MESSAGE QUEUE" #FFE66D {
+    [RabbitMQ\nAsync Processing] as Queue
+  }
+  
+  rectangle "BACKGROUND WORKERS" #FF6B6B {
+    [Image Processor\nAI Analysis] as ImageWorker
+    [Outfit Generator\nAlgorithms] as OutfitWorker
+    [Fashion Advisor\nAI Tips] as FashionWorker
+  }
+  
+  database "DATABASE" #4ECDC4 {
+    [MongoDB\n+ GridFS\nImage Storage] as DB
+  }
+}
+
+cloud "EXTERNAL APIS" #FFF9C4 {
+  [OpenWeather\nWeather Data] as Weather
+  [Google Vision\nImage Recognition] as Vision
+  [Ollama\nAI Assistant] as Ollama
+}
+
+' User interactions
+User --> Frontend : Browse & Upload
+
+' Frontend to Services
+Frontend --> UserSvc : Login/Register
+Frontend --> WardrobeSvc : Upload Clothing
+Frontend --> OutfitSvc : Get Recommendations
+
+' Services to Database
+UserSvc --> DB : User Data
+WardrobeSvc --> DB : Clothing Items\n+ Images
+OutfitSvc --> DB : Saved Outfits
+
+' Services to Queue
+WardrobeSvc --> Queue : Image Analysis\nRequest
+OutfitSvc --> Queue : Outfit Generation\nRequest
+OutfitSvc --> Queue : Fashion Advice\nRequest
+
+' Queue to Workers
+Queue --> ImageWorker : Process Images
+Queue --> OutfitWorker : Generate Outfits
+Queue --> FashionWorker : Create Advice
+
+' Workers to Database
+ImageWorker --> DB : Update Metadata
+OutfitWorker --> DB : Save Outfits
+FashionWorker --> DB : Store Tips
+
+' External API calls
+OutfitSvc --> Weather : Fetch Weather
+ImageWorker --> Vision : Analyze Image
+FashionWorker --> Ollama : Generate Advice
+
+note right of Frontend
+  User Features:
+  - Upload clothing photos
+  - Browse digital wardrobe
+  - Get outfit suggestions
+  - View weather forecast
+  - Save favorite outfits
+  - AI styling tips
+end note
+
+note right of UserSvc
+  REST APIs
+  Port 3001, 3002, 3003
+  
+  JWT Authentication
+  HTTPS Communication
+end note
+
+note right of Queue
+  Asynchronous Processing
+  
+  Handles long-running tasks:
+  - Image AI analysis (5-10s)
+  - Outfit generation (2-5s)
+  - Fashion advice (10-20s)
+  
+  Ensures fast user experience
+end note
+
+note bottom of DB
+  Storage:
+  - Users & Preferences
+  - 1000s of Clothing Items
+  - Images (GridFS)
+  - Generated Outfits
+  - AI Metadata
+end note
+
+note bottom of Weather
+  Third-Party Services:
+  
+  OpenWeather: Current + 7-day forecast
+  Google Vision: 92% accuracy
+  Ollama: Local LLM (free)
+end note
+
+@enduml

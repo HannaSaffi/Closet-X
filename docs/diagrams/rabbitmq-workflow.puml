@@ -1,0 +1,145 @@
+@startuml rabbitmq-workflow
+!theme vibrant
+
+title RabbitMQ Message Flow - Asynchronous Processing
+
+skinparam {
+  backgroundColor #FFFFFF
+  componentStyle rectangle
+}
+
+actor User
+participant "Frontend" as Frontend
+participant "Wardrobe\nService" as Wardrobe
+queue "RabbitMQ\nExchange\n(closetx_events)" as Exchange
+queue "image_processing\n_queue" as ImageQueue
+queue "outfit_generation\n_queue" as OutfitQueue
+queue "fashion_advice\n_queue" as AdviceQueue
+participant "Image\nProcessor\nWorker" as ImageWorker
+participant "Outfit\nGenerator\nWorker" as OutfitWorker
+participant "Fashion\nAdvice\nWorker" as FashionWorker
+database "MongoDB" as DB
+
+== Upload Photo - Image Processing Flow ==
+
+User -> Frontend: Upload clothing photo
+activate Frontend
+
+Frontend -> Wardrobe: POST /api/wardrobe/clothing\n(multipart/form-data)
+activate Wardrobe
+
+Wardrobe -> DB: Store image in GridFS
+activate DB
+DB --> Wardrobe: Image ID
+deactivate DB
+
+Wardrobe -> Exchange: **PUBLISH MESSAGE**\nRouting Key: "image.analyze"\n{\n  itemId: "...",\n  imageId: "...",\n  userId: "..."\n}
+
+Exchange -> ImageQueue: Route to queue
+
+Wardrobe --> Frontend: 201 Created\n(item created, processing...)
+deactivate Wardrobe
+
+Frontend --> User: Show item\n"AI analyzing..."
+deactivate Frontend
+
+ImageQueue -> ImageWorker: **CONSUME MESSAGE**
+activate ImageWorker
+
+ImageWorker -> DB: Fetch image from GridFS
+activate DB
+DB --> ImageWorker: Image data
+deactivate DB
+
+ImageWorker -> ImageWorker: Call Google Vision AI\nAnalyze image
+
+ImageWorker -> DB: Update item with AI results
+activate DB
+DB --> ImageWorker: Updated
+deactivate DB
+
+ImageWorker -> ImageQueue: **ACK** (acknowledge)
+deactivate ImageWorker
+
+note right of ImageQueue
+  **Message Properties:**
+  - Durable: true
+  - Persistent: true
+  - Manual ACK: true
+  
+  **Ensures:**
+  - Messages survive restarts
+  - No message loss
+  - Retry on failure
+end note
+
+== Outfit Generation Flow ==
+
+User -> Frontend: Request outfit
+activate Frontend
+
+Frontend -> Wardrobe: GET /api/outfits/daily
+activate Wardrobe
+
+Wardrobe -> Exchange: **PUBLISH MESSAGE**\nRouting Key: "outfit.generate"
+
+Exchange -> OutfitQueue: Route to queue
+
+Wardrobe --> Frontend: 202 Accepted\n(processing...)
+deactivate Wardrobe
+
+Frontend --> User: "Generating outfits..."
+deactivate Frontend
+
+OutfitQueue -> OutfitWorker: **CONSUME MESSAGE**
+activate OutfitWorker
+
+OutfitWorker -> DB: Fetch wardrobe items
+OutfitWorker -> OutfitWorker: Run algorithms\n- Color harmony\n- Style matching\n- Weather scoring
+
+OutfitWorker -> DB: Save generated outfits
+OutfitWorker -> OutfitQueue: **ACK**
+deactivate OutfitWorker
+
+== Fashion Advice Flow ==
+
+User -> Frontend: Ask for styling tips
+activate Frontend
+
+Frontend -> Wardrobe: POST /api/outfits/ai-advice
+activate Wardrobe
+
+Wardrobe -> Exchange: **PUBLISH MESSAGE**\nRouting Key: "fashion.advice"
+
+Exchange -> AdviceQueue: Route to queue
+
+Wardrobe --> Frontend: 202 Accepted
+deactivate Wardrobe
+
+Frontend --> User: "Getting advice..."
+deactivate Frontend
+
+AdviceQueue -> FashionWorker: **CONSUME MESSAGE**
+activate FashionWorker
+
+FashionWorker -> FashionWorker: Call Ollama LLM\nGenerate advice
+
+FashionWorker -> DB: Store advice
+FashionWorker -> AdviceQueue: **ACK**
+deactivate FashionWorker
+
+note right of Queue
+  **Exchange Type:** Topic
+  
+  **Routing Keys:**
+  - image.analyze → image_processing_queue
+  - outfit.generate → outfit_generation_queue
+  - fashion.advice → fashion_advice_queue
+  
+  **Benefits:**
+  - Flexible routing
+  - Multiple consumers per queue
+  - Decoupled services
+end note
+
+@enduml

@@ -29,7 +29,7 @@
 - [Overview](#-overview)
 - [Features](#-features)
 - [Documentation](#-documentation)
-- [Architecture](#-architecture)
+- [Architecture Documentation](docs/ARCHITECTURE.md)
 - [Technology Stack](#-technology-stack)
 - [Quick Start](#-quick-start)
 - [Team](#-team)

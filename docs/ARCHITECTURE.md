@@ -32,6 +32,13 @@
 
 ---
 
+### RabbitMQ Message Flow
+![RabbitMQ Workflow](diagrams/rabbitmq-workflow.png)
+
+*Asynchronous message processing workflow showing publish-route-consume-acknowledge cycle for image processing, outfit generation, and fashion advice.*
+
+---
+
 ### Sequence Diagrams
 
 #### Outfit Recommendation Flow
@@ -52,6 +59,13 @@
 ![Database Schema](diagrams/database-schema.png)
 
 *Entity-relationship diagram showing MongoDB collections, relationships, and indexes.*
+
+---
+
+### Simplified Project Overview
+![Project Overview](diagrams/project-overview-simple.png)
+
+*Easy-to-understand high-level view of the entire system: User → Frontend → Services → Queue → Workers → Database, with color-coded component layers.*
 
 ---
 

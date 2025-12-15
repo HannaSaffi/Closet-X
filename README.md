@@ -72,28 +72,17 @@ Comprehensive documentation for developers and users:
 ### User Features
 
 - **Digital Wardrobe Management**
-  - Upload clothing photos with automatic AI categorization
-  - Organize items by category, color, season, brand
-  - Track purchase dates, prices, and wear frequency
+  - Upload clothing photos
   - Add custom tags and notes
 
 - **Intelligent Outfit Recommendations**
   - Daily outfit suggestions based on weather
-  - Color harmony and style compatibility analysis
   - Occasion-specific outfit filtering (casual, business, formal, athletic)
   - AI-powered fashion advice using natural language chat
 
 - **Weather Integration**
   - Real-time weather data from OpenWeather API
-  - 7-day forecast for weekly outfit planning
   - Temperature-appropriate clothing recommendations
-  - Precipitation alerts and rain gear suggestions
-
-- **User Preferences**
-  - Customizable style preferences
-  - Favorite outfits and combinations
-  - Preferred colors and styles
-  - Size and fit preferences
 
 ### Technical Features
 
@@ -227,7 +216,7 @@ kubectl apply -f k8s/homelab/
 - **Semester**: Fall 2024
 - **Institution**: Trinity College
 - **Instructor**: Professor Jonathan Johnson
-- **Presentation Date**: December 9, 2024
+- **Presentation Date**: December 17, 2024
 
 ---
 
@@ -277,12 +266,6 @@ Closet-X/
 - **Kubernetes Pods**: 10 running
 - **API Endpoints**: 25+
 - **Database Collections**: 5
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 

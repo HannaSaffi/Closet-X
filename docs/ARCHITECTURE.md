@@ -1,8 +1,20 @@
 # Closet-X Architecture Documentation
 
-**Version:** 1.0  
-**Last Updated:** December 15, 2024  
-**Team:** Team Kates (Kuany Kuany, Hanna Saffi, Ale Apostolo)
+---
+
+## 📋 Table of Contents
+
+1. [Architecture Diagrams](#-architecture-diagrams)
+2. [System Overview](#system-overview)
+3. [Architecture Principles](#architecture-principles)
+4. [System Architecture](#system-architecture)
+5. [Service Architecture](#service-architecture)
+6. [Data Architecture](#data-architecture)
+7. [Communication Patterns](#communication-patterns)
+8. [Deployment Architecture](#deployment-architecture)
+9. [Security Architecture](#security-architecture)
+10. [Scalability & Performance](#scalability--performance)
+11. [Design Decisions](#design-decisions)
 
 ---
 
@@ -52,26 +64,11 @@
 
 ---
 
-## Table of Contents
-
-1. [System Overview](#system-overview)
-2. [Architecture Principles](#architecture-principles)
-3. [System Architecture](#system-architecture)
-4. [Service Architecture](#service-architecture)
-5. [Data Architecture](#data-architecture)
-6. [Communication Patterns](#communication-patterns)
-7. [Deployment Architecture](#deployment-architecture)
-8. [Security Architecture](#security-architecture)
-9. [Scalability & Performance](#scalability--performance)
-10. [Design Decisions](#design-decisions)
-
----
-
 ## System Overview
 
 Closet-X is a cloud-native, microservices-based digital wardrobe management application deployed on Kubernetes. The system enables users to digitize their clothing collection, receive AI-powered outfit recommendations based on weather conditions, and manage their wardrobe efficiently.
 
-### **Key Architectural Characteristics**
+### Key Architectural Characteristics
 
 - **Architecture Style**: Microservices with Event-Driven Architecture (EDA)
 - **Deployment Model**: Kubernetes (homelab cluster)
@@ -80,14 +77,10 @@ Closet-X is a cloud-native, microservices-based digital wardrobe management appl
 - **Container Registry**: Harbor (private registry)
 - **CI/CD**: GitHub Actions
 
-### **Core Components**
+### Core Components
 
 - **3 RESTful Microservices**: User, Wardrobe, Outfit services
 - **3 Background Workers**: Image Processor, Fashion Advice, Outfit Generator
 - **1 Message Broker**: RabbitMQ for async communication
 - **1 Database**: MongoDB (StatefulSet with persistence)
 - **1 Frontend**: React SPA with Vite
-
----
-
-[Rest of the content remains the same...]

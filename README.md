@@ -29,7 +29,7 @@
 - [Overview](#-overview)
 - [Features](#-features)
 - [Documentation](#-documentation)
-- [Architecture](#-Architecture)  
+- [Architecture](#️-architecture)  
 - [Quick Start](#-quick-start)
 - [Team](#-team)
 

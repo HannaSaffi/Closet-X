@@ -6,15 +6,6 @@
 
 1. [Architecture Diagrams](#-architecture-diagrams)
 2. [System Overview](#system-overview)
-3. [Architecture Principles](#architecture-principles)
-4. [System Architecture](#system-architecture)
-5. [Service Architecture](#service-architecture)
-6. [Data Architecture](#data-architecture)
-7. [Communication Patterns](#communication-patterns)
-8. [Deployment Architecture](#deployment-architecture)
-9. [Security Architecture](#security-architecture)
-10. [Scalability & Performance](#scalability--performance)
-11. [Design Decisions](#design-decisions)
 
 ---
 

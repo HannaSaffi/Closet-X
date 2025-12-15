@@ -30,7 +30,6 @@
 - [Features](#-features)
 - [Documentation](#-documentation)
 - [Architecture Documentation](docs/ARCHITECTURE.md)
-- [Technology Stack](#-technology-stack)
 - [Quick Start](#-quick-start)
 - [Team](#-team)
 

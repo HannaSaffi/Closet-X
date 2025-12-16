@@ -24,7 +24,7 @@ const Outfit = require('../shared/models/Outfit');
 
 // Configuration
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://closetx-mongodb:27017/closetx';
-const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://guest:guest@closetx-rabbitmq:5672';
+const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://guest:guest@rabbitmq.rabbitmq:5672';
 const QUEUE_NAME = 'outfit_generation_queue';
 const MAX_RETRIES = 3;
 

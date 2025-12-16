@@ -36,6 +36,8 @@ spec:
             configMapKeyRef:
               name: closetx-config
               key: JWT_EXPIRE
+        - name: RABBITMQ_URL
+          value: "amqp://admin:admin@rabbitmq.rabbitmq.svc.cluster.local:5672"
         resources:
           requests:
             memory: "128Mi"

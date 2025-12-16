@@ -1,4 +1,4 @@
-#k8s/homelab/06-outfit-service.yaml
+# k8s/homelab/06-outfit-service.yaml
 # Outfit Service Deployment with Gemini AI Integration
 # Fixed: Uses secret reference for API keys instead of hardcoded values
 
@@ -35,7 +35,7 @@ spec:
         
         # Message Queue
         - name: RABBITMQ_URL
-          value: "amqp://admin:admin@rabbitmq.rabbitmq.svc.cluster.local:5672"
+          value: "amqp://admin:admin@rabbitmq.rabbitmq:5672"
         
         # JWT Authentication (from secret)
         - name: JWT_SECRET

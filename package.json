@@ -1,82 +1,34 @@
 {
   "name": "closet-x",
   "version": "1.0.0",
-  "description": "AI-powered digital wardrobe management application",
+  "description": "Digital Closet Application - AI-powered wardrobe management",
   "private": true,
   "scripts": {
-    "install:all": "npm run install:services && npm run install:workers",
-    "install:services": "cd services/user-service && npm install && cd ../wardrobe-service && npm install && cd ../outfit-service && npm install && cd ../ai-advice-service && pip install -r requirements.txt",
-    "install:workers": "cd workers/image-processor && npm install && cd ../outfit-generator && npm install && cd ../fashion-advice && npm install",
-    "test": "jest --config=jest.config.js --coverage",
-    "test:unit": "npm run test:services && npm run test:workers",
-    "test:services": "cd services/user-service && npm test && cd ../wardrobe-service && npm test && cd ../outfit-service && npm test",
-    "test:workers": "cd workers/image-processor && npm test && cd ../outfit-generator && npm test && cd ../fashion-advice && npm test",
-    "test:integration": "jest --config=jest.integration.config.js --detectOpenHandles --coverage",
-    "test:e2e": "jest --config=jest.e2e.config.js --detectOpenHandles --maxWorkers=1",
-    "test:ai": "jest tests/integration/ai-integration.test.js --detectOpenHandles",
-    "test:all": "npm run test:unit && npm run test:integration && npm run test:e2e",
-    "test:watch": "jest --config=jest.config.js --watch",
-    "test:coverage": "jest --config=jest.config.js --coverage --coverageReporters=text --coverageReporters=lcov --coverageReporters=html",
-    "test:coverage:report": "npm run test:coverage && open coverage/lcov-report/index.html",
-    "test:ci": "jest --config=jest.config.js --coverage --ci --maxWorkers=2 --detectOpenHandles",
-    "test:user-service": "jest --config=jest.config.js --selectProjects=user-service",
-    "test:wardrobe-service": "jest --config=jest.config.js --selectProjects=wardrobe-service",
-    "test:outfit-service": "jest --config=jest.config.js --selectProjects=outfit-service",
-    "test:workers-only": "jest --config=jest.config.js --selectProjects=workers",
-    "test:integration-only": "jest --config=jest.config.js --selectProjects=integration",
-    "test:e2e-only": "jest --config=jest.config.js --selectProjects=e2e",
-    "test:verbose": "jest --config=jest.config.js --verbose --detectOpenHandles",
-    "test:silent": "jest --config=jest.config.js --silent",
-    "test:clear-cache": "jest --clearCache",
-    "lint": "npm run lint:services && npm run lint:workers",
-    "lint:services": "cd services/user-service && npm run lint || true && cd ../wardrobe-service && npm run lint || true && cd ../outfit-service && npm run lint || true",
-    "lint:workers": "cd workers/image-processor && npm run lint || true",
-    "dev": "docker-compose up",
-    "dev:build": "docker-compose up --build",
-    "dev:down": "docker-compose down",
-    "dev:logs": "docker-compose logs -f",
-    "docker:build": "docker-compose build",
-    "docker:up": "docker-compose up -d",
-    "docker:down": "docker-compose down",
-    "docker:logs": "docker-compose logs -f",
-    "k8s:apply": "kubectl apply -f k8s/",
-    "k8s:delete": "kubectl delete -f k8s/",
-    "k8s:status": "kubectl get all -n kates-closetx",
-    "migrate:up": "node database/migrations/001_initial_schema.js up",
-    "migrate:down": "node database/migrations/001_initial_schema.js down",
-    "build": "./build-and-push.sh",
-    "deploy": "./deploy-to-k8s.sh"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/your-team/Closet-X.git"
+    "install-all": "npm run install-services && npm run install-workers && npm run install-infrastructure",
+    "install-services": "cd services/user-service && npm install && cd ../wardrobe-service && npm install && cd ../outfit-service && npm install && cd ../..",
+    "install-workers": "cd workers/image-processor && npm install && cd ../..",
+    "install-infrastructure": "cd infrastructure/scripts && npm install && cd ../..",
+    "start": "docker-compose up",
+    "start-dev": "docker-compose up --build",
+    "stop": "docker-compose down",
+    "seed": "node infrastructure/scripts/seed-database.js",
+    "init-db": "docker exec -i closetx-mongodb mongosh -u admin -p admin123 < infrastructure/scripts/mongo-init.js"
   },
   "keywords": [
-    "closet",
-    "wardrobe",
-    "ai",
     "fashion",
+    "ai",
+    "wardrobe",
     "microservices",
-    "kubernetes",
-    "cloud-native",
-    "outfit-recommendation"
+    "kubernetes"
   ],
-  "author": "Team Kates - Aleksandra Postolova, Kuany Kuany, Hanna Saffi",
+  "author": "Closet-X Team",
   "license": "MIT",
   "devDependencies": {
-    "@types/jest": "^29.5.14",
-    "jest": "^29.7.0",
-    "jest-junit": "^16.0.0",
-    "supertest": "^6.3.4",
-    "axios": "^1.6.2",
-    "concurrently": "^8.2.2",
-    "eslint": "^8.56.0"
+    "concurrently": "^8.2.2"
   },
   "dependencies": {
-    "mongodb": "^6.3.0"
-  },
-  "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=9.0.0"
+    "@huggingface/transformers": "^3.7.6",
+    "dotenv": "^17.2.3",
+    "mongoose": "^8.19.2"
   }
 }

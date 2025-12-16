@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 # Environment variables
 MONGODB_URI = os.getenv('MONGODB_URI', 'mongodb://ai_service:service_password_123@mongodb-service.kates-closetx.svc.cluster.local:27017/closetx_ai?authSource=admin')
-RABBITMQ_URL = os.getenv('RABBITMQ_URL', 'amqp://guest:guest@closetx-rabbitmq:5672')
+RABBITMQ_URL = os.getenv('RABBITMQ_URL', 'amqp://guest:guest@rabbitmq.rabbitmq:5672')
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', '')
 PORT = int(os.getenv('PORT', 3004))
 

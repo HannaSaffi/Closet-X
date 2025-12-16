@@ -18,7 +18,7 @@ const PORT = process.env.PORT || 3001;
 
 // Environment variables
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://user_service:service_password_123@mongodb-service.kates-closetx.svc.cluster.local:27017/closetx_users?authSource=admin';
-const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://guest:guest@closetx-rabbitmq:5672';
+const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://guest:guest@rabbitmq.rabbitmq:5672';
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
 // Global connection state

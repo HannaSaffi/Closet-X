@@ -208,7 +208,7 @@ kubectl apply -f k8s/homelab/
 
 - **Hanna Saffi** - Frontend Development, AI Integration, Workers
 - **Kuany Kuany** - DevOps, CI/CD Pipeline, Infrastructure
-- **Ale Apostolo** - Backend Services, Database Design, Testing
+- **Aleksandra Apostolo** - Backend Services, Database Design, Testing
 
 ### Course Information
 

@@ -1,0 +1,22 @@
+[33ma65bb52[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Fix: Add GEMINI_API_KEY to outfit-service deployment
+[33m54b85ec[m Merge branch 'main' of github.com:HannaSaffi/Closet-X
+[33m21006b3[m Add rabbitmq-workflow.png
+[33m6af3899[m Add RabbitMQ workflow and simplified project overview diagrams
+[33mc103771[m Update ARCHITECTURE.md
+[33m3503641[m Update README.md
+[33m18f7a2b[m Update README.md
+[33m93fac66[m Update README.md
+[33m9877568[m Update README.md
+[33md64a6bc[m Update README.md
+[33m47c6a98[m Update README.md
+[33mda8f461[m Update ARCHITECTURE.md
+[33mf8b92fe[m Update ARCHITECTURE.md
+[33m87dd3a8[m Rename deployment-simple.png Architecture.png to deployment-simple.png
+[33m5f0a380[m Rename Dabase Schema.png to database-schema.png
+[33mb448ef7[m Rename Image Upload Flow.png to image-upload-flow.png
+[33m4380fe2[m Rename Outfit Recommendation Flow .png to outfit-recommendation-flow.png
+[33mb64bfb7[m Rename Microservices Components .png to microservices-components.png
+[33m36af0df[m Rename Deployment Architecture.png to deployment-simple.png Architecture.png
+[33mded1ca3[m Rename System architecture .png to system-architecture.png
+[33me73f55b[m Update ARCHITECTURE.md
+[33me311e1c[m Add architecture diagram images

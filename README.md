@@ -5,6 +5,7 @@
 [![Kubernetes](https://img.shields.io/badge/Kubernetes-326CE5?style=flat&logo=kubernetes&logoColor=white)](https://kubernetes.io/)
 [![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white)](https://www.docker.com/)
 [![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat&logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=flat&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
 [![RabbitMQ](https://img.shields.io/badge/RabbitMQ-FF6600?style=flat&logo=rabbitmq&logoColor=white)](https://www.rabbitmq.com/)
 [![React](https://img.shields.io/badge/React-61DAFB?style=flat&logo=react&logoColor=black)](https://reactjs.org/)
@@ -19,33 +20,37 @@
 - **Email:** `apostolo@trincoll.edu`
 - **Password:** `12345678`
 
+⚠️ **Accessing from Trinity College Network?**  
+Trinity may block DuckDNS domains. Try these solutions:
+- Add to your `/etc/hosts` file: `76.118.58.14  kates-closetx.javajon.duckdns.org`
+- Connect via mobile hotspot
+
 > 💡 See our [User Guide](USER_GUIDE.md) for a complete walkthrough of all features!
 
 ---
 
 ## 📋 Table of Contents
 
-- [Live Demo](#-live-demo)
 - [Overview](#-overview)
 - [Features](#-features)
+- [Architecture](#️-architecture)
+- [Technology Stack](#️-technology-stack)
 - [Documentation](#-documentation)
-- [Architecture](#️-architecture)  
 - [Quick Start](#-quick-start)
+- [Key Metrics](#-key-metrics)
 - [Team](#-team)
 
 ---
 
 ## 📚 Documentation
 
-Comprehensive documentation for developers and users:
-
-- 📖 **[User Guide](USER_GUIDE.md)** - Complete walkthrough with screenshots and feature descriptions
-- 🏗️ **[Architecture Documentation](docs/ARCHITECTURE.md)** - System design, PlantUML diagrams, and component relationships
-- 📚 **[API Documentation](docs/API_DOCUMENTATION.md)** - Complete REST API reference with examples
-- 🗄️ **[Database Schema](docs/DATABASE_SCHEMA.md)** - MongoDB collections, indexes, and relationships
-- 🔨 **[Build Instructions](docs/BUILD_INSTRUCTIONS.md)** - Container build guide and Harbor registry setup
-- 🚀 **[Deployment Guide](docs/DEPLOYMENT_GUIDE.md)** - Kubernetes deployment to Harbor and clusters
-- 🧪 **[Testing Guide](docs/TESTING.md)** - Test coverage, running tests, and CI/CD integration
+- 📖 **[User Guide](USER_GUIDE.md)** - Complete walkthrough with screenshots
+- 🏗️ **[Architecture Documentation](docs/ARCHITECTURE.md)** - System design and diagrams
+- 📚 **[API Documentation](docs/API_DOCUMENTATION.md)** - REST API reference
+- 🗄️ **[Database Schema](docs/DATABASE_SCHEMA.md)** - MongoDB collections and indexes
+- 🔨 **[Build Instructions](docs/BUILD_INSTRUCTIONS.md)** - Container build guide
+- 🚀 **[Deployment Guide](docs/DEPLOYMENT_GUIDE.md)** - Kubernetes deployment
+- 🧪 **[Testing Guide](docs/TESTING.md)** - Test coverage and CI/CD
 
 ---
 
@@ -53,16 +58,12 @@ Comprehensive documentation for developers and users:
 
 **Closet-X** is a comprehensive digital wardrobe management application built with cloud-native principles. It helps users organize their clothing, get AI-powered outfit recommendations based on weather and occasion, and discover new styling possibilities from their existing wardrobe.
 
-### Core Value Proposition
+### Key Features
 
-> **"What Should I Wear Today?"** - Get personalized, AI-powered outfit recommendations that consider weather, occasion, and your personal style preferences.
-
-### Key Differentiators
-
-- 🤖 **AI-Powered Analysis**: Automatic clothing categorization and color/style detection using Google Vision AI
+- 🤖 **AI-Powered Analysis**: Automatic clothing categorization and color detection using Google Vision AI
 - 🌤️ **Weather Integration**: Real-time weather-based outfit suggestions using OpenWeather API
 - 🎨 **Smart Algorithms**: Color harmony and style compatibility matching
-- ☁️ **Cloud-Native**: Built with microservices architecture, deployed on Kubernetes
+- ☁️ **Cloud-Native**: Microservices architecture deployed on Kubernetes
 - 🔄 **Asynchronous Processing**: RabbitMQ message queues for scalable background tasks
 
 ---
@@ -72,26 +73,18 @@ Comprehensive documentation for developers and users:
 ### User Features
 
 - **Digital Wardrobe Management**
-  - Upload clothing photos
-  - Add custom tags and notes
+  - Upload clothing photos with automatic background removal
+  - AI-powered categorization and tagging
+  - Color detection and style analysis
 
 - **Intelligent Outfit Recommendations**
-  - Daily outfit suggestions based on weather
+  - Daily outfit suggestions based on real-time weather
   - Occasion-specific outfit filtering (casual, business, formal, athletic)
   - AI-powered fashion advice using natural language chat
 
 - **Weather Integration**
   - Real-time weather data from OpenWeather API
   - Temperature-appropriate clothing recommendations
-
-### Technical Features
-
-- **Microservices Architecture**: 4 independent services with clear boundaries
-- **Message Queues**: Asynchronous processing with RabbitMQ
-- **Container Orchestration**: Kubernetes deployment with auto-scaling
-- **Image Storage**: MongoDB GridFS for efficient image management
-- **CI/CD Pipeline**: Automated testing and deployment
-- **Monitoring**: Health checks and logging
 
 ---
 
@@ -104,30 +97,47 @@ Closet-X follows cloud-native microservices architecture with **4 core services*
 ```
 React Frontend (Vite + Tailwind)
          ↓
-   Kubernetes Ingress
+   Kubernetes Ingress (nginx)
          ↓
-┌────────────────────────────┐
-│  Microservices Layer       │
-│  - User Service (Auth)     │
-│  - Wardrobe Service        │
-│  - Outfit Service          │
-│  - AI Advice Service       │
-└────────────────────────────┘
-         ↓
-    RabbitMQ Queue
-         ↓
-┌────────────────────────────┐
-│  Background Workers        │
-│  - Image Processor         │
-│  - Outfit Generator        │
-│  - Fashion Advisor         │
-└────────────────────────────┘
-         ↓
-  MongoDB + GridFS
+┌────────────────────────────────────┐
+│     Microservices Layer            │
+│  - User Service (Auth) :3001       │
+│  - Wardrobe Service :3003          │
+│  - Outfit Service :3002            │
+│  - AI Advice Service :3004         │
+└────────────────┬───────────────────┘
+                 ↓
+┌────────────────────────────────────┐
+│       RabbitMQ Queue               │
+│     (rabbitmq.rabbitmq)            │
+│  - image_processing queue          │
+│  - outfit_generation queue         │
+│  - fashion_advice queue            │
+└────────────────┬───────────────────┘
+                 ↓
+┌────────────────────────────────────┐
+│     Background Workers             │
+│  - Image Processor (Node.js)       │
+│  - Outfit Generator (Node.js)      │
+│  - Fashion Advice (Python)         │
+└────────────────┬───────────────────┘
+                 ↓
+┌──────────┬─────────────────────────┐
+│ MongoDB  │    External APIs        │
+│ + GridFS │  - OpenWeather API      │
+│          │  - Google Vision AI     │
+│          │  - Google Gemini        │
+│          │  - Remove.bg            │
+└──────────┴─────────────────────────┘
 ```
 
-**For detailed architecture diagrams and component relationships, see:**
-- 📐 **[Architecture Documentation](docs/ARCHITECTURE.md)** - PlantUML diagrams, service communication flows, and design decisions
+### Message Queue Architecture
+
+Closet-X uses **RabbitMQ** for asynchronous task processing:
+
+- **Image Processing Queue**: Automatic clothing categorization, color detection, and background removal
+- **Outfit Generation Queue**: AI-powered outfit recommendations with weather integration  
+- **Fashion Advice Queue**: Real-time AI chat responses
 
 ---
 
@@ -136,69 +146,122 @@ React Frontend (Vite + Tailwind)
 ### Frontend
 - **Framework**: React 18 with Vite
 - **Styling**: Tailwind CSS
-- **State Management**: React Hooks
 - **HTTP Client**: Axios
 - **Routing**: React Router v6
 
-### Backend Services
+### Backend Services (Node.js)
 - **Runtime**: Node.js 18 LTS
 - **Framework**: Express.js
 - **Authentication**: JWT (JSON Web Tokens)
 - **Password Hashing**: bcrypt
 - **Image Processing**: Multer, Sharp
 - **Testing**: Jest, Supertest
+- **Message Queue**: amqplib (RabbitMQ)
 
-### Workers
+### Background Workers
+- **Languages**: Node.js, Python
 - **Message Queue**: RabbitMQ (amqplib)
-- **AI/ML**: Google Vision API, Ollama (local LLM)
+- **Image Processing**: Google Vision API
+- **AI/ML**: Google Gemini API
 
-### Database
-- **Primary Database**: MongoDB 6.0
+### Database & Storage
+- **Primary Database**: MongoDB 6.0 (StatefulSet)
 - **Image Storage**: MongoDB GridFS
-- **ODM**: Mongoose
 
 ### External APIs
-- **Weather**: OpenWeather API
+- **Weather Data**: OpenWeather API
 - **Image Recognition**: Google Vision AI
-- **AI Model**: Ollama (llama3.2)
+- **Background Removal**: Remove.bg API
+- **AI Chat**: Google Gemini API
 
 ### Infrastructure
 - **Container Runtime**: Docker 24.0
-- **Orchestration**: Kubernetes 1.28
+- **Orchestration**: Kubernetes 1.28+
 - **Registry**: Harbor (private registry)
-- **CI/CD**: GitHub Actions
-- **Reverse Proxy**: Nginx Ingress Controller
+- **Message Queue**: RabbitMQ 3.x
+- **Ingress**: Nginx Ingress Controller
+- **DNS**: DuckDNS
+
+### Programming Languages
+- **JavaScript/Node.js**: Backend services and workers
+- **JavaScript/React**: Frontend application
+- **Python**: AI Advice Service worker
+
+---
+
+## 📚 Documentation
+
+- 📖 **[User Guide](USER_GUIDE.md)** - Complete walkthrough with screenshots
+- 🏗️ **[Architecture Documentation](docs/ARCHITECTURE.md)** - System design and diagrams
+- 📚 **[API Documentation](docs/API_DOCUMENTATION.md)** - REST API reference
+- 🗄️ **[Database Schema](docs/DATABASE_SCHEMA.md)** - MongoDB collections and indexes
+- 🔨 **[Build Instructions](docs/BUILD_INSTRUCTIONS.md)** - Container build guide
+- 🚀 **[Deployment Guide](docs/DEPLOYMENT_GUIDE.md)** - Kubernetes deployment
+- 🧪 **[Testing Guide](docs/TESTING.md)** - Test coverage and CI/CD
 
 ---
 
 ## 🚀 Quick Start
 
 ### For Users
-Visit [https://kates-closetx.javajon.duckdns.org/](https://kates-closetx.javajon.duckdns.org/) and log in with demo credentials. See [User Guide](USER_GUIDE.md) for features.
+Visit [https://kates-closetx.javajon.duckdns.org/](https://kates-closetx.javajon.duckdns.org/) and log in:
+- Email: `apostolo@trincoll.edu`
+- Password: `12345678`
 
 ### For Developers
 
-**Local Development:**
+**Prerequisites:**
+- Kubernetes cluster access
+- Harbor registry access
+- kubectl configured
+
+**Deploy:**
 ```bash
 git clone https://github.com/HannaSaffi/Closet-X.git
 cd Closet-X
-npm install
-docker-compose up -d  # Start MongoDB + RabbitMQ
-npm run dev           # Start all services
-```
 
-**Kubernetes Deployment:**
-```bash
-# Build and push containers
+# Build and push to Harbor
 ./build-and-push.sh
 
 # Deploy to Kubernetes
-kubectl apply -f k8s/homelab/
+kubectl apply -f k8s/homelab/ -n kates-closetx
+
+# Verify
+kubectl get pods -n kates-closetx
 ```
 
-**Detailed Instructions:**
-- 🔨 [Build Instructions](docs/BUILD_INSTRUCTIONS.md) - Build containers for Harbor
-- 🚀 [Deployment Guide](docs/DEPLOYMENT_GUIDE.md) - Deploy to Kubernetes clusters
+---
+
+## 📊 Key Metrics
+
+- **Test Coverage**: 97.4% pass rate (301 passing tests)
+- **Container Images**: 8 services
+- **Kubernetes Pods**: 14 running (all with 0 restarts)
+- **API Endpoints**: 25+
+- **Database Collections**: 5 (users, wardrobe_items, outfits, fs.files, fs.chunks)
+
+---
+
+## 🗺️ Project Structure
+
+```
+Closet-X/
+├── frontend/                 # React application
+├── services/                 # Microservices
+│   ├── user-service/        # Authentication (Node.js)
+│   ├── wardrobe-service/    # Wardrobe management (Node.js)
+│   ├── outfit-service/      # Outfit recommendations (Node.js)
+│   └── ai-advice-service/   # Fashion advice (Node.js)
+├── workers/                  # Background workers
+│   ├── image-processor/     # Image analysis (Node.js)
+│   ├── outfit-generator/    # Outfit generation (Node.js)
+│   └── fashion-advice/      # AI recommendations (Python)
+├── k8s/                      # Kubernetes manifests
+│   ├── homelab/             # Homelab cluster configs
+│   └── gke/                 # GKE configs
+├── docs/                     # Documentation
+└── USER_GUIDE.md
+```
 
 ---
 
@@ -208,64 +271,15 @@ kubectl apply -f k8s/homelab/
 
 - **Hanna Saffi** - Frontend Development, AI Integration, Workers
 - **Kuany Kuany** - DevOps, CI/CD Pipeline, Infrastructure
-- **Aleksandra Apostolo** - Backend Services, Database Design, Testing
+- **Aleksandra Postolov** - Backend Services, Database Design, Testing
 
 ### Course Information
 
 - **Course**: CPSC 415 - Building Cloud Native Apps
-- **Semester**: Fall 2024
+- **Semester**: Fall 2025
 - **Institution**: Trinity College
 - **Instructor**: Professor Jonathan Johnson
-- **Presentation Date**: December 17, 2024
-
----
-
-## 🗺️ Project Structure
-
-```
-Closet-X/
-├── frontend/                 # React application
-│   ├── src/
-│   │   ├── components/      # Reusable UI components
-│   │   ├── pages/           # Page components
-│   │   └── services/        # API client services
-│   └── Dockerfile
-├── services/                 # Microservices
-│   ├── user-service/        # Authentication & user management
-│   ├── wardrobe-service/    # Clothing item management
-│   ├── outfit-service/      # Outfit recommendations
-│   └── ai-advice-service/   # AI-powered fashion advice
-├── workers/                  # Background workers
-│   ├── image-processor/     # Image analysis with Google Vision
-│   ├── outfit-generator/    # Outfit combination logic
-│   └── fashion-advice/      # AI fashion recommendations
-├── k8s/                      # Kubernetes manifests
-│   ├── homelab/             # Homelab cluster configs
-│   └── gke/                 # Google Kubernetes Engine configs
-├── docs/                     # Documentation
-│   ├── API_DOCUMENTATION.md
-│   ├── ARCHITECTURE.md
-│   ├── DATABASE_SCHEMA.md
-│   ├── DEPLOYMENT_GUIDE.md
-│   ├── TESTING.md
-│   └── diagrams/            # PlantUML architecture diagrams
-├── USER_GUIDE.md            # End-user documentation
-└── README.md                # This file
-```
-
----
-
-## 📊 Key Metrics
-
-- **Test Coverage**: 28.33% overall
-  - User Service: 64%
-  - Outfit Service: 28%
-  - Controllers: 97%
-- **Total Tests**: 301 passing
-- **Container Images**: 7 services
-- **Kubernetes Pods**: 10 running
-- **API Endpoints**: 25+
-- **Database Collections**: 5
+- **Presentation Date**: December 17, 2025
 
 ---
 
@@ -273,29 +287,18 @@ Closet-X/
 
 - **OpenWeather API** for weather data
 - **Google Vision AI** for image recognition
-- **Gemini** for local LLM capabilities
-- **Harbor** for private container registry
-- **Kubernetes** community for excellent documentation
-- **Professor Jonathan Johnson** for guidance and support
-  
+- **Google Gemini** for AI recommendations
+- **Remove.bg** for background removal
+- **Harbor** for container registry
+- **Professor Jonathan Johnson** for guidance and infrastructure support
+
 ---
 
 ## 📞 Contact
-For questions or support:
 
-GitHub Issues: https://github.com/HannaSaffi/Closet-X/issues
-Team Email: Contact through Trinity College
+- **GitHub**: [https://github.com/HannaSaffi/Closet-X](https://github.com/HannaSaffi/Closet-X)
+- **Issues**: [https://github.com/HannaSaffi/Closet-X/issues](https://github.com/HannaSaffi/Closet-X/issues)
 
 ---
-## 🗺️ Roadmap
-Future Enhancements
 
-- Mobile app (React Native)
-- Outfit calendar and planning
-- Style analytics and insights
-- Machine learning for better recommendations
-- Multi-language support
- 
----
-
-Built with ❤️ by Team Kates | Trinity College | Fall 2024
+Built with help of Claude and ❤️ by Team Kates | Trinity College | Fall 2025

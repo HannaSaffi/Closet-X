@@ -1,14 +1,18 @@
 #!/bin/bash
+# Deploy Closet-X to GKE Cluster
+# Team Kates
 
 set -e
-
-echo "🚀 Deploying Closet-X to GKE Cluster..."
 
 # Colors
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
+BLUE='\033[0;34m'
 NC='\033[0m'
+
+echo -e "${BLUE}🚀 Deploying Closet-X to GKE Cluster...${NC}"
+echo ""
 
 # Check kubectl
 if ! command -v kubectl &> /dev/null; then
@@ -28,9 +32,9 @@ if ! kubectl cluster-info &> /dev/null; then
 fi
 
 echo -e "${GREEN}✅ Connected to GKE cluster${NC}"
-
-# Apply manifests
 echo ""
+
+# Apply manifests in order
 echo -e "${YELLOW}📦 Step 1: Creating namespace...${NC}"
 kubectl apply -f k8s/gke/00-namespace.yaml
 
@@ -49,13 +53,14 @@ kubectl apply -f k8s/gke/03-mongodb.yaml
 echo ""
 echo -e "${YELLOW}⏳ Waiting for MongoDB to be ready...${NC}"
 kubectl wait --for=condition=ready pod -l app=mongodb -n kates-closetx --timeout=300s || true
+sleep 10
 
 echo ""
 echo -e "${YELLOW}🚀 Step 5: Deploying microservices...${NC}"
 kubectl apply -f k8s/gke/04-user-service.yaml
 kubectl apply -f k8s/gke/05-wardrobe-service.yaml
 kubectl apply -f k8s/gke/06-outfit-service.yaml
-kubectl apply -f k8s/gke/07-advice-service.yaml
+kubectl apply -f k8s/gke/07-ai-advice-service.yaml
 
 echo ""
 echo -e "${YELLOW}👷 Step 6: Deploying workers...${NC}"
@@ -64,27 +69,41 @@ kubectl apply -f k8s/gke/09-outfit-generator.yaml
 kubectl apply -f k8s/gke/10-fashion-advice.yaml
 
 echo ""
-echo -e "${YELLOW}🌐 Step 7: Creating ingress...${NC}"
+echo -e "${YELLOW}🌐 Step 7: Deploying frontend...${NC}"
+kubectl apply -f k8s/gke/13-frontend.yaml
+
+echo ""
+echo -e "${YELLOW}🔀 Step 8: Creating ingress...${NC}"
 kubectl apply -f k8s/gke/11-ingress.yaml
 
 echo ""
 echo -e "${GREEN}✅ Deployment complete!${NC}"
 echo ""
+
+# Wait for deployments
+echo -e "${YELLOW}⏳ Waiting for pods to be ready...${NC}"
+sleep 30
+
+echo ""
 echo "📊 Checking deployment status..."
 echo ""
-
 kubectl get all -n kates-closetx
 
 echo ""
 echo -e "${GREEN}🎉 Closet-X is deployed to GKE!${NC}"
 echo ""
-echo "🔍 To check pod status:"
+echo -e "${BLUE}Useful commands:${NC}"
+echo ""
+echo "🔍 Check pod status:"
 echo "   kubectl get pods -n kates-closetx"
 echo ""
-echo "📝 To view logs:"
+echo "📝 View logs:"
 echo "   kubectl logs -f deployment/user-service -n kates-closetx"
 echo ""
-echo "🌐 Access your application at:"
+echo "🔍 Check RabbitMQ connections:"
+echo "   kubectl logs -n kates-closetx deployment/image-processor --tail=20 | grep -i rabbitmq"
+echo ""
+echo "🌐 Access your application:"
 echo "   http://kates-closetx.javajon-gke.duckdns.org"
 echo ""
 echo "🔧 To delete deployment:"

@@ -1,4 +1,4 @@
-#k8s/00-namespace.yaml
+#k8s/gke/00-namespace.yaml
 apiVersion: v1
 kind: Namespace
 metadata:

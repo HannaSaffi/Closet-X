@@ -1,3 +1,4 @@
+#k8s/gke/11-ingress.yaml
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -11,10 +12,9 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-  - host: kates-closetx.javajon.duckdns.org
+  - host: kates-closetx.javajon-gke.duckdns.org
     http:
       paths:
-      # User Service - Authentication
       - path: /api/auth
         pathType: Prefix
         backend:
@@ -22,8 +22,6 @@ spec:
             name: user-service
             port:
               number: 3001
-      
-      # Wardrobe Service - Clothing management
       - path: /api/wardrobe
         pathType: Prefix
         backend:
@@ -31,8 +29,6 @@ spec:
             name: wardrobe-service
             port:
               number: 3003
-
-      # Outfit Service - Daily outfit (MUST BE BEFORE /api/outfits)
       - path: /api/daily-outfit
         pathType: Prefix
         backend:
@@ -40,8 +36,6 @@ spec:
             name: outfit-service
             port:
               number: 3002
-      
-      # Outfit Service - Outfit generation
       - path: /api/outfits
         pathType: Prefix
         backend:
@@ -49,8 +43,6 @@ spec:
             name: outfit-service
             port:
               number: 3002
-      
-      # AI Service - Fashion advice
       - path: /api/ai
         pathType: Prefix
         backend:
@@ -58,8 +50,6 @@ spec:
             name: ai-advice-service
             port:
               number: 3004
-      
-      # Health checks 
       - path: /health
         pathType: Prefix
         backend:
@@ -67,32 +57,6 @@ spec:
             name: user-service
             port:
               number: 3001
-      
-      - path: /health/wardrobe
-        pathType: Exact
-        backend:
-          service:
-            name: wardrobe-service
-            port:
-              number: 3003
-      
-      - path: /health/outfit
-        pathType: Exact
-        backend:
-          service:
-            name: outfit-service
-            port:
-              number: 3002
-      
-      - path: /health/ai
-        pathType: Exact
-        backend:
-          service:
-            name: ai-advice-service
-            port:
-              number: 3004
-
-      # Frontend - MUST BE LAST (catch-all)
       - path: /
         pathType: Prefix
         backend:

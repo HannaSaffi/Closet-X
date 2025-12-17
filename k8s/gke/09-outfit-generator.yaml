@@ -1,3 +1,4 @@
+#k8s/gke/09-outfit-generator.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -15,7 +16,7 @@ spec:
     spec:
       containers:
       - name: outfit-generator
-        image: harbor.javajon.duckdns.org/library/outfit-generator:v1.0.0
+        image: harbor.javajon-gke.duckdns.org/library/outfit-generator:v8.0.8
         imagePullPolicy: Always
         env:
         - name: NODE_ENV
@@ -23,7 +24,7 @@ spec:
         - name: MONGO_URI
           value: "mongodb://outfit_service:service_password_123@mongodb-service.kates-closetx.svc.cluster.local:27017/closetx_outfits?authSource=admin"
         - name: RABBITMQ_URL
-          value: "amqp://admin:admin@rabbitmq.rabbitmq.svc.cluster.local:5672"
+          value: "amqp://admin:admin@rabbitmq.rabbitmq:5672"
         - name: WARDROBE_SERVICE_URL
           valueFrom:
             configMapKeyRef:

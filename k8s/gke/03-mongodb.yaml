@@ -1,4 +1,4 @@
-#k8s/03-mongodb.yaml
+#k8s/gke/03-mongodb.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:

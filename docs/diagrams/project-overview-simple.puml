@@ -41,7 +41,7 @@ rectangle "KUBERNETES CLUSTER" #E8F5E9 {
 cloud "EXTERNAL APIS" #FFF9C4 {
   [OpenWeather\nWeather Data] as Weather
   [Google Vision\nImage Recognition] as Vision
-  [Ollama\nAI Assistant] as Ollama
+  [Google Gemini\nAI Assistant] as Gemini
 }
 
 ' User interactions
@@ -75,7 +75,7 @@ FashionWorker --> DB : Store Tips
 ' External API calls
 OutfitSvc --> Weather : Fetch Weather
 ImageWorker --> Vision : Analyze Image
-FashionWorker --> Ollama : Generate Advice
+FashionWorker --> Gemini : Generate Advice
 
 note right of Frontend
   User Features:
@@ -120,7 +120,7 @@ note bottom of Weather
   
   OpenWeather: Current + 7-day forecast
   Google Vision: 92% accuracy
-  Ollama: Local LLM (free)
+  Google Gemini: AI-powered fashion advice
 end note
 
 @enduml

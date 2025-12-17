@@ -1,9 +1,7 @@
 #!/bin/bash
-
 # ============================================
 # Closet-X Kubernetes Resources Demo
 # ============================================
-
 echo "=========================================="
 echo "CLOSET-X KUBERNETES CLUSTER STATUS"
 echo "=========================================="
@@ -11,7 +9,7 @@ echo ""
 
 # 1. Show all namespaces
 echo "📦 NAMESPACES:"
-kubectl get namespaces
+kubectl get namespaces | grep kates
 echo ""
 
 # 2. Show all pods in kates-closetx namespace
@@ -34,29 +32,24 @@ echo "🔀 INGRESS:"
 kubectl get ingress -n kates-closetx
 echo ""
 
-# 6. Show persistent volumes
-echo "💾 PERSISTENT VOLUMES:"
-kubectl get pv
+# 6. Show HPA
+echo "📊 HORIZONTAL POD AUTOSCALERS:"
+kubectl get hpa -n kates-closetx
 echo ""
 
-# 7. Show persistent volume claims
-echo "📎 PERSISTENT VOLUME CLAIMS:"
-kubectl get pvc -n kates-closetx
-echo ""
-
-# 8. Show nodes
+# 7. Show nodes
 echo "🖥️  CLUSTER NODES:"
 kubectl get nodes -o wide
 echo ""
 
-# 9. Show replica sets
-echo "♻️  REPLICA SETS:"
-kubectl get rs -n kates-closetx
-echo ""
-
-# 10. Show logs from outfit service
+# 8. Show logs from outfit service
 echo "📝 RECENT LOGS (Outfit Service):"
 kubectl logs -n kates-closetx deployment/outfit-service --tail=10
+echo ""
+
+# 9. Show RabbitMQ connection status
+echo "🐰 RABBITMQ CONNECTIONS:"
+kubectl logs -n kates-closetx deployment/image-processor --tail=5 | grep RabbitMQ
 echo ""
 
 echo "=========================================="

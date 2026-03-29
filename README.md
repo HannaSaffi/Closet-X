@@ -12,23 +12,6 @@
 
 ---
 
-## 🚀 Live Demo
-
-**Try Closet-X Now:** [https://kates-closetx.javajon.duckdns.org/](https://kates-closetx.javajon.duckdns.org/)
-
-**Demo Credentials:**
-- **Email:** `apostolo@trincoll.edu`
-- **Password:** `12345678`
-
-⚠️ **Accessing from Trinity College Network?**  
-Trinity may block DuckDNS domains. Try these solutions:
-- Add to your `/etc/hosts` file: `76.118.58.14  kates-closetx.javajon.duckdns.org`
-- Connect via mobile hotspot
-
-> 💡 See our [User Guide](USER_GUIDE.md) for a complete walkthrough of all features!
-
----
-
 ## 📋 Table of Contents
 
 - [Overview](#-overview)
